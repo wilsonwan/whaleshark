@@ -193,10 +193,7 @@ function autoSettlementConfigured(settings: import("@t3tools/contracts").ServerS
 }
 
 /** Identity of every settlement input, so unrelated settings edits do not trigger a sweep. */
-/** @internal Exported for tests. */
-export function autoSettlementSettingsKey(
-  settings: import("@t3tools/contracts").ServerSettings,
-): string {
+function autoSettlementSettingsKey(settings: import("@t3tools/contracts").ServerSettings): string {
   return JSON.stringify([
     settings.sidebarAutoSettleOnMerge,
     settings.sidebarAutoSettleAfterDays,

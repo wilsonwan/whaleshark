@@ -242,6 +242,10 @@ describe("editable file highlighting", () => {
       expect(renderer.renderFullHTML(firstLines!)).toContain('style="color:');
       expect(document.lineCount).toBe(7_000 + count);
     },
+    // Appending to a 7,000-line document and re-rendering it through real
+    // tokenizer workers takes seconds, and CI gives these runners two vCPUs
+    // where the budgets were set on eight, so the default 15s is too tight.
+    60_000,
   );
 
   it("does not replace a same-line edit with stale tokens", async () => {
