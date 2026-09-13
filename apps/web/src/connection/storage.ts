@@ -218,13 +218,13 @@ function vcsRefsCacheKey(environmentId: EnvironmentId, cwd: string) {
 }
 
 const decodeCatalog = Effect.fn("web.connectionStorage.decodeCatalog")(function* (raw: string) {
-  const parsed = yield* Effect.try({
-    try: () => JSON.parse(raw) as unknown,
-    catch: (cause) => catalogError("decode", cause),
-  });
   // Catalogs written before relays were dropped still carry relay targets and
   // DPoP tokens; those rows are removed rather than allowed to invalidate the
-  // direct and SSH connections stored beside them.
+  // direct and SSH connections stored beside them. That leniency needs the
+  // document as an unknown value first, so it is parsed without a shape.
+  const parsed = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(raw).pipe(
+    Effect.mapError((cause) => catalogError("decode", cause)),
+  );
   return Option.getOrElse(
     decodeConnectionCatalogDocument(parsed),
     () => EMPTY_CONNECTION_CATALOG_DOCUMENT,
