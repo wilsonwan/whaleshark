@@ -33,6 +33,18 @@ const runGit = (cwd: string, args: ReadonlyArray<string>) =>
     });
   });
 
+const listCheckpointPaths = (cwd: string, checkpointRef: CheckpointRef) =>
+  Effect.gen(function* () {
+    const driver = yield* GitVcsDriver.GitVcsDriver;
+    const result = yield* driver.execute({
+      operation: "GitVcsDriver.test.listCheckpointPaths",
+      cwd,
+      args: ["ls-tree", "--full-tree", "--name-only", "-r", checkpointRef],
+      timeoutMs: 10_000,
+    });
+    return result.stdout.split("\n").filter((line) => line.trim().length > 0);
+  });
+
 type GitContractError = GitCommandError | PlatformError.PlatformError;
 
 runVcsDriverContractSuite<GitVcsDriver.GitVcsDriver, GitContractError>({
@@ -126,6 +138,87 @@ it.effect("restores empty checkpoints without changing paths outside the workspa
         assert.strictEqual(staged.stdout.trim(), "outside.txt");
       }
     }
+  }).pipe(Effect.scoped, Effect.provide(GitContractLayer)),
+);
+
+it.effect("captures and restores untracked files created in a repository-root workspace", () =>
+  Effect.gen(function* () {
+    const fileSystem = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const driver = yield* GitVcsDriver.makeVcsDriverShape();
+    const root = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3-root-checkpoint-" });
+    yield* runGit(root, ["init"]);
+    yield* runGit(root, ["config", "user.email", "test@test.com"]);
+    yield* runGit(root, ["config", "user.name", "Test"]);
+    yield* fileSystem.writeFileString(path.join(root, "tracked.txt"), "tracked\n");
+    yield* runGit(root, ["add", "tracked.txt"]);
+    yield* runGit(root, ["commit", "-m", "initial"]);
+
+    const baselineRef = CheckpointRef.make("refs/t3/checkpoints/root-baseline");
+    yield* driver.checkpoints.captureCheckpoint({ cwd: root, checkpointRef: baselineRef });
+
+    // The turn creates a file git has never seen, at the top level of the repo.
+    yield* fileSystem.writeFileString(path.join(root, "agent-created.txt"), "agent output\n");
+
+    const turnRef = CheckpointRef.make("refs/t3/checkpoints/root-turn");
+    yield* driver.checkpoints.captureCheckpoint({ cwd: root, checkpointRef: turnRef });
+    assert.include(yield* listCheckpointPaths(root, turnRef), "agent-created.txt");
+
+    assert.isTrue(
+      yield* driver.checkpoints.restoreCheckpoint({
+        cwd: root,
+        checkpointRef: baselineRef,
+        fallbackToHead: false,
+      }),
+    );
+    assert.isFalse(yield* fileSystem.exists(path.join(root, "agent-created.txt")));
+    assert.strictEqual(
+      yield* fileSystem.readFileString(path.join(root, "tracked.txt")),
+      "tracked\n",
+    );
+  }).pipe(Effect.scoped, Effect.provide(GitContractLayer)),
+);
+
+it.effect("scopes nested workspace checkpoints to the workspace subtree", () =>
+  Effect.gen(function* () {
+    const fileSystem = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const driver = yield* GitVcsDriver.makeVcsDriverShape();
+    const root = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3-nested-checkpoint-" });
+    yield* runGit(root, ["init"]);
+    yield* runGit(root, ["config", "user.email", "test@test.com"]);
+    yield* runGit(root, ["config", "user.name", "Test"]);
+    yield* fileSystem.writeFileString(path.join(root, "tracked.txt"), "tracked\n");
+    yield* runGit(root, ["add", "tracked.txt"]);
+    yield* runGit(root, ["commit", "-m", "initial"]);
+
+    const cwd = path.join(root, "apps", "server");
+    yield* fileSystem.makeDirectory(cwd, { recursive: true });
+    const baselineRef = CheckpointRef.make("refs/t3/checkpoints/nested-baseline");
+    yield* driver.checkpoints.captureCheckpoint({ cwd, checkpointRef: baselineRef });
+
+    // One file inside the project workspace, one in the repository above it.
+    yield* fileSystem.writeFileString(path.join(cwd, "in-scope.txt"), "inside\n");
+    yield* fileSystem.writeFileString(path.join(root, "out-of-scope.txt"), "outside\n");
+
+    const turnRef = CheckpointRef.make("refs/t3/checkpoints/nested-turn");
+    yield* driver.checkpoints.captureCheckpoint({ cwd, checkpointRef: turnRef });
+    const paths = yield* listCheckpointPaths(cwd, turnRef);
+    assert.include(paths, "apps/server/in-scope.txt");
+    assert.notInclude(paths, "out-of-scope.txt");
+
+    assert.isTrue(
+      yield* driver.checkpoints.restoreCheckpoint({
+        cwd,
+        checkpointRef: baselineRef,
+        fallbackToHead: false,
+      }),
+    );
+    assert.isFalse(yield* fileSystem.exists(path.join(cwd, "in-scope.txt")));
+    assert.strictEqual(
+      yield* fileSystem.readFileString(path.join(root, "out-of-scope.txt")),
+      "outside\n",
+    );
   }).pipe(Effect.scoped, Effect.provide(GitContractLayer)),
 );
 

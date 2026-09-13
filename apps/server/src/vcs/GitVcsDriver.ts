@@ -752,6 +752,10 @@ export const makeVcsDriverShape = Effect.fn("makeGitVcsDriverShape")(function* (
       yield* Effect.gen(function* () {
         const headExists = yield* hasHeadCommit(input.cwd);
         if (headExists) {
+          // Seeding the temp index from HEAD keeps paths outside the workspace at
+          // their committed state, while the `add` pathspec below only refreshes
+          // the workspace itself. One repository can host several projects, so a
+          // checkpoint must not carry a sibling project's uncommitted changes.
           yield* execute({
             operation,
             cwd: input.cwd,
@@ -849,6 +853,8 @@ export const makeVcsDriverShape = Effect.fn("makeGitVcsDriverShape")(function* (
         return false;
       }
 
+      // Scoped like capture: only paths beneath the workspace are restored or
+      // cleaned, so reverting one project never touches a sibling's files.
       const tracked = yield* execute({
         operation,
         cwd: input.cwd,

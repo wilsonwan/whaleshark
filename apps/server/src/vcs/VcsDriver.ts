@@ -40,6 +40,12 @@ export interface VcsDeleteCheckpointRefsInput {
 }
 
 export interface VcsCheckpointOps {
+  /**
+   * Checkpoints are scoped to each input's `cwd`: capture, restore, and clean
+   * only see paths beneath that workspace, so a project nested in a larger
+   * repository never drags a sibling project's files into a checkpoint or a
+   * revert.
+   */
   readonly captureCheckpoint: (input: VcsCaptureCheckpointInput) => Effect.Effect<void, VcsError>;
   /**
    * Optional background warm-up so the first blocking capture in a fresh

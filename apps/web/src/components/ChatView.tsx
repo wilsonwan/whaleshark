@@ -10011,7 +10011,8 @@ export default function ChatView(props: ChatViewProps) {
             <AlertDialogTitle>Edit from here?</AlertDialogTitle>
             <AlertDialogDescription>
               Rewind chat to before this message. Your prompt and attachments return to the
-              composer.
+              composer. Reverting files only affects this project's workspace; files written outside
+              that workspace stay on disk.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
