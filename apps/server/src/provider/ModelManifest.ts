@@ -244,7 +244,7 @@ export function applyModelManifest(
 }
 
 /** The manifest's chat default for `driverKind`, when it names one. */
-export function manifestDefaultModel(
+function manifestDefaultModel(
   manifest: ModelManifestData,
   driverKind: ProviderDriverKind,
 ): string | undefined {
