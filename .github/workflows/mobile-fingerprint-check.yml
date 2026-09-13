@@ -1,5 +1,9 @@
 name: Mobile Fingerprint Check
 
+# This fork temporarily uses a GitHub-hosted runner because Blacksmith is not
+# configured here. Restore blacksmith-8vcpu-ubuntu-2404 when runner capacity is
+# available again.
+
 # Detects whether a PR changes the native fingerprint — i.e. whether merging
 # it would leave main un-OTA-able until a new store build ships. Native-change
 # PRs get the "📱 Native Change" label so they can be held and merged as a
@@ -32,7 +36,7 @@ concurrency:
 jobs:
   fingerprint:
     name: Native fingerprint diff
-    runs-on: blacksmith-8vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       issues: write
