@@ -73,7 +73,12 @@ function withoutDuplicateQuestionTools(
   });
 }
 
-/** Keep a question and its answer at the original tool position in the work log. */
+/**
+ * Keep a question and its answer at the original tool position in the work log.
+ *
+ * @public Part of this module's client-facing work-log API, consumed through the
+ * `./work-log/user-input` subpath export. This revision has no in-repo caller yet.
+ */
 export function foldUserInputActivities(
   activities: ReadonlyArray<OrchestrationThreadActivity>,
 ): ReadonlyArray<OrchestrationThreadActivity> {
