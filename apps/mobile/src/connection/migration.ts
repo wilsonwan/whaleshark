@@ -2,8 +2,6 @@ import {
   BearerConnectionCredential,
   BearerConnectionProfile,
   BearerConnectionRegistration,
-  RelayConnectionRegistration,
-  RelayConnectionTarget,
   BearerConnectionTarget,
 } from "@t3tools/client-runtime/connection";
 import {
@@ -40,6 +38,9 @@ export class LegacyConnectionMigrationError extends Schema.TaggedError<LegacyCon
   },
 ) {}
 
+// Legacy relay rows (relay-managed or DPoP authentication) are no longer
+// supported. Their stored shape keeps decoding, but migration drops them so they
+// never resurface as usable connections.
 function isRelayManaged(connection: typeof LegacySavedRemoteConnection.Type): boolean {
   return connection.relayManaged === true || connection.authenticationMethod === "dpop";
 }
@@ -49,15 +50,7 @@ function migrateConnection(
   connection: typeof LegacySavedRemoteConnection.Type,
 ): ConnectionCatalogDocument {
   if (isRelayManaged(connection)) {
-    return registerConnectionInCatalog(
-      document,
-      new RelayConnectionRegistration({
-        target: new RelayConnectionTarget({
-          environmentId: connection.environmentId,
-          label: connection.environmentLabel,
-        }),
-      }),
-    );
+    return document;
   }
 
   if (connection.bearerToken === null || connection.bearerToken.trim() === "") {

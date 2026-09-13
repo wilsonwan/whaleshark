@@ -9,12 +9,12 @@ describe("findErrorTraceId", () => {
       findErrorTraceId({
         cause: {
           cause: {
-            _tag: "RelayInternalError",
-            traceId: "trace-relay",
+            _tag: "EnvironmentInternalError",
+            traceId: "trace-wrapped",
           },
         },
       }),
-    ).toBe("trace-relay");
+    ).toBe("trace-wrapped");
   });
 
   it("terminates for cyclic causes", () => {

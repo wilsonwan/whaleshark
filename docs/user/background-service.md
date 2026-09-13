@@ -38,9 +38,6 @@ service is still installed and will start at the next login.
 
 Windows background services are not supported.
 
-T3 Connect can offer service installation during setup, but the two are managed
-separately. Signing out of T3 Connect does not stop or uninstall the service.
-
 ## Troubleshooting
 
 Start with `t3 service status` on the host. It prints the log path and, on Linux,
@@ -61,8 +58,8 @@ ssh -t your-server 'sudo loginctl enable-linger "$(id -un)"'
 ```
 
 Then retry service setup as your normal user. Run only the `loginctl` command
-with sudo; running T3 Code as root creates a separate installation and Connect
-identity. Without administrator access, run `t3 serve` in a terminal and keep
+with sudo; running T3 Code as root creates a separate installation and identity.
+Without administrator access, run `t3 serve` in a terminal and keep
 that session open.
 
 | Status problem                          | Next step                                                                                                                      |
@@ -77,5 +74,5 @@ Downloads, it may need Full Disk Access for the Node executable listed in
 `ProgramArguments` in
 `~/Library/LaunchAgents/com.t3tools.t3code.service.plist`.
 
-For failures after signing in to T3 Connect, see
-[connection troubleshooting](./remote-access.md#t3-connect-troubleshooting).
+For connection failures, see
+[remote access troubleshooting](./remote-access.md#troubleshooting).

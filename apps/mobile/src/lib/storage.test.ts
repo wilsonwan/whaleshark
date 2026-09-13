@@ -121,7 +121,7 @@ describe("mobile connection storage", () => {
     vi.clearAllMocks();
   });
 
-  it("persists relay-managed connections without their ephemeral access token", async () => {
+  it("persists a legacy relay-managed connection without its ephemeral access token", async () => {
     await saveConnection(managedConnection);
 
     const savedValue = mocks.setItemAsync.mock.calls[0]?.[1];
@@ -131,12 +131,10 @@ describe("mobile connection storage", () => {
     });
   });
 
-  it("loads relay-managed connection metadata without a cached access token", async () => {
+  it("loads without resurfacing legacy relay-managed connections", async () => {
     await saveConnection(managedConnection);
 
-    await expect(loadSavedConnections()).resolves.toEqual([
-      toStableSavedRemoteConnection(managedConnection),
-    ]);
+    await expect(loadSavedConnections()).resolves.toEqual([]);
   });
 
   it("preserves secure-storage read failures with operation and key context", async () => {

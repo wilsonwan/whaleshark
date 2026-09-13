@@ -37,6 +37,7 @@ const electronAppLayer = Layer.succeed(ElectronApp.ElectronApp, {
   exit: () => Effect.void,
   relaunch: () => Effect.void,
   setPath: () => Effect.void,
+  requestSingleInstanceLock: Effect.succeed(true),
   setName: () => Effect.void,
   setAboutPanelOptions: () => Effect.void,
   setAppUserModelId: () => Effect.void,

@@ -22,6 +22,8 @@ interface PersistedSavedEnvironmentStorageRecord extends Omit<
   "desktopSsh"
 > {
   readonly desktopSsh?: PersistedSavedEnvironmentDesktopSsh;
+  /** Legacy relay metadata; decoded for tolerance, never used to connect. */
+  readonly relayManaged?: { readonly relayUrl: string };
   readonly encryptedBearerToken?: string;
 }
 
@@ -191,6 +193,22 @@ export class DesktopSavedEnvironments extends Context.Service<
   }
 >()("@t3tools/desktop/settings/DesktopSavedEnvironments") {}
 
+type PersistedSavedEnvironmentRelayMetadata = NonNullable<
+  PersistedSavedEnvironmentStorageRecord["relayManaged"]
+>;
+
+/**
+ * Legacy relay metadata is no longer supported but stays in the persisted
+ * persisted document so old files keep decoding. Read it structurally so the
+ * desktop store can identify and drop those rows during migration.
+ */
+function relayManagedMetadata(
+  record: PersistedSavedEnvironmentRecord | PersistedSavedEnvironmentStorageRecord,
+): PersistedSavedEnvironmentRelayMetadata | undefined {
+  return (record as { readonly relayManaged?: PersistedSavedEnvironmentRelayMetadata })
+    .relayManaged;
+}
+
 function toPersistedSavedEnvironmentRecord(
   record: PersistedSavedEnvironmentStorageRecord,
 ): PersistedSavedEnvironmentRecord {
@@ -202,10 +220,11 @@ function toPersistedSavedEnvironmentRecord(
     createdAt: record.createdAt,
     lastConnectedAt: record.lastConnectedAt,
   };
+  const relayManaged = relayManagedMetadata(record);
   return {
     ...nextRecord,
     ...(record.desktopSsh ? { desktopSsh: record.desktopSsh } : {}),
-    ...(record.relayManaged ? { relayManaged: record.relayManaged } : {}),
+    ...(relayManaged ? { relayManaged } : {}),
   };
 }
 
@@ -221,9 +240,10 @@ function toSavedEnvironmentStorageRecord(
     createdAt: record.createdAt,
     lastConnectedAt: record.lastConnectedAt,
   };
+  const relayManaged = relayManagedMetadata(record);
   const metadata = {
     ...(record.desktopSsh ? { desktopSsh: record.desktopSsh } : {}),
-    ...(record.relayManaged ? { relayManaged: record.relayManaged } : {}),
+    ...(relayManaged ? { relayManaged } : {}),
   };
   return Option.match(encryptedBearerToken, {
     onNone: () => ({ ...nextRecord, ...metadata }),

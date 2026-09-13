@@ -420,7 +420,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
   });
   const environment = useEnvironment(thread.environmentId);
   const primaryEnvironmentId = usePrimaryEnvironmentId();
-  // No primary (the hosted app) means every thread is remote, and the machine
+  // A thread on a remote environment is not the primary, and the machine
   // glyph is what tells the environments apart.
   const isRemoteThread = thread.environmentId !== primaryEnvironmentId;
   const remoteEnvLabel = environment?.label ?? null;

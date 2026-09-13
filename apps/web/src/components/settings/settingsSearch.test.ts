@@ -89,7 +89,6 @@ describe("searchSettings", () => {
   it("finds settings that used to be reachable only through their section", () => {
     expect(searchSettings("pull request template")[0]?.id).toBe("follow-change-request-templates");
     expect(searchSettings("git security keys")[0]?.id).toBe("git-fetch-interval");
-    expect(searchSettings("push notifications")[0]?.id).toBe("publish-agent-activity");
     expect(searchSettings("battery saver")[0]?.id).toBe("background-activity");
     expect(searchSettings("binary path")[0]?.id).toBe("providers");
     expect(searchSettings("Google sign in")[0]?.id).toBe("providers");
@@ -146,7 +145,6 @@ describe("searchSettings", () => {
 
   it("hides settings whose controls are unavailable", () => {
     const available = filterAvailableSettingsSearchItems({
-      hasCloudPublicConfig: false,
       hasEnvironment: false,
       hasProviderSettingsEnvironment: false,
       canManageLocalBackend: false,
@@ -158,11 +156,9 @@ describe("searchSettings", () => {
       "follow-change-request-templates",
       "git-fetch-interval",
       "network-access",
-      "publish-agent-activity",
       "provider-health-check-interval",
       "source-control-writer-model",
       "source-control-writing-style",
-      "t3-connect",
       "tailscale-https",
       "wsl-backend",
       "auto-settle-inactive-threads",
@@ -174,7 +170,6 @@ describe("searchSettings", () => {
 
   it("shows automatic settlement settings when the server supports them", () => {
     const available = filterAvailableSettingsSearchItems({
-      hasCloudPublicConfig: false,
       hasEnvironment: false,
       hasProviderSettingsEnvironment: false,
       canManageLocalBackend: false,
@@ -278,7 +273,6 @@ describe("searchSettings", () => {
 
   it("keeps environment settings discoverable without a primary environment", () => {
     const available = filterAvailableSettingsSearchItems({
-      hasCloudPublicConfig: false,
       hasEnvironment: true,
       hasProviderSettingsEnvironment: true,
       canManageLocalBackend: false,
@@ -372,7 +366,6 @@ describe("auto-settlement search availability", () => {
     const availability = getThreadAutoSettlementSearchAvailability(environments);
     expect(availability.eligibleEnvironmentIds).toEqual([capable.environmentId]);
     const items = filterAvailableSettingsSearchItems({
-      hasCloudPublicConfig: false,
       hasEnvironment: true,
       hasProviderSettingsEnvironment: true,
       canManageLocalBackend: false,

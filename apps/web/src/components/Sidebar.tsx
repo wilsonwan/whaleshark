@@ -1277,9 +1277,8 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
     : thread.modelSelection.model;
 
   // The local environment is "this machine" and needs no marker; every other
-  // one gets its machine glyph. With no local environment (the hosted app)
-  // that is every thread, which is the point: the glyph is what tells rows on
-  // different machines apart.
+  // one gets its machine glyph, which is what tells rows on different
+  // machines apart.
   const isRemote = thread.environmentId !== props.currentEnvironmentId;
 
   const detailsTooltip = (
@@ -2357,9 +2356,9 @@ export default function Sidebar() {
   const projectGroupsRef = useRef(projectGroups);
   projectGroupsRef.current = projectGroups;
   const serverConfigs = useAtomValue(environmentServerConfigsAtom);
-  // Threads on non-primary environments (T3 Connect, hosted) resolve their
-  // provider entry from their own environment's config: default instance ids
-  // are driver slugs, so a flat map would collide across environments.
+  // Threads on non-primary environments resolve their provider entry from
+  // their own environment's config: default instance ids are driver slugs, so
+  // a flat map would collide across environments.
   const providerEntriesByEnvironment = useMemo(
     () =>
       deriveProviderEntriesByEnvironment(

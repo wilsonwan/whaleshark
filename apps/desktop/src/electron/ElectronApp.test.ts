@@ -23,6 +23,7 @@ const {
   setDockIconMock,
   setNameMock,
   setPathMock,
+  requestSingleInstanceLockMock,
   whenReadyMock,
 } = vi.hoisted(() => ({
   appendSwitchMock: vi.fn(),
@@ -38,6 +39,7 @@ const {
   relaunchMock: vi.fn(),
   removeListenerMock: vi.fn(),
   removeSwitchMock: vi.fn(),
+  requestSingleInstanceLockMock: vi.fn(() => true),
   setAboutPanelOptionsMock: vi.fn(),
   setAppUserModelIdMock: vi.fn(),
   setAsDefaultProtocolClientMock: vi.fn(() => true),
@@ -78,6 +80,7 @@ vi.mock("electron", () => ({
     setDesktopName: setDesktopNameMock,
     setName: setNameMock,
     setPath: setPathMock,
+    requestSingleInstanceLock: requestSingleInstanceLockMock,
     whenReady: whenReadyMock,
     exit: exitMock,
   },
@@ -96,6 +99,7 @@ describe("ElectronApp", () => {
     relaunchMock.mockClear();
     removeListenerMock.mockClear();
     removeSwitchMock.mockClear();
+    requestSingleInstanceLockMock.mockClear();
     setPathMock.mockClear();
   });
 

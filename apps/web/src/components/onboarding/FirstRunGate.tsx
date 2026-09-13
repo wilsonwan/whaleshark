@@ -14,7 +14,6 @@ import {
   isFirstRunWorkspaceProvenanceAuthoritative,
   isFreshFirstRunWorkspace,
   resolveFirstRunDecision,
-  resolveHostedFirstRunDecision,
   transitionFirstRunGateState,
   type FirstRunGateState,
 } from "../../onboarding/firstRun.logic";
@@ -31,17 +30,17 @@ import { environmentThreadShells } from "../../state/threads";
 import { Button } from "../ui/button";
 
 /**
- * Holds back authenticated and hosted app trees until the first-run decision
- * is known, so a fresh install never flashes the main screen before the wizard.
+ * Holds back the authenticated app tree until the first-run decision is
+ * known, so a fresh install never flashes the main screen before the wizard.
  * Nothing renders while pending — no shell, no EventRouter (whose welcome
  * payload would otherwise navigate into a thread), no dialogs.
  *
  * Decision order: a set `onboardingCompletedAt` resolves to the app as soon as
  * settings hydrate (the common case, no server round-trip). A `null` flag also
  * covers installs that predate the field, so it alone is not enough — the gate
- * waits for environment shells to bootstrap and inspects the workspace.
- * Hosted mode instead checks its saved environment catalog. A timeout shows
- * recovery for an unreachable primary server without mounting the app tree.
+ * waits for environment shells to bootstrap and inspects the workspace. A
+ * timeout shows recovery for an unreachable primary server without mounting
+ * the app tree.
  */
 
 const FIRST_RUN_DECISION_TIMEOUT_MS = 4_000;
@@ -71,11 +70,9 @@ const workspaceEvidenceLiveAtom = Atom.make((get) => {
 
 export function FirstRunGate({
   enabled,
-  hostedStatic,
   children,
 }: {
   readonly enabled: boolean;
-  readonly hostedStatic: boolean;
   readonly children: React.ReactNode;
 }) {
   const navigate = useNavigate();
@@ -85,7 +82,7 @@ export function FirstRunGate({
   const completeOnboarding = useCompleteOnboarding();
   const onboardingCompletedAt = useClientSettings((settings) => settings.onboardingCompletedAt);
   const bootstrapped = useAllEnvironmentShellsBootstrapped();
-  const { environments, isReady: environmentCatalogReady } = useEnvironments();
+  const { isReady: environmentCatalogReady } = useEnvironments();
   const projects = useProjects();
   const threads = useThreadShells();
   const serverConfig = useAtomValue(primaryServerConfigAtom);
@@ -95,10 +92,7 @@ export function FirstRunGate({
   // Within a session settings stay hydrated, so remounts (e.g. returning from
   // the wizard) resolve synchronously instead of blanking a frame.
   const [gateState, setGateState] = useState<FirstRunGateState>(() => ({
-    decision:
-      (!enabled && !hostedStatic) || (hydrated && onboardingCompletedAt !== null)
-        ? "app"
-        : "pending",
+    decision: !enabled || (hydrated && onboardingCompletedAt !== null) ? "app" : "pending",
     stalled: false,
   }));
   const { decision, stalled } = gateState;
@@ -124,30 +118,23 @@ export function FirstRunGate({
     threads,
   });
 
-  const { decision: nextDecision, persistCompletion } = hostedStatic
-    ? resolveHostedFirstRunDecision({
-        hydrated,
-        completed: onboardingCompletedAt !== null,
-        catalogReady: environmentCatalogReady,
-        environmentCount: environments.length,
-      })
-    : resolveFirstRunDecision({
-        enabled,
-        hydrated,
-        completed: onboardingCompletedAt !== null,
-        bootstrapped,
-        authoritative: primaryShellLive,
-        workspaceAuthoritative: workspaceEvidenceLive,
-        workspaceProvenanceAuthoritative: isFirstRunWorkspaceProvenanceAuthoritative({
-          welcomeReceived: serverWelcome !== null,
-          bootstrapStatus: serverWelcome?.bootstrapStatus ?? null,
-        }),
-        catalogReady: environmentCatalogReady,
-        serverConfigAvailable: serverConfig !== null,
-        workspaceFresh,
-        projectCount: projects.length,
-        threadCount: threads.length,
-      });
+  const { decision: nextDecision, persistCompletion } = resolveFirstRunDecision({
+    enabled,
+    hydrated,
+    completed: onboardingCompletedAt !== null,
+    bootstrapped,
+    authoritative: primaryShellLive,
+    workspaceAuthoritative: workspaceEvidenceLive,
+    workspaceProvenanceAuthoritative: isFirstRunWorkspaceProvenanceAuthoritative({
+      welcomeReceived: serverWelcome !== null,
+      bootstrapStatus: serverWelcome?.bootstrapStatus ?? null,
+    }),
+    catalogReady: environmentCatalogReady,
+    serverConfigAvailable: serverConfig !== null,
+    workspaceFresh,
+    projectCount: projects.length,
+    threadCount: threads.length,
+  });
 
   useEffect(() => {
     if (decision === "wizard" || !hydrated) return;

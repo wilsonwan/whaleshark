@@ -1,3 +1,4 @@
+import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 
 import {
@@ -6,7 +7,6 @@ import {
   ConnectionProfile,
 } from "../connection/catalog.ts";
 import { type ConnectionTarget, PersistedConnectionTarget } from "../connection/model.ts";
-import * as TokenStore from "../authorization/tokenStore.ts";
 
 export const StoredConnectionCredential = Schema.Struct({
   connectionId: Schema.String,
@@ -19,7 +19,6 @@ export const ConnectionCatalogDocument = Schema.Struct({
   targets: Schema.Array(PersistedConnectionTarget),
   profiles: Schema.Array(ConnectionProfile),
   credentials: Schema.Array(StoredConnectionCredential),
-  remoteDpopTokens: Schema.Array(TokenStore.RemoteDpopAccessToken),
 });
 export type ConnectionCatalogDocument = typeof ConnectionCatalogDocument.Type;
 
@@ -28,8 +27,38 @@ export const EMPTY_CONNECTION_CATALOG_DOCUMENT: ConnectionCatalogDocument = Obje
   targets: [],
   profiles: [],
   credentials: [],
-  remoteDpopTokens: [],
 });
+
+const decodePersistedTarget = Schema.decodeUnknownOption(PersistedConnectionTarget);
+const decodeDocument = Schema.decodeUnknownOption(ConnectionCatalogDocument);
+
+/**
+ * Decode a catalog document written by any build of the client.
+ *
+ * Documents written before relays were dropped still carry relay connection
+ * targets and the DPoP access tokens stored beside them. Those rows are
+ * unreadable here, but the direct and SSH connections in the same document are
+ * not, so the legacy rows are removed before decoding instead of being allowed
+ * to invalidate everything. A document with no usable rows left decodes to
+ * none, which callers treat as an empty catalog rather than an error.
+ */
+export function decodeConnectionCatalogDocument(
+  input: unknown,
+): Option.Option<ConnectionCatalogDocument> {
+  if (typeof input !== "object" || input === null) {
+    return Option.none();
+  }
+  const legacy = input as Record<string, unknown>;
+  const targets = legacy["targets"];
+  const rest = { ...legacy };
+  delete rest["remoteDpopTokens"];
+  return decodeDocument({
+    ...rest,
+    targets: Array.isArray(targets)
+      ? targets.filter((target) => Option.isSome(decodePersistedTarget(target)))
+      : targets,
+  });
+}
 
 export function replaceCatalogValue<A>(
   values: ReadonlyArray<A>,
@@ -51,7 +80,6 @@ export function removeCatalogValue<A>(
 function connectionIdOf(target: ConnectionTarget): string | null {
   switch (target._tag) {
     case "PrimaryConnectionTarget":
-    case "RelayConnectionTarget":
       return null;
     case "BearerConnectionTarget":
     case "SshConnectionTarget":
@@ -62,7 +90,6 @@ function connectionIdOf(target: ConnectionTarget): string | null {
 function removeConnectionMetadata(
   document: ConnectionCatalogDocument,
   target: ConnectionTarget,
-  removeRemoteToken: boolean,
 ): ConnectionCatalogDocument {
   const connectionId = connectionIdOf(target);
   return {
@@ -80,13 +107,6 @@ function removeConnectionMetadata(
       connectionId === null
         ? document.credentials
         : removeCatalogValue(document.credentials, (value) => value.connectionId, connectionId),
-    remoteDpopTokens: removeRemoteToken
-      ? removeCatalogValue(
-          document.remoteDpopTokens,
-          (value) => value.environmentId,
-          target.environmentId,
-        )
-      : document.remoteDpopTokens,
   };
 }
 
@@ -98,16 +118,13 @@ export function registerConnectionInCatalog(
   const previous = document.targets.find(
     (candidate) => candidate.environmentId === target.environmentId,
   );
-  const cleaned =
-    previous === undefined ? document : removeConnectionMetadata(document, previous, false);
+  const cleaned = previous === undefined ? document : removeConnectionMetadata(document, previous);
   const next: ConnectionCatalogDocument = {
     ...cleaned,
     targets: replaceCatalogValue(cleaned.targets, (value) => value.environmentId, target),
   };
 
   switch (registration._tag) {
-    case "RelayConnectionRegistration":
-      return next;
     case "BearerConnectionRegistration":
       return {
         ...next,
@@ -137,26 +154,5 @@ export function removeConnectionFromCatalog(
   document: ConnectionCatalogDocument,
   target: ConnectionTarget,
 ): ConnectionCatalogDocument {
-  return removeConnectionMetadata(document, target, true);
-}
-
-export function putRemoteDpopTokenInCatalog(
-  document: ConnectionCatalogDocument,
-  token: TokenStore.RemoteDpopAccessToken,
-): ConnectionCatalogDocument {
-  const registered = document.targets.some(
-    (target) =>
-      target._tag === "RelayConnectionTarget" && target.environmentId === token.environmentId,
-  );
-  if (!registered) {
-    return document;
-  }
-  return {
-    ...document,
-    remoteDpopTokens: replaceCatalogValue(
-      document.remoteDpopTokens,
-      (value) => value.environmentId,
-      token,
-    ),
-  };
+  return removeConnectionMetadata(document, target);
 }
