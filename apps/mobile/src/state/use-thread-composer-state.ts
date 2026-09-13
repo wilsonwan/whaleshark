@@ -358,8 +358,8 @@ export function useThreadComposerState() {
       isModelSelectionUnavailable(serverConfig, modelSelection)
     ) {
       Alert.alert(
-        "Antigravity model unavailable",
-        "Set up Antigravity on web or desktop, or choose another model.",
+        "Model unavailable",
+        "Set up this provider on web or desktop, or select another model.",
       );
       return null;
     }
