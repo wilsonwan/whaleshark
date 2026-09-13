@@ -96,9 +96,9 @@ Named exports in web UI component modules are kept as complete component sets. K
 unused exports in `apps/web/src/components/ui/*.tsx`, while still reporting an entire unused file.
 Use `vp run knip --workspace apps/web` to audit one workspace, including exports,
 or `vp run knip:production --workspace apps/web` to find code kept alive only by tests.
-The full export audit still has findings and is not a repo-wide CI gate. Extend the
-export check's workspace selectors as more workspaces become clean. Review callers before
-deleting code; production mode can also report development scripts and test fixtures.
+The export audit covers only the workspaces its selectors name, so it is not a repo-wide gate.
+Extend the export check's workspace selectors as more workspaces become clean. Review callers
+before deleting code; production mode can also report development scripts and test fixtures.
 Runtime-discovered entrypoints and dependency exceptions belong in [knip.jsonc](../../knip.jsonc).
 
 ## Desktop artifacts
