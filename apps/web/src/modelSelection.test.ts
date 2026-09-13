@@ -162,24 +162,22 @@ describe("instance-scoped model selection", () => {
     ).toBe("opus");
   });
 
-  it("includes Grok custom models from the selected provider instance", () => {
-    const providers = [provider({ provider: ProviderDriverKind.make("grok"), instanceId: "grok" })];
+  it("includes Pi custom models from the selected provider instance", () => {
+    const providers = [provider({ provider: ProviderDriverKind.make("pi"), instanceId: "pi" })];
     const settings: UnifiedSettings = {
       ...settingsWithProviderInstances(),
       providerInstances: {
         ...settingsWithProviderInstances().providerInstances,
-        [ProviderInstanceId.make("grok")]: {
-          driver: ProviderDriverKind.make("grok"),
-          config: { customModels: ["grok-test-custom-model"] },
+        [ProviderInstanceId.make("pi")]: {
+          driver: ProviderDriverKind.make("pi"),
+          config: { customModels: ["pi-test-custom-model"] },
         },
       },
     };
-    const grok = deriveProviderInstanceEntries(providers).find(
-      (entry) => entry.instanceId === "grok",
-    )!;
+    const pi = deriveProviderInstanceEntries(providers).find((entry) => entry.instanceId === "pi")!;
 
-    expect(getAppModelOptionsForInstance(settings, grok).map((option) => option.slug)).toContain(
-      "grok-test-custom-model",
+    expect(getAppModelOptionsForInstance(settings, pi).map((option) => option.slug)).toContain(
+      "pi-test-custom-model",
     );
   });
 
@@ -706,19 +704,19 @@ describe("instance-scoped model selection", () => {
     );
   });
   it("does not select a provider that cannot generate system text", () => {
-    const instanceId = ProviderInstanceId.make("grok");
+    const instanceId = ProviderInstanceId.make("acp_gemini");
     const unsupported = {
       ...provider({
-        provider: ProviderDriverKind.make("grok"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         instanceId,
-        models: ["grok-4"],
+        models: ["default"],
       }),
       supportsTextGeneration: false,
     };
     const supported = provider({ instanceId: "codex", models: ["gpt-5.6-sol"] });
     const settings = {
       ...settingsWithProviderInstances(),
-      textGenerationModelSelection: createModelSelection(instanceId, "grok-4"),
+      textGenerationModelSelection: createModelSelection(instanceId, "default"),
     };
 
     expect(resolveAppModelSelectionState(settings, [unsupported, supported])).toEqual(

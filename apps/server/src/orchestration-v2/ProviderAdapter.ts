@@ -416,7 +416,7 @@ export interface ProviderAdapterV2SteerInput {
 export interface ProviderAdapterV2InterruptInput {
   readonly providerThread: OrchestrationV2ProviderThread;
   readonly providerTurnId: ProviderTurnId;
-  /** When true, the next `startTurn` may respawn the provider runtime (Grok Stop recovery). */
+  /** When true, the next `startTurn` may respawn the provider runtime (runtime restart on user Stop). */
   readonly requestRuntimeRestart?: boolean;
 }
 

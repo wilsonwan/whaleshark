@@ -16,24 +16,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isSessionModelState(value: unknown): value is EffectAcpSchema.SessionModelState {
-  if (!isRecord(value) || typeof value.currentModelId !== "string") {
-    return false;
-  }
-  if (!Array.isArray(value.availableModels)) {
-    return false;
-  }
-  return value.availableModels.every(
-    (model) =>
-      isRecord(model) &&
-      typeof model.modelId === "string" &&
-      typeof model.name === "string" &&
-      (model.description === undefined ||
-        model.description === null ||
-        typeof model.description === "string"),
-  );
-}
-
 function isSessionModeState(value: unknown): value is EffectAcpSchema.SessionModeState {
   if (!isRecord(value) || typeof value.currentModeId !== "string") {
     return false;
@@ -573,7 +555,7 @@ function extractToolCallCommand(rawInput: unknown, title: string | undefined): s
   return extractCommandFromTitle(title);
 }
 
-// Some ACP agents (observed with Grok's CLI) resend the ENTIRE accumulated tool-call
+// Some ACP agents resend the ENTIRE accumulated tool-call
 // output on every `tool_call_update` notification instead of a delta, so a redrawing
 // terminal progress bar can balloon a single tool call to hundreds of KB per update at
 // several updates per second. Cap what we retain/emit to a bounded tail so one busy tool
@@ -1182,7 +1164,7 @@ export function sessionUpdateIsReplay(params: EffectAcpSchema.SessionNotificatio
   return isRecord(meta) && meta.isReplay === true;
 }
 
-/** Replay chunks and substantive updates during session/load; not Grok keepalives. */
+/** Replay chunks and substantive updates during session/load; not agent keepalives. */
 export function sessionUpdateCountsAsLoadReplayActivity(
   params: EffectAcpSchema.SessionNotification,
   gatedSessionId?: string,
@@ -1250,18 +1232,6 @@ export const waitForSessionLoadReplayIdle = (input: {
       yield* Effect.sleep(pollInterval);
     }
   });
-
-/**
- * Model state some agents (Grok) advertise in `initialize._meta.modelState`, before any
- * session exists. Undefined when the agent does not advertise it or the shape is unknown.
- */
-export function sessionModelStateFromInitialize(
-  initializeResult: EffectAcpSchema.InitializeResponse,
-): EffectAcpSchema.SessionModelState | undefined {
-  const meta = initializeResult._meta;
-  const modelState = isRecord(meta) ? meta.modelState : undefined;
-  return isSessionModelState(modelState) ? modelState : undefined;
-}
 
 export function syntheticLoadSessionResponseFromInitialize(
   initializeResult: EffectAcpSchema.InitializeResponse,

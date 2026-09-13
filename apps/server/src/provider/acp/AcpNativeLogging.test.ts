@@ -78,7 +78,7 @@ nodeServicesIt("ACP native logging", (it) => {
           write: (event) => Effect.sync(() => void records.push(event)),
           close: () => Effect.void,
         },
-        provider: ProviderDriverKind.make("grok"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: ThreadId.make("thread-1"),
       });
 
@@ -206,7 +206,7 @@ nodeServicesIt("ACP native logging", (it) => {
           write: (event) => Effect.sync(() => void records.push(event)),
           close: () => Effect.void,
         },
-        provider: ProviderDriverKind.make("grok"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: ThreadId.make("thread-1"),
         verboseProtocolLogging: true,
       });

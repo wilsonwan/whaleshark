@@ -32,8 +32,9 @@ See the [adapter](../../apps/server/src/orchestration-v2/Adapters/PiAdapterV2.ts
 ## Setup must not happen as a health-check side effect
 
 Opening a provider session can start MCP servers, run hooks, or launch a login browser.
-[Grok probes](../../apps/server/src/provider/Layers/GrokProvider.ts) avoid authentication and
-session creation for this reason.
+The [Claude capability probe](../../apps/server/src/provider/Layers/ClaudeProvider.ts) keeps
+filesystem setting sources for command discovery but disables hooks and MCP discovery, so a
+periodic health check cannot run the user's setup.
 
 ## Provider updates run only through the owning installer
 

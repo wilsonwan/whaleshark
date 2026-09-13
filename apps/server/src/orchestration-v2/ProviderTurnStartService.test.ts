@@ -153,7 +153,7 @@ function makeLocalCommandHarness(input: {
   const providerThreadId = ProviderThreadId.make("new-provider-thread");
   const providerSessionId = ProviderSessionId.make("new-provider-session");
   const oldProviderThreadId = ProviderThreadId.make("existing-native-provider-thread");
-  const oldInstanceId = ProviderInstanceId.make("grok-personal");
+  const oldInstanceId = ProviderInstanceId.make("acpRegistry-personal");
   const newInstanceId = ProviderInstanceId.make("codex-personal");
   const checkpointScopeId = CheckpointScopeId.make("scope-native-account-command");
   const messageId = MessageId.make("message-native-account-command");
@@ -268,10 +268,10 @@ function makeLocalCommandHarness(input: {
               ...providerThread,
               id: oldProviderThreadId,
               providerInstanceId: oldInstanceId,
-              driver: ProviderDriverKind.make("grok"),
+              driver: ProviderDriverKind.make("acpRegistry"),
               lastRunOrdinal: 1,
               nativeThreadRef: {
-                driver: ProviderDriverKind.make("grok"),
+                driver: ProviderDriverKind.make("acpRegistry"),
                 nativeId: "existing-session",
                 strength: "strong" as const,
               },

@@ -332,7 +332,6 @@ const PersistedOptionalProviderSettings = Schema.Struct({
   providers: Schema.optionalKey(
     Schema.Struct({
       cursor: Schema.optionalKey(Schema.Struct({ enabled: Schema.optionalKey(Schema.Boolean) })),
-      grok: Schema.optionalKey(Schema.Struct({ enabled: Schema.optionalKey(Schema.Boolean) })),
       opencode: Schema.optionalKey(Schema.Struct({ enabled: Schema.optionalKey(Schema.Boolean) })),
     }),
   ),
@@ -359,9 +358,7 @@ function restoreUsedProviders(
     Object.entries(settings.providerInstances).map(([instanceId, instance]) => [
       instanceId,
       instance.enabled === undefined &&
-      (instance.driver === "cursor" ||
-        instance.driver === "grok" ||
-        instance.driver === "opencode") &&
+      (instance.driver === "cursor" || instance.driver === "opencode") &&
       usedProviderInstances.has(instanceId)
         ? { ...instance, enabled: true }
         : instance,
@@ -375,10 +372,6 @@ function restoreUsedProviders(
       cursor: {
         ...settings.providers.cursor,
         enabled: persisted.providers?.cursor?.enabled ?? usedProviders.has("cursor"),
-      },
-      grok: {
-        ...settings.providers.grok,
-        enabled: persisted.providers?.grok?.enabled ?? usedProviders.has("grok"),
       },
       opencode: {
         ...settings.providers.opencode,
@@ -447,7 +440,6 @@ const PERSISTED_SERVER_SETTINGS_DEFAULTS = {
   providers: {
     ...DEFAULT_SERVER_SETTINGS.providers,
     cursor: { ...DEFAULT_SERVER_SETTINGS.providers.cursor, enabled: undefined },
-    grok: { ...DEFAULT_SERVER_SETTINGS.providers.grok, enabled: undefined },
     opencode: { ...DEFAULT_SERVER_SETTINGS.providers.opencode, enabled: undefined },
   },
 };
@@ -673,13 +665,13 @@ const make = Effect.gen(function* () {
         provider_name AS "providerName",
         provider_instance_id AS "providerInstanceId"
       FROM projection_thread_sessions
-      WHERE provider_name IN ('cursor', 'grok', 'opencode')
+      WHERE provider_name IN ('cursor', 'opencode')
       UNION
       SELECT DISTINCT
         provider_name AS "providerName",
         provider_instance_id AS "providerInstanceId"
       FROM provider_session_runtime
-      WHERE provider_name IN ('cursor', 'grok', 'opencode')
+      WHERE provider_name IN ('cursor', 'opencode')
     `.pipe(
       Effect.mapError(
         (cause) =>

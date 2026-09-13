@@ -3,7 +3,6 @@ import {
   ClaudeSettings,
   CodexSettings,
   CursorSettings,
-  GrokSettings,
   OpenCodeSettings,
   PiSettings,
   ProviderDriverKind,
@@ -13,7 +12,6 @@ import {
   ACPRegistryIcon,
   ClaudeAI,
   CursorIcon,
-  GrokIcon,
   type Icon,
   OpenAI,
   OpenCodeIcon,
@@ -83,12 +81,6 @@ const PROVIDER_CLIENT_DEFINITIONS: readonly ProviderClientDefinition[] = [
         sensitive: true,
       },
     ],
-  },
-  {
-    value: ProviderDriverKind.make("grok"),
-    label: "Grok",
-    icon: GrokIcon,
-    settingsSchema: GrokSettings,
   },
   {
     value: ProviderDriverKind.make("acpRegistry"),

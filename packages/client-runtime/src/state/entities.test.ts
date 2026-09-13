@@ -155,20 +155,21 @@ describe("V2 client presentation", () => {
     const codex = ProviderInstanceId.make("codex");
     const claude = ProviderInstanceId.make("claude");
     const cursor = ProviderInstanceId.make("cursor");
-    const grok = ProviderInstanceId.make("grok");
+    const pi = ProviderInstanceId.make("pi");
     const shell = presentThreadShell(environmentId, {
       ...v2ThreadShell,
-      providerInstanceId: grok,
-      modelSelection: { instanceId: grok, model: "grok-4" },
-      providerInstanceHistory: [codex, claude, cursor, grok],
+      providerInstanceId: pi,
+      modelSelection: { instanceId: pi, model: "pi-4" },
+      providerInstanceHistory: [codex, claude, cursor, pi],
     });
 
     // Three slots: the two most recent earlier owners, then the current one.
-    expect(resolveThreadProviderStack(shell)).toEqual([claude, cursor, grok]);
-    expect(
-      resolveThreadProviderStack({ ...shell, providerInstanceHistory: [codex, grok] }),
-    ).toEqual([codex, grok]);
-    expect(resolveThreadProviderStack({ ...shell, providerInstanceHistory: [] })).toEqual([grok]);
+    expect(resolveThreadProviderStack(shell)).toEqual([claude, cursor, pi]);
+    expect(resolveThreadProviderStack({ ...shell, providerInstanceHistory: [codex, pi] })).toEqual([
+      codex,
+      pi,
+    ]);
+    expect(resolveThreadProviderStack({ ...shell, providerInstanceHistory: [] })).toEqual([pi]);
     // Servers that predate the field decode to an empty history.
     expect(
       presentThreadShell(environmentId, { ...v2ThreadShell, providerInstanceHistory: undefined })

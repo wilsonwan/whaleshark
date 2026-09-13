@@ -33,13 +33,7 @@ const mergeProviderModels = (
  * Built-in drivers in presentation order. Codex and Claude lead, the opt-in
  * providers follow, and unknown or fork drivers sort after every built-in.
  */
-const BUILT_IN_DRIVER_ORDER: ReadonlyArray<string> = [
-  "codex",
-  "claudeAgent",
-  "cursor",
-  "grok",
-  "opencode",
-];
+const BUILT_IN_DRIVER_ORDER: ReadonlyArray<string> = ["codex", "claudeAgent", "cursor", "opencode"];
 
 const driverRank = (driver: string): number => {
   const index = BUILT_IN_DRIVER_ORDER.indexOf(driver);

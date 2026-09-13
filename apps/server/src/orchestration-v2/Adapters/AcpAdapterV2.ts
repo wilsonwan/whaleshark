@@ -167,8 +167,8 @@ export interface AcpAdapterV2ExtensionContext {
   readonly runtime: AcpSessionRuntime.AcpSessionRuntime["Service"];
   /**
    * Session-scoped background-task lifecycle reported via extension
-   * notifications (e.g. Grok `x.ai/task_backgrounded`; older builds use the
-   * underscore alias). Mutations for non-root sessions are ignored.
+   * notifications (e.g. the `x.ai/task_backgrounded` method; older builds use
+   * the underscore alias). Mutations for non-root sessions are ignored.
    */
   readonly applyBackgroundTaskMutation: (mutation: {
     readonly sessionId: string;
@@ -267,13 +267,13 @@ export interface AcpAdapterV2Flavor {
     toolCall: AcpToolCallState,
   ) => AcpAdapterV2SubagentUpdate | undefined;
   /**
-   * Optional Grok-style rewrite before tool projection (e.g. keep monitor start
-   * ACKs in the running state until stream end).
+   * Optional provider-specific rewrite before tool projection (e.g. keep monitor
+   * start ACKs in the running state until stream end).
    */
   readonly normalizeToolCall?: (toolCall: AcpToolCallState) => AcpToolCallState;
   /**
    * Optional plan-file sniffing (#8358): providers that write their proposed
-   * plan to a file mid-turn (Grok plan.md) return its markdown from a tool
+   * plan to a file mid-turn (e.g. `plan.md`) return its markdown from a tool
    * call so T3 can show the proposed-plan card while plan mode is active.
    */
   readonly extractProposedPlanMarkdown?: (toolCall: AcpToolCallState) => string | undefined;
@@ -296,7 +296,7 @@ export interface AcpAdapterV2Flavor {
    * Optional parse of root-session synthetic text announcing a background
    * subagent's end ("Background subagent "<uuid>" ... completed successfully").
    * Older builds may never hydrate via get_command_or_subagent_output, so this
-   * remains a terminal fallback. Current Grok additionally emits structured
+   * remains a terminal fallback. The agent CLI may additionally emit structured
    * `subagent_finished` session notifications.
    */
   readonly extractSubagentEndNotice?: (text: string) =>
@@ -315,22 +315,22 @@ export interface AcpAdapterV2Flavor {
     readonly appendOutput: string;
   }>;
   /**
-   * Persistent monitors (e.g. Grok `persistent: true`) should not hold root-turn
-   * deferred finalize open forever. Still tracked for post-settle wake.
+   * Persistent monitors (background tools flagged `persistent: true`) should not
+   * hold root-turn deferred finalize open forever. Still tracked for post-settle wake.
    */
   readonly isPersistentBackgroundTool?: (toolCall: AcpToolCallState) => boolean;
   /**
    * When true, keep the active turn open after session/prompt returns while
    * background tools/subagents are still running so later monitor/wake traffic
-   * can project (Grok monitors finish after the root prompt settles).
+   * can project (persistent monitors finish after the root prompt settles).
    */
   readonly deferFinalizeForBackgroundWork?: boolean;
   readonly assertComplete?: Effect.Effect<void, EffectAcpErrors.AcpError>;
-  /** Interrupt the local prompt fiber before `session/cancel` (Grok wedged prompts). */
+  /** Interrupt the local prompt fiber before `session/cancel` (wedged agent prompts). */
   readonly interruptPromptOnCancel?: boolean;
   /**
    * Kill and respawn the ACP child process before the next `session/prompt` after a
-   * user interrupt. Grok can keep `task_already_running` state until the process exits.
+   * user interrupt. Some agents keep `task_already_running` state until the process exits.
    */
   readonly restartRuntimeAfterInterrupt?: boolean;
   /**
@@ -346,8 +346,8 @@ export interface AcpAdapterV2Flavor {
    * on a turn whose native prompt already settled skips the hard process-group
    * kill, the ACP cancel, and the runtime respawn entirely: the turn
    * terminalizes locally while background subagents keep running in the same
-   * process and carry over into the replacement turn. Verified against the
-   * real Grok CLI (tmp/grok-acp-experiments E1): a new session/prompt is
+   * process and carry over into the replacement turn. Verified against a
+   * real ACP agent CLI: a new session/prompt is
    * accepted concurrently while a fire-and-forget subagent is still running,
    * with no task_already_running. User Stop (`requestRuntimeRestart: true`)
    * keeps the hard teardown; mid-prompt non-Stop interrupts go soft
@@ -363,7 +363,7 @@ export interface AcpAdapterV2Flavor {
   readonly enablePostSettleContinuation?: boolean;
   /**
    * When true, send image attachment content blocks even if the ACP agent
-   * advertises `promptCapabilities.image: false`. Grok CLI currently accepts
+   * advertises `promptCapabilities.image: false`. The agent CLI accepts
    * and vision-processes image blocks while still reporting the capability as
    * false; without this override, screenshot turns fail before `session/prompt`.
    */
@@ -371,7 +371,7 @@ export interface AcpAdapterV2Flavor {
 }
 
 /** Whether image attachment blocks may be included in session/prompt. */
-export function acpSupportsImagePrompts(input: {
+function acpSupportsImagePrompts(input: {
   readonly flavorSupportsImagePrompts?: boolean | undefined;
   readonly negotiatedImage?: boolean | undefined;
 }): boolean {
@@ -776,7 +776,7 @@ function textFromUnknown(value: unknown): string | undefined {
   if (record === undefined) {
     return undefined;
   }
-  // Prefer prompt-facing Grok fields before nested envelopes.
+  // Prefer prompt-facing fields before nested envelopes.
   for (const key of [
     "output_for_prompt",
     "stdout",
@@ -819,7 +819,7 @@ function commandExitCode(value: unknown): number | undefined {
 
 /**
  * Project an exit code only when the tool has a terminal native status.
- * Mid-stream Grok Bash re-reports carry exit_code 0 while still in progress;
+ * Mid-stream Bash re-reports carry exit_code 0 while still in progress;
  * interrupted tools must not retain that stale success code.
  */
 export function acpProjectedCommandExitCode(
@@ -1142,7 +1142,7 @@ export function acpPostSettleContinuationOfferEvidence(
   if (update.sessionUpdate === "tool_call" || update.sessionUpdate === "tool_call_update") {
     return parseSessionUpdateEvent(notification).events.some((event) => {
       if (event._tag !== "ToolCallUpdated") return false;
-      // Normalize first: a Grok monitor start ACK arrives with raw status
+      // Normalize first: a monitor start ACK arrives with raw status
       // "completed" but is a still-running background task, not completion.
       const toolCall = flavor.normalizeToolCall?.(event.toolCall) ?? event.toolCall;
       return toolCall.status === "completed" || toolCall.status === "failed";
@@ -1202,7 +1202,7 @@ export function acpPostSettleMonitorPromptShouldSuppress(
   return mutation?.status === "running";
 }
 
-export function acpCompletedTurnShouldTerminalizeTool(
+function acpCompletedTurnShouldTerminalizeTool(
   tool: AcpToolCallState,
   flavor: Pick<AcpAdapterV2Flavor, "extractBackgroundTaskId" | "extractSubagentUpdate">,
 ): boolean {
@@ -1246,9 +1246,7 @@ function acpSubagentStatusIsTerminal(status: OrchestrationV2Subagent["status"]):
   );
 }
 
-export function acpSubagentStatusBlocksTurnSettlement(
-  status: OrchestrationV2Subagent["status"],
-): boolean {
+function acpSubagentStatusBlocksTurnSettlement(status: OrchestrationV2Subagent["status"]): boolean {
   return status === "running" || status === "pending";
 }
 
@@ -1738,7 +1736,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
             return acknowledgements.size > 0;
           }),
         );
-        // Post-settle wake support (Grok async subagent/monitor follow-up). After
+        // Post-settle wake support (async subagent/monitor follow-up). After
         // the root turn finalizes, later root session/update traffic buffers here
         // until a provider continuation run attaches and drains it.
         const lastTurnRoute = yield* Ref.make<{
@@ -1770,19 +1768,19 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
         // get_command must still wake after finalize).
         const midTurnUnreportedCompletedTaskIds = yield* Ref.make<ReadonlySet<string>>(new Set());
         // A monitor-event can arrive after its task and the user-facing provider
-        // turn already completed. Grok starts another internal prompt for that
+        // turn already completed. The agent starts another internal prompt for that
         // stale notification; suppress its agent output until a genuine terminal
         // mutation or the next app turn so it cannot create a redundant app
         // continuation. Tool frames continue through normal hydration.
         const suppressPostSettleMonitorPrompt = yield* Ref.make(false);
-        // Background tasks (Grok monitors) known to still run at session level.
+        // Background tasks (persistent monitors) known to still run at session level.
         // Turn contexts are too short-lived to carry this: a continuation run
         // finalizes between monitor events, and the next commentary burst must
         // not reopen a run while the monitor is still streaming.
         const runningBackgroundTaskIds = yield* Ref.make<ReadonlySet<string>>(new Set());
         // Task ids with a GENUINE end signal (monitor-ended reminder or
         // TaskOutput completion). Normalized tool statuses are not genuine:
-        // Grok Bash re-reports carry exit_code 0 mid-stream. A straggler
+        // Bash re-reports carry exit_code 0 mid-stream. A straggler
         // monitor-event can land after the real end (the CLI keeps streaming
         // while the agent already consumed the output via
         // get_command_or_subagent_output); without the tombstone it would
@@ -2833,7 +2831,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
             // Only before promptSettled: after STARTED the deferred-finalize
             // hold can let a monitor finish while the turn is still active;
             // marking then would suppress the legitimate post-settle TaskOutput
-            // continuation (live: grok-post-settle-continuation-poll).
+            // continuation (live: post-settle-continuation-poll).
             // Terminal statuses only after normalizeToolCall (start ACKs stay
             // inProgress/running).
             //
@@ -3014,7 +3012,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
             typeof rawOutputRecord?.type === "string" &&
             rawOutputRecord.type.trim().toLowerCase() === "bash" &&
             commandExitCode(rawOutput) !== undefined;
-          // Grok Monitor tools arrive as generic kind + variant; project like shell
+          // Monitor tools arrive as generic kind + variant; project like shell
           // so stdout is plain text in the timeline (not JSON {type:Text,text:...}).
           // Post-settle wake re-reports of a finished monitor carry no rawInput at
           // all, only a structured Bash result; project those as commands too.
@@ -3576,11 +3574,11 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
             }
           }
           const backgroundWorkRunning = (yield* Ref.get(runningBackgroundTaskIds)).size > 0;
-          // Residual Grok agent/thought chatter after in-turn-handled background
+          // Residual agent/thought chatter after in-turn-handled background
           // work must not be retained as wake evidence. Tool-path alreadyHandled
           // covers re-reports with a task id; this covers agent_message_chunk /
           // agent_thought_chunk frames that carry no task id (live:
-          // grok-in-turn-monitor-no-wake, multiturn stale-buffer arm). Check
+          // in-turn-monitor-no-wake, multiturn stale-buffer arm). Check
           // before buffering so the frames cannot dirty wakeBuffer and later
           // arm a mid-turn offer when a second monitor completes.
           const handledInTurnCount = (yield* Ref.get(handledBackgroundTaskIdsInActiveTurn)).size;
@@ -3588,7 +3586,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
             handledInTurnCount > 0 &&
             (update.sessionUpdate === "agent_message_chunk" ||
               update.sessionUpdate === "agent_thought_chunk");
-          // Grok prompts itself for every monitor event after the root turn
+          // The agent prompts itself for every monitor event after the root turn
           // settles. Its assistant/reasoning replies are progress chatter, not
           // separate wake results. Retaining them would replay the entire burst
           // into the single continuation once the monitor finishes. Keep tool
@@ -3622,7 +3620,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
           }
           // While a monitor is still streaming, tool re-reports buffer without
           // offering and per-event agent commentary is consumed without being
-          // retained. Grok re-reports a running monitor as Bash frames that
+          // retained. The agent re-reports a running monitor as Bash frames that
           // already carry exit_code 0 mid-stream, so a "terminal" normalized
           // status is not evidence the task ended; each burst would otherwise
           // reopen a synthetic "Background task completed." run. Retained tool
@@ -6237,7 +6235,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
             // awaitingBackgroundHydration hold the turn through monitors; this
             // is only a short debounce after the last rearm so a slightly late
             // post-hydration assistant chunk stays in the same continuation.
-            // Grok commonly sends its final summary just over two seconds after
+            // Agents commonly send their final summary just over two seconds after
             // the hydrated tool frame; two seconds split that tail into a second
             // synthetic wake. Longer floors (4–20s) only prolonged Working.
             yield* Effect.gen(function* () {
@@ -6653,7 +6651,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
                           ? "interrupted"
                           : "cancelled"
                         : "completed";
-                    // Grok monitors (and async subagents) keep working after the root
+                    // Persistent monitors (and async subagents) keep working after the root
                     // prompt RPC returns. Defer finalize so their later updates and
                     // wake-turn traffic still project onto this run.
                     if (
@@ -6787,7 +6785,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
                   if ((yield* Ref.get(wakeBuffer)).length > 0) return true;
                   if (yield* Ref.get(continuationRequested)) return true;
                   if ((yield* Ref.get(runningBackgroundTaskIds)).size > 0) return true;
-                  // Projected post-settle Grok subagents can outlive the root
+                  // Projected post-settle subagents can outlive the root
                   // turn via carryover; keep the ACP process pinned until they
                   // terminalize or teardown clears the carryover.
                   // Also pin while a terminal status is held only in memory

@@ -490,7 +490,7 @@ describe("ACP Registry probe", () => {
 
   it("distinguishes authentication failures from generic probe failures", () => {
     const advertised = normalizeAcpRegistryAuthMethods([
-      { id: "grok-login", name: "Log in with Grok" },
+      { id: "oauth-login", name: "Log in with the agent" },
     ]);
     const cause = new EffectAcpErrors.AcpRequestError({
       code: -32000,
@@ -502,8 +502,8 @@ describe("ACP Registry probe", () => {
     expect(authFailure.cause).toBe(cause);
     expect(authFailure.authMethods).toEqual([
       {
-        id: "grok-login",
-        name: "Log in with Grok",
+        id: "oauth-login",
+        name: "Log in with the agent",
         description: null,
         type: "agent",
       },

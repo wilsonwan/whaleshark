@@ -36,6 +36,7 @@ import { applyServerSettingsPatch } from "@t3tools/shared/serverSettings";
 import { checkCodexProviderStatus, type CodexAppServerProviderSnapshot } from "./CodexProvider.ts";
 import { checkClaudeProviderStatus } from "./ClaudeProvider.ts";
 import * as BackgroundPolicy from "../../background/BackgroundPolicy.ts";
+import { BUILT_IN_DRIVERS } from "../builtInDrivers.ts";
 import * as ModelManifest from "../ModelManifest.ts";
 import * as CodexResetCredit from "./codexResetCredit.ts";
 import * as OpenCodeRuntime from "../opencodeRuntime.ts";
@@ -2177,7 +2178,6 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
                   codex: { enabled: false },
                   claudeAgent: { enabled: false },
                   cursor: { enabled: false },
-                  grok: { enabled: false },
                   opencode: { enabled: false },
                 },
                 // `providerInstances` keys are branded `ProviderInstanceId`;
@@ -2288,7 +2288,6 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
                   codex: { enabled: true, binaryPath: firstMissing },
                   claudeAgent: { enabled: false },
                   cursor: { enabled: false },
-                  grok: { enabled: false },
                   opencode: { enabled: false },
                 },
               }),
@@ -2403,7 +2402,6 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
                   codex: { enabled: false },
                   claudeAgent: { enabled: false },
                   cursor: { enabled: false },
-                  grok: { enabled: false },
                   opencode: { enabled: false },
                 },
                 providerInstances: {
@@ -2460,6 +2458,86 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
       );
 
       it.effect(
+        "keeps a persisted grok instance as an unavailable snapshot now that grok is not built in",
+        () =>
+          Effect.gen(function* () {
+            // A build that no longer ships the dedicated Grok driver must still
+            // boot against settings a previous version persisted: the
+            // `driver: "grok"` envelope is no longer a built-in, but it still
+            // decodes and the row survives verbatim. The registry surfaces it
+            // as an unavailable shadow snapshot instead of dropping the
+            // instance or failing to start.
+            const grokInstanceId = ProviderInstanceId.make("grok_main");
+            const persisted = decodeServerSettings(
+              deepMerge(encodedDefaultServerSettings, {
+                providers: {
+                  codex: { enabled: false },
+                  claudeAgent: { enabled: false },
+                  cursor: { enabled: false },
+                  opencode: { enabled: false },
+                },
+                providerInstances: {
+                  [grokInstanceId]: {
+                    driver: ProviderDriverKind.make("grok"),
+                    displayName: "Grok",
+                    enabled: false,
+                    config: { binaryPath: "grok" },
+                  },
+                } as unknown as ContractServerSettings["providerInstances"],
+              }),
+            );
+            // Decoding is the persistence contract — an unknown driver kind
+            // round-trips rather than failing the whole settings load.
+            assert.strictEqual(persisted.providerInstances[grokInstanceId]?.driver, "grok");
+            const serverSettings = yield* makeMutableServerSettingsService(persisted);
+            const scope = yield* Scope.make();
+            yield* Effect.addFinalizer(() => Scope.close(scope, Exit.void));
+            const providerRegistryLayer = ProviderRegistryLive.pipe(
+              Layer.provideMerge(ProviderInstanceRegistryHydrationLive),
+              Layer.provideMerge(
+                Layer.succeed(ServerSettingsModule.ServerSettingsService, serverSettings),
+              ),
+              Layer.provideMerge(
+                ServerConfig.layerTest(process.cwd(), {
+                  prefix: "t3-provider-registry-",
+                }),
+              ),
+              Layer.provideMerge(TestHttpClientLive),
+              Layer.provideMerge(
+                Layer.succeed(
+                  ProviderEventLoggers.ProviderEventLoggers,
+                  ProviderEventLoggers.NoOpProviderEventLoggers,
+                ),
+              ),
+              Layer.provideMerge(ModelManifest.layerTest),
+              Layer.provideMerge(CodexResetCredit.layerTest),
+              Layer.provideMerge(OpenCodeRuntime.OpenCodeRuntimeLive),
+              Layer.provideMerge(NodeServices.layer),
+              Layer.provideMerge(BackgroundPolicyAlwaysRunLayer),
+            );
+            const runtimeServices = yield* Layer.build(providerRegistryLayer).pipe(
+              Scope.provide(scope),
+            );
+
+            yield* Effect.gen(function* () {
+              const registry = yield* ProviderRegistry.ProviderRegistry;
+              const providers = yield* registry.getProviders;
+              const grok = providers.find((provider) => provider.instanceId === grokInstanceId);
+
+              assert.notStrictEqual(grok, undefined);
+              assert.strictEqual(grok?.driver, "grok");
+              assert.strictEqual(grok?.availability, "unavailable");
+              assert.match(grok?.unavailableReason ?? "", /grok/);
+              // The persisted row is preserved, not rewritten or deleted.
+              const current = yield* serverSettings.getSettings;
+              assert.strictEqual(current.providerInstances[grokInstanceId]?.driver, "grok");
+              // Grok is no longer one of the driver kinds this build ships.
+              assert.isFalse(BUILT_IN_DRIVERS.some((driver) => driver.driverKind === "grok"));
+            }).pipe(Effect.provide(runtimeServices));
+          }),
+      );
+
+      it.effect(
         "keeps Cursor disabled and skips provider probing when settings use their defaults",
         () =>
           Effect.gen(function* () {
@@ -2468,9 +2546,6 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
                 deepMerge(encodedDefaultServerSettings, {
                   providers: {
                     codex: {
-                      enabled: false,
-                    },
-                    grok: {
                       enabled: false,
                     },
                   },
@@ -2544,7 +2619,6 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
                 "claudeAgent",
                 "codex",
                 "cursor",
-                "grok",
                 "opencode",
                 "pi",
               ]);

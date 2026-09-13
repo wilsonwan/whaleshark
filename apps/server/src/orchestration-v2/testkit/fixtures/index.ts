@@ -8,12 +8,10 @@ import { claudeLocalBashTaskInput } from "./claude_local_bash_task/input.ts";
 import { assertClaudeLocalBashTaskOutput } from "./claude_local_bash_task/output.ts";
 import { claudeResultIsErrorInput } from "./claude_result_is_error/input.ts";
 import { assertClaudeResultIsErrorOutput } from "./claude_result_is_error/output.ts";
-import { grokSubagentLineageInput } from "./grok_subagent_lineage/input.ts";
-import { assertGrokSubagentLineageOutput } from "./grok_subagent_lineage/output.ts";
 import { assertClaudeMessageSteeringOutput } from "./message_steering/claude_output.ts";
 import { assertMessageSteeringOutput } from "./message_steering/codex_output.ts";
 import { assertCursorMessageSteeringOutput } from "./message_steering/cursor_output.ts";
-import { assertGrokMessageSteeringOutput } from "./message_steering/grok_output.ts";
+import { assertAcpMessageSteeringOutput } from "./message_steering/acp_output.ts";
 import { messageSteeringInput } from "./message_steering/input.ts";
 import { assertMultiTurnClaudeOutput } from "./multi_turn/claude_output.ts";
 import { assertMultiTurnOutput } from "./multi_turn/codex_output.ts";
@@ -49,7 +47,7 @@ import { assertThreadRollbackOutput } from "./thread_rollback/codex_output.ts";
 import { threadRollbackInput } from "./thread_rollback/input.ts";
 import { assertTodoListOutput } from "./todo_list/codex_output.ts";
 import { assertTodoListCursorOutput } from "./todo_list/cursor_output.ts";
-import { assertTodoListGrokOutput } from "./todo_list/grok_output.ts";
+import { assertTodoListAcpOutput } from "./todo_list/acp_output.ts";
 import { todoListInput } from "./todo_list/input.ts";
 import { assertToolCallReadOnlyClaudeOutput } from "./tool_call_read_only/claude_output.ts";
 import { assertToolCallReadOnlyCursorOutput } from "./tool_call_read_only/cursor_output.ts";
@@ -80,7 +78,6 @@ import {
   CLAUDE_MODEL_SELECTION,
   CODEX_MODEL_SELECTION,
   CURSOR_MODEL_SELECTION,
-  GROK_MODEL_SELECTION,
   OPENCODE_MODEL_SELECTION,
   READ_ONLY_NEVER_POLICY,
   READ_ONLY_ON_REQUEST_POLICY,
@@ -148,28 +145,13 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
     ],
   },
   {
-    name: "grok_subagent_lineage",
-    buildInput: grokSubagentLineageInput,
-    providers: [
-      {
-        driver: ProviderDriverKind.make("grok"),
-        transcriptFile: new URL("./grok_subagent_lineage/grok_transcript.ndjson", import.meta.url),
-        modelSelection: {
-          ...GROK_MODEL_SELECTION,
-          model: "grok-composer-2.5-fast",
-        },
-        assertOutput: assertGrokSubagentLineageOutput,
-      },
-    ],
-  },
-  {
     name: "acp_elicitation",
     buildInput: planQuestionsInput,
     providers: [
-      // Grok Build still elicits with the pre-1.0 session/elicitation wire
-      // method the current spec removed; T3 supports standard ACP only, so
-      // the scenario covers the registry driver until Grok ships
-      // elicitation/create.
+      // Some registry agents still elicit with the pre-1.0
+      // session/elicitation wire method the current spec removed; T3 supports
+      // standard ACP only, so the scenario covers the registry driver until
+      // the agent ships elicitation/create.
       {
         driver: ProviderDriverKind.make("acpRegistry"),
         transcriptFile: new URL("./acp_elicitation/registry_transcript.ndjson", import.meta.url),
@@ -202,14 +184,8 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertSimpleOutput,
       },
       {
-        driver: ProviderDriverKind.make("grok"),
-        transcriptFile: new URL("./simple/grok_transcript.ndjson", import.meta.url),
-        modelSelection: GROK_MODEL_SELECTION,
-        assertOutput: assertSimpleOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
-        transcriptFile: new URL("./simple/grok_transcript.ndjson", import.meta.url),
+        transcriptFile: new URL("./simple/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
         assertOutput: assertSimpleOutput,
       },
@@ -240,15 +216,8 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertToolCallReadOnlyCursorOutput,
       },
       {
-        driver: ProviderDriverKind.make("grok"),
-        transcriptFile: new URL("./tool_call_read_only/grok_transcript.ndjson", import.meta.url),
-        modelSelection: GROK_MODEL_SELECTION,
-        runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
-        assertOutput: assertToolCallReadOnlyCursorOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
-        transcriptFile: new URL("./tool_call_read_only/grok_transcript.ndjson", import.meta.url),
+        transcriptFile: new URL("./tool_call_read_only/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
         runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
         assertOutput: assertToolCallReadOnlyCursorOutput,
@@ -280,19 +249,9 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertToolCallReadOnlyOnRequestClaudeOutput,
       },
       {
-        driver: ProviderDriverKind.make("grok"),
-        transcriptFile: new URL(
-          "./tool_call_read_only_on_request/grok_transcript.ndjson",
-          import.meta.url,
-        ),
-        modelSelection: GROK_MODEL_SELECTION,
-        runtimePolicyOverride: READ_ONLY_ON_REQUEST_POLICY,
-        assertOutput: assertToolCallReadOnlyOnRequestOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
         transcriptFile: new URL(
-          "./tool_call_read_only_on_request/grok_transcript.ndjson",
+          "./tool_call_read_only_on_request/acp_transcript.ndjson",
           import.meta.url,
         ),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
@@ -465,14 +424,8 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertMultiTurnOutput,
       },
       {
-        driver: ProviderDriverKind.make("grok"),
-        transcriptFile: new URL("./multi_turn/grok_transcript.ndjson", import.meta.url),
-        modelSelection: GROK_MODEL_SELECTION,
-        assertOutput: assertMultiTurnOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
-        transcriptFile: new URL("./multi_turn/grok_transcript.ndjson", import.meta.url),
+        transcriptFile: new URL("./multi_turn/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
         assertOutput: assertMultiTurnOutput,
       },
@@ -527,14 +480,8 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertQueuedTurnOutput,
       },
       {
-        driver: ProviderDriverKind.make("grok"),
-        transcriptFile: new URL("./queued_turn/grok_transcript.ndjson", import.meta.url),
-        modelSelection: GROK_MODEL_SELECTION,
-        assertOutput: assertQueuedTurnOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
-        transcriptFile: new URL("./queued_turn/grok_transcript.ndjson", import.meta.url),
+        transcriptFile: new URL("./queued_turn/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
         assertOutput: assertQueuedTurnOutput,
       },
@@ -559,16 +506,10 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertTodoListCursorOutput,
       },
       {
-        driver: ProviderDriverKind.make("grok"),
-        transcriptFile: new URL("./todo_list/grok_transcript.ndjson", import.meta.url),
-        modelSelection: GROK_MODEL_SELECTION,
-        assertOutput: assertTodoListGrokOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
-        transcriptFile: new URL("./todo_list/grok_transcript.ndjson", import.meta.url),
+        transcriptFile: new URL("./todo_list/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
-        assertOutput: assertTodoListGrokOutput,
+        assertOutput: assertTodoListAcpOutput,
       },
     ],
   },
@@ -598,13 +539,6 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         driver: ProviderDriverKind.make("codex"),
         transcriptFile: new URL("./plan_questions/codex_transcript.ndjson", import.meta.url),
         modelSelection: CODEX_MODEL_SELECTION,
-        runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
-        assertOutput: assertPlanQuestionsOutput,
-      },
-      {
-        driver: ProviderDriverKind.make("grok"),
-        transcriptFile: new URL("./plan_questions/grok_transcript.ndjson", import.meta.url),
-        modelSelection: GROK_MODEL_SELECTION,
         runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
         assertOutput: assertPlanQuestionsOutput,
       },
@@ -660,16 +594,10 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertCursorMessageSteeringOutput,
       },
       {
-        driver: ProviderDriverKind.make("grok"),
-        transcriptFile: new URL("./message_steering/grok_transcript.ndjson", import.meta.url),
-        modelSelection: GROK_MODEL_SELECTION,
-        assertOutput: assertGrokMessageSteeringOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
-        transcriptFile: new URL("./message_steering/grok_transcript.ndjson", import.meta.url),
+        transcriptFile: new URL("./message_steering/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
-        assertOutput: assertGrokMessageSteeringOutput,
+        assertOutput: assertAcpMessageSteeringOutput,
       },
     ],
   },
@@ -692,15 +620,8 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertTurnInterruptClaudeOutput,
       },
       {
-        driver: ProviderDriverKind.make("grok"),
-        transcriptFile: new URL("./turn_interrupt/grok_transcript.ndjson", import.meta.url),
-        modelSelection: GROK_MODEL_SELECTION,
-        runtimePolicyOverride: WORKSPACE_NEVER_POLICY,
-        assertOutput: assertTurnInterruptOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
-        transcriptFile: new URL("./turn_interrupt/grok_transcript.ndjson", import.meta.url),
+        transcriptFile: new URL("./turn_interrupt/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
         runtimePolicyOverride: WORKSPACE_NEVER_POLICY,
         assertOutput: assertTurnInterruptOutput,

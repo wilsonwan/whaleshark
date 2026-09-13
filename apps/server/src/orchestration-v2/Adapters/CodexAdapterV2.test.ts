@@ -4288,7 +4288,7 @@ describe("CodexAdapterV2 post-settle continuation", () => {
             item: {
               type: "dynamicToolCall",
               id: PERSISTENT_MONITOR_ITEM,
-              namespace: "grok",
+              namespace: "t3",
               tool: "monitor",
               status: "inProgress",
               arguments: { persistent: true, command: "tail -f" },
@@ -4323,7 +4323,7 @@ describe("CodexAdapterV2 post-settle continuation", () => {
             item: {
               type: "dynamicToolCall",
               id: PERSISTENT_MONITOR_ITEM,
-              namespace: "grok",
+              namespace: "t3",
               tool: "monitor",
               status: "completed",
               arguments: { persistent: true, command: "tail -f" },

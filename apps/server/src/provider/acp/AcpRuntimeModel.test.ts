@@ -69,7 +69,7 @@ describe("AcpRuntimeModel", () => {
     expect(modelConfigId).toBe("model");
   });
 
-  it("detects Grok session replay updates from _meta.isReplay", () => {
+  it("detects ACP session replay updates from _meta.isReplay", () => {
     expect(
       sessionUpdateIsReplay({
         _meta: { isReplay: true },
@@ -91,7 +91,7 @@ describe("AcpRuntimeModel", () => {
     ).toBe(false);
   });
 
-  it("ignores Grok keepalive chunks when tracking session/load replay activity", () => {
+  it("ignores keepalive chunks when tracking session/load replay activity", () => {
     expect(
       sessionUpdateCountsAsLoadReplayActivity({
         sessionId: "session-1",
@@ -484,7 +484,7 @@ describe("AcpRuntimeModel", () => {
   });
 
   it("bounds an oversized cumulative tool_call_update content buffer to a tail window", () => {
-    // Mirrors Grok's ACP CLI resending the ENTIRE accumulated terminal output on every
+    // Mirrors an ACP CLI resending the ENTIRE accumulated terminal output on every
     // tool_call_update notification instead of a delta (see upstream #6556).
     const hugeText = Array.from({ length: 2_000 }, (_, i) => `line ${i}: ${"x".repeat(50)}`).join(
       "\n",
@@ -542,7 +542,7 @@ describe("AcpRuntimeModel", () => {
     let cumulativeBuffer = "";
 
     for (let i = 0; i < 1_000; i += 1) {
-      // Grok resends the FULL accumulated buffer, not a delta, on every redraw.
+      // The ACP agent resends the FULL accumulated buffer, not a delta, on every redraw.
       cumulativeBuffer += `frame ${i}: ${"#".repeat(50)}\n`;
       const isLast = i === 999;
 
@@ -776,7 +776,7 @@ describe("AcpRuntimeModel", () => {
     const toolCall = (detail: string | undefined, status?: AcpToolCallState["status"]) =>
       ({
         toolCallId: "tool-1",
-        title: "Grok Tool",
+        title: "Agent Tool",
         ...(status ? { status } : {}),
         ...(detail ? { detail } : {}),
         data: {},
@@ -786,7 +786,7 @@ describe("AcpRuntimeModel", () => {
       expect(
         decideToolCallUpdateEmission({
           previous: undefined,
-          next: { toolCallId: "tool-1", title: "Grok Tool", status: "pending", data: {} },
+          next: { toolCallId: "tool-1", title: "Agent Tool", status: "pending", data: {} },
           lastEmittedDetailLength: undefined,
           skippedSinceEmit: 0,
         }),

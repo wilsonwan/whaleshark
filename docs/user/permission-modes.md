@@ -24,7 +24,7 @@ Providers enforce permissions differently. Some read-only actions can proceed in
 **Auto** uses automatic review on Codex, Claude, and Cursor; providers without an equivalent,
 including OpenCode, fall back to asking.
 
-For Grok, **Always allow this session** remembers the matching command or tool input. Other
-actions still require approval.
+For ACP Registry agents, **Always allow this session** remembers the matching command or tool
+input for the rest of the session. Other actions still require approval.
 
 See the [provider guides](./install.md#providers) for setup and provider-specific limits.

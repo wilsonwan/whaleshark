@@ -680,7 +680,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       const settings = yield* serverSettings.getSettings;
 
-      assert.isFalse(settings.providers.grok.enabled);
+      assert.isFalse(settings.providers.pi.enabled);
       assert.isTrue(settings.providers.opencode.enabled);
       assert.isFalse(settings.providers.cursor.enabled);
       assert.equal(settings.providers.opencode.serverUrl, "http://127.0.0.1:4096");
@@ -694,18 +694,21 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providerInstances":{"cursor_work":{"driver":"cursor","config":{}},"grok":{"driver":"grok","config":{}},"opencode_work":{"driver":"opencode","config":{"serverUrl":"http://127.0.0.1:4096"}},"opencode_unused":{"driver":"opencode","config":{}}}}',
+        '{"providerInstances":{"cursor_work":{"driver":"cursor","config":{}},"pi":{"driver":"pi","config":{}},"opencode_work":{"driver":"opencode","config":{"serverUrl":"http://127.0.0.1:4096"}},"opencode_unused":{"driver":"opencode","config":{}}}}',
       );
       yield* recordProviderUsage("cursor", "cursor_work");
-      yield* recordProviderUsage("grok", null);
       yield* recordProviderUsage("opencode", "opencode_work");
 
       const settings = yield* serverSettings.getSettings;
 
       assert.isTrue(settings.providers.cursor.enabled);
       assert.isTrue(settings.providerInstances[ProviderInstanceId.make("cursor_work")]?.enabled);
-      assert.isTrue(settings.providerInstances[ProviderInstanceId.make("grok")]?.enabled);
       assert.isTrue(settings.providerInstances[ProviderInstanceId.make("opencode_work")]?.enabled);
+      // History restoration is scoped to the opt-in drivers above; an instance
+      // for any other driver stays on its driver default.
+      const pi = settings.providerInstances[ProviderInstanceId.make("pi")];
+      assert.isDefined(pi);
+      assert.isFalse(resolveProviderInstanceEnabled(pi));
       const unused = settings.providerInstances[ProviderInstanceId.make("opencode_unused")];
       assert.isDefined(unused);
       assert.isFalse(resolveProviderInstanceEnabled(unused));
@@ -719,18 +722,18 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providers":{"grok":{"enabled":false},"opencode":{"enabled":false},"cursor":{"enabled":false}},"providerInstances":{"grok":{"driver":"grok","enabled":false,"config":{}},"opencode":{"driver":"opencode","config":{"enabled":false}},"cursor":{"driver":"cursor","enabled":false,"config":{}}}}',
+        '{"providers":{"pi":{"enabled":false},"opencode":{"enabled":false},"cursor":{"enabled":false}},"providerInstances":{"pi":{"driver":"pi","enabled":false,"config":{}},"opencode":{"driver":"opencode","config":{"enabled":false}},"cursor":{"driver":"cursor","enabled":false,"config":{}}}}',
       );
-      yield* recordProviderUsage("grok");
+      yield* recordProviderUsage("pi");
       yield* recordProviderUsage("opencode");
       yield* recordProviderUsage("cursor");
 
       const settings = yield* serverSettings.getSettings;
 
-      assert.isFalse(settings.providers.grok.enabled);
+      assert.isFalse(settings.providers.pi.enabled);
       assert.isFalse(settings.providers.opencode.enabled);
       assert.isFalse(settings.providers.cursor.enabled);
-      assert.isFalse(settings.providerInstances[ProviderInstanceId.make("grok")]?.enabled);
+      assert.isFalse(settings.providerInstances[ProviderInstanceId.make("pi")]?.enabled);
       assert.isFalse(settings.providerInstances[ProviderInstanceId.make("opencode")]?.enabled);
       assert.isFalse(settings.providerInstances[ProviderInstanceId.make("cursor")]?.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -763,7 +766,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       const settings = yield* serverSettings.getSettings;
 
-      assert.isFalse(settings.providers.grok.enabled);
+      assert.isFalse(settings.providers.pi.enabled);
       assert.isFalse(settings.providers.opencode.enabled);
       assert.isFalse(settings.providers.cursor.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -772,13 +775,13 @@ it.layer(NodeServices.layer)("server settings", (it) => {
   it.effect("preserves provider history when no settings file exists", () =>
     Effect.gen(function* () {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
-      yield* recordProviderUsage("grok");
+      yield* recordProviderUsage("opencode");
 
       const settings = yield* serverSettings.getSettings;
 
-      assert.isTrue(settings.providers.grok.enabled);
-      assert.isFalse(settings.providers.opencode.enabled);
+      assert.isTrue(settings.providers.opencode.enabled);
       assert.isFalse(settings.providers.cursor.enabled);
+      assert.isFalse(settings.providers.pi.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
 
@@ -793,7 +796,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const settings = yield* serverSettings.getSettings;
 
       assert.isTrue(settings.providers.cursor.enabled);
-      assert.isFalse(settings.providers.grok.enabled);
+      assert.isFalse(settings.providers.pi.enabled);
       assert.isFalse(settings.providers.opencode.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
@@ -805,15 +808,15 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"addProjectBaseDirectory":42,"providers":{"cursor":{"enabled":false},"grok":{"enabled":true}}}',
+        '{"addProjectBaseDirectory":42,"providers":{"cursor":{"enabled":false},"opencode":{"enabled":true}}}',
       );
       yield* recordProviderUsage("cursor");
 
       const settings = yield* serverSettings.getSettings;
 
       assert.isFalse(settings.providers.cursor.enabled);
-      assert.isTrue(settings.providers.grok.enabled);
-      assert.isFalse(settings.providers.opencode.enabled);
+      assert.isTrue(settings.providers.opencode.enabled);
+      assert.isFalse(settings.providers.pi.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
 
@@ -842,7 +845,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       const settings = yield* serverSettings.getSettings;
 
-      assert.isFalse(settings.providers.grok.enabled);
+      assert.isFalse(settings.providers.pi.enabled);
       assert.isTrue(settings.providers.opencode.enabled);
       assert.isFalse(settings.providers.cursor.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -853,18 +856,18 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverConfig = yield* ServerConfig.ServerConfig;
       const fileSystem = yield* FileSystem.FileSystem;
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
-      yield* recordProviderUsage("grok");
+      yield* recordProviderUsage("opencode");
 
-      assert.isTrue((yield* serverSettings.getSettings).providers.grok.enabled);
+      assert.isTrue((yield* serverSettings.getSettings).providers.opencode.enabled);
 
       const settings = yield* serverSettings.updateSettings({
-        providers: { grok: { enabled: false } },
+        providers: { opencode: { enabled: false } },
       });
-      assert.isFalse(settings.providers.grok.enabled);
+      assert.isFalse(settings.providers.opencode.enabled);
 
       const raw = yield* fileSystem.readFileString(serverConfig.settingsPath);
       // @effect-diagnostics-next-line preferSchemaOverJson:off
-      assert.isFalse(JSON.parse(raw).providers.grok.enabled);
+      assert.isFalse(JSON.parse(raw).providers.opencode.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
 
@@ -877,7 +880,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       yield* serverSettings.updateSettings({
         providers: {
           cursor: { enabled: true },
-          grok: { enabled: true },
+          pi: { enabled: true },
           opencode: { enabled: true },
         },
       });
@@ -887,7 +890,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       // @effect-diagnostics-next-line preferSchemaOverJson:off
       const persisted = JSON.parse(raw);
       assert.isTrue(persisted.providers.cursor.enabled);
-      assert.isTrue(persisted.providers.grok.enabled);
+      assert.isTrue(persisted.providers.pi.enabled);
       assert.isTrue(persisted.providers.opencode.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
@@ -899,34 +902,34 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
 
       const initial = yield* serverSettings.getSettings;
-      assert.isFalse(initial.providers.grok.enabled);
+      assert.isFalse(initial.providers.pi.enabled);
       assert.isFalse(initial.providers.opencode.enabled);
       assert.isFalse(initial.providers.cursor.enabled);
 
+      const piId = ProviderInstanceId.make("pi");
       const next = yield* serverSettings.updateSettings({
         addProjectBaseDirectory: "~/Development",
         providerInstances: {
-          [ProviderInstanceId.make("grok")]: {
-            driver: ProviderDriverKind.make("grok"),
+          [piId]: {
+            driver: ProviderDriverKind.make("pi"),
             config: {},
           },
         },
       });
 
-      assert.isFalse(next.providers.grok.enabled);
+      assert.isFalse(next.providers.pi.enabled);
       assert.isFalse(next.providers.opencode.enabled);
       assert.isFalse(next.providers.cursor.enabled);
-      const grok = next.providerInstances[ProviderInstanceId.make("grok")];
-      assert.isDefined(grok);
-      assert.isFalse(resolveProviderInstanceEnabled(grok));
+      const pi = next.providerInstances[piId];
+      assert.isDefined(pi);
+      assert.isFalse(resolveProviderInstanceEnabled(pi));
 
       const raw = yield* fileSystem.readFileString(serverConfig.settingsPath);
       // @effect-diagnostics-next-line preferSchemaOverJson:off
       const persisted = JSON.parse(raw);
       assert.isFalse(persisted.providers.cursor.enabled);
-      assert.isFalse(persisted.providers.grok.enabled);
       assert.isFalse(persisted.providers.opencode.enabled);
-      assert.isUndefined(persisted.providerInstances.grok.enabled);
+      assert.isUndefined(persisted.providerInstances.pi.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
 
@@ -939,15 +942,15 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       // The explicit false must win so a user's disable sticks.
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providerInstances":{"grok":{"driver":"grok","enabled":true,"config":{"enabled":false}},"codex_work":{"driver":"codex","config":{"enabled":true,"homePath":"~/.codex"}},"cursor":{"driver":"cursor","config":{"enabled":"nope"}}}}',
+        '{"providerInstances":{"pi":{"driver":"pi","enabled":true,"config":{"enabled":false}},"codex_work":{"driver":"codex","config":{"enabled":true,"homePath":"~/.codex"}},"cursor":{"driver":"cursor","config":{"enabled":"nope"}}}}',
       );
 
       const settings = yield* serverSettings.getSettings;
 
-      const grokId = ProviderInstanceId.make("grok");
+      const piId = ProviderInstanceId.make("pi");
       const codexWorkId = ProviderInstanceId.make("codex_work");
-      assert.deepEqual(settings.providerInstances[grokId], {
-        driver: ProviderDriverKind.make("grok"),
+      assert.deepEqual(settings.providerInstances[piId], {
+        driver: ProviderDriverKind.make("pi"),
         enabled: false,
         config: {},
       });
@@ -969,22 +972,22 @@ it.layer(NodeServices.layer)("server settings", (it) => {
   it.effect("folds in-config enabled flags arriving through updates", () =>
     Effect.gen(function* () {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
-      const grokId = ProviderInstanceId.make("grok");
+      const piId = ProviderInstanceId.make("pi");
 
       const next = yield* serverSettings.updateSettings({
         providerInstances: {
-          [grokId]: {
-            driver: ProviderDriverKind.make("grok"),
+          [piId]: {
+            driver: ProviderDriverKind.make("pi"),
             enabled: true,
-            config: { enabled: false, binaryPath: "/opt/grok" },
+            config: { enabled: false, binaryPath: "/opt/pi" },
           },
         },
       });
 
-      assert.deepEqual(next.providerInstances[grokId], {
-        driver: ProviderDriverKind.make("grok"),
+      assert.deepEqual(next.providerInstances[piId], {
+        driver: ProviderDriverKind.make("pi"),
         enabled: false,
-        config: { binaryPath: "/opt/grok" },
+        config: { binaryPath: "/opt/pi" },
       });
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
@@ -1104,7 +1107,10 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       const raw = yield* fileSystem.readFileString(serverConfig.settingsPath);
       // @effect-diagnostics-next-line preferSchemaOverJson:off
-      assert.deepEqual(JSON.parse(raw), {
+      const persisted = JSON.parse(raw);
+      // The removed Grok provider must not leave a legacy `providers.grok` key.
+      assert.isUndefined(persisted.providers.grok);
+      assert.deepEqual(persisted, {
         addProjectBaseDirectory: "~/Development",
         observability: {
           otlpTracesUrl: "http://localhost:4318/v1/traces",
@@ -1115,9 +1121,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
             binaryPath: "/opt/homebrew/bin/codex",
           },
           cursor: {
-            enabled: false,
-          },
-          grok: {
             enabled: false,
           },
           opencode: {

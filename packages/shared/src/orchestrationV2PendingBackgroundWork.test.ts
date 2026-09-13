@@ -229,7 +229,7 @@ describe("derivePendingBackgroundWork", () => {
     expect(tasks).toEqual([{ taskId: "task-9", description: "Agent review" }]);
   });
 
-  it("excludes Grok persistent monitors", () => {
+  it("excludes persistent monitors", () => {
     const tasks = derivePendingBackgroundWork({
       latestRun: { id: "run-1" as never, ordinal: 1, status: "completed" },
       providerThreads: [{ id: "pt-1" as never }],

@@ -129,7 +129,7 @@ OpenCode replay transcript
 
 ACP replay transcript
   -> logical JSON-RPC requests/responses/notifications over a strict NDJSON peer
-  -> consumed by AcpAdapter and a provider flavor (Grok or ACP Registry)
+  -> consumed by AcpAdapter and the ACP registry provider
 ```
 
 Fixtures should preserve raw provider evidence as closely as possible. Expected V2 events or projections are assertions, not fixture input.
