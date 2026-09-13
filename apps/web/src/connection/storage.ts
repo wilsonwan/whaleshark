@@ -66,6 +66,9 @@ const decodeStoredServerConfig = Schema.decodeUnknownEffect(StoredServerConfigJs
 const encodeStoredServerConfig = Schema.encodeEffect(StoredServerConfigJson);
 const decodeStoredVcsRefs = Schema.decodeUnknownEffect(StoredVcsRefsJson);
 const encodeStoredVcsRefs = Schema.encodeEffect(StoredVcsRefsJson);
+// The catalog is inspected as an unknown document so rows written by older
+// clients survive; the shape check happens in decodeConnectionCatalogDocument.
+const parseCatalogJson = Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown));
 
 function catalogError(operation: string, cause: unknown) {
   return new ConnectionTransientError({
@@ -222,7 +225,7 @@ const decodeCatalog = Effect.fn("web.connectionStorage.decodeCatalog")(function*
   // DPoP tokens; those rows are removed rather than allowed to invalidate the
   // direct and SSH connections stored beside them. That leniency needs the
   // document as an unknown value first, so it is parsed without a shape.
-  const parsed = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(raw).pipe(
+  const parsed = yield* parseCatalogJson(raw).pipe(
     Effect.mapError((cause) => catalogError("decode", cause)),
   );
   return Option.getOrElse(
