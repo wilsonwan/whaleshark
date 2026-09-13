@@ -22,7 +22,7 @@ export interface PreviewMiniPlayerFrame extends PreviewMiniPlayerPosition, Previ
 /**
  * The rendered size of what the floating player mirrors: the device viewport
  * when one is set, otherwise the size the webview had when it was floated
- * (`fittedSourceContent`), which the hosted webview keeps as its CSS viewport.
+ * (`fittedSourceContent`), which the floating webview keeps as its CSS viewport.
  */
 export function resolvePreviewMiniPlayerSourceSize(
   viewport: PreviewViewportSetting,

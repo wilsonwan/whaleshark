@@ -121,7 +121,7 @@ describe("DesktopConnectionCatalogStore", () => {
     ),
   );
 
-  it.effect("migrates legacy relay, SSH, bearer profile, and credential data", () =>
+  it.effect("migrates legacy SSH and bearer data while dropping relay rows", () =>
     withStore(
       Effect.gen(function* () {
         const store = yield* DesktopConnectionCatalogStore.DesktopConnectionCatalogStore;
@@ -134,8 +134,10 @@ describe("DesktopConnectionCatalogStore", () => {
             wsBaseUrl: "wss://relay.example.com/",
             createdAt: "2026-06-01T00:00:00.000Z",
             lastConnectedAt: null,
+            // Legacy relay rows have no typed field anymore; the persisted
+            // document still carries the marker so migration can drop it.
             relayManaged: { relayUrl: "https://relay-control.example.com/" },
-          },
+          } as PersistedSavedEnvironmentRecord,
           {
             environmentId: EnvironmentId.make("ssh-environment"),
             label: "SSH",
@@ -174,18 +176,19 @@ describe("DesktopConnectionCatalogStore", () => {
         }
         const catalog = yield* decodeConnectionCatalog(migrated.value);
 
+        // The relay-managed row is dropped: only the SSH and bearer rows remain,
+        // in that order, and no relay target resurfaces.
+        assert.lengthOf(catalog.targets, 2);
+        assert.isFalse(
+          catalog.targets.some((target) => (target._tag as string) === "RelayConnectionTarget"),
+        );
         assert.deepInclude(catalog.targets[0], {
-          _tag: "RelayConnectionTarget",
-          environmentId: EnvironmentId.make("relay-environment"),
-          label: "Relay",
-        });
-        assert.deepInclude(catalog.targets[1], {
           _tag: "SshConnectionTarget",
           environmentId: EnvironmentId.make("ssh-environment"),
           label: "SSH",
           connectionId: "ssh:ssh-environment",
         });
-        assert.deepInclude(catalog.targets[2], {
+        assert.deepInclude(catalog.targets[1], {
           _tag: "BearerConnectionTarget",
           environmentId: EnvironmentId.make("bearer-environment"),
           label: "Bearer",

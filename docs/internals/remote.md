@@ -2,7 +2,7 @@
 
 Each connection joins a client to one environment over HTTP and WebSocket. The
 environment owns providers, execution, files, and durable state. Direct access,
-Tailscale, SSH, and T3 Connect change how the client reaches that server; they do
+Tailscale, and SSH change how the client reaches that server; they do
 not introduce another execution model. See
 [remote access](../user/remote-access.md) for setup.
 
@@ -24,16 +24,15 @@ prove that a route works. In particular, a host's loopback address refers to a
 different machine when another device opens it. Endpoint selection must not
 silently fall back to loopback when a shareable endpoint is unavailable.
 
-## Hosted web is a client
+## Clients connect directly
 
-The hosted web app stores its connection catalog in the browser and connects
-directly to each environment. It does not proxy traffic or hold server-side
-pairing state. Hosting the UI over HTTPS therefore cannot make a plain HTTP LAN
-backend accessible from that browser context.
+A web client stores its connection catalog locally and connects directly to each
+environment. It does not proxy traffic or hold server-side pairing state.
+Serving the UI over HTTPS therefore cannot make a plain HTTP LAN backend
+accessible from that browser context.
 
-A [hosted pairing URL](../../apps/web/src/hostedPairing.ts) identifies the backend
-in its query and carries the pairing secret in its fragment. Fragments stay out
-of requests to the hosted origin. The browser exchanges the secret with the
+A pairing URL carries the pairing secret in its fragment. Fragments stay out of
+requests to the page origin. The browser exchanges the secret with the
 environment and strips it from its history. Moving the token into a query
 parameter would disclose it to the wrong origin.
 
@@ -41,8 +40,7 @@ parameter would disclose it to the wrong origin.
 
 Tailscale supplies an endpoint for ordinary pairing, so it needs no separate
 environment type. Authentication remains the environment's responsibility for
-every route. See [environment authentication](./environment-auth.md) and the
-[T3 Connect trust boundary](./t3-connect.md).
+every route. See [environment authentication](./environment-auth.md).
 
 SSH can launch a server as well as forward a port. Desktop main owns that
 lifecycle because it can spawn SSH and handle authentication prompts. The

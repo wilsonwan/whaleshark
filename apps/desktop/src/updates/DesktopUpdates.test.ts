@@ -148,7 +148,7 @@ describe("DesktopUpdates", () => {
             },
             {
               version: "1.2.4-nightly.20260709.765",
-              note: "- [codex] Upgrade Clerk stack by @juliusmarminge in #3821",
+              note: "- [codex] Refresh auth stack by @juliusmarminge in #3821",
             },
             { version: "1.2.4-nightly.20260709.764", note: "- Change 764" },
             { version: "1.2.4-nightly.20260709.763", note: "- Change 763" },
@@ -169,7 +169,7 @@ describe("DesktopUpdates", () => {
           },
           {
             version: "1.2.4-nightly.20260709.765",
-            items: ["[codex] Upgrade Clerk stack by @juliusmarminge in #3821"],
+            items: ["[codex] Refresh auth stack by @juliusmarminge in #3821"],
             totalItems: 1,
           },
           { version: "1.2.4-nightly.20260709.764", items: ["Change 764"], totalItems: 1 },

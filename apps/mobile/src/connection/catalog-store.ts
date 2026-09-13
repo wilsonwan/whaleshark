@@ -2,6 +2,7 @@ import {
   ConnectionCatalogDocument,
   type ConnectionCatalogDocument as ConnectionCatalogDocumentType,
   EMPTY_CONNECTION_CATALOG_DOCUMENT,
+  decodeConnectionCatalogDocument,
 } from "@t3tools/client-runtime/platform";
 import { ConnectionTransientError } from "@t3tools/client-runtime/connection";
 import * as Effect from "effect/Effect";
@@ -24,12 +25,19 @@ function catalogError(operation: string, cause: unknown) {
 }
 
 const ConnectionCatalogDocumentJson = Schema.fromJsonString(ConnectionCatalogDocument);
-const decodeConnectionCatalogDocument = Schema.decodeEffect(ConnectionCatalogDocumentJson);
 const encodeConnectionCatalogDocument = Schema.encodeEffect(ConnectionCatalogDocumentJson);
 
 const decodeCatalog = Effect.fn("mobile.connectionStorage.decodeCatalog")(function* (raw: string) {
-  return yield* decodeConnectionCatalogDocument(raw).pipe(
-    Effect.mapError((cause) => catalogError("decode", cause)),
+  const parsed = yield* Effect.try({
+    try: () => JSON.parse(raw) as unknown,
+    catch: (cause) => catalogError("decode", cause),
+  });
+  // Catalogs written before relays were dropped still carry relay targets and
+  // DPoP tokens; those rows are removed rather than allowed to invalidate the
+  // direct and SSH connections stored beside them.
+  return Option.getOrElse(
+    decodeConnectionCatalogDocument(parsed),
+    () => EMPTY_CONNECTION_CATALOG_DOCUMENT,
   );
 });
 

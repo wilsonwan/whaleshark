@@ -51,12 +51,22 @@ describe("extractPairingUrlFromQrPayload", () => {
 });
 
 describe("parsePairingUrl", () => {
-  it("reads hosted pairing links into backend host fields", () => {
-    expect(
-      parsePairingUrl(
-        "https://app.t3.codes/pair?host=https%3A%2F%2Fdesktop.tailnet.ts.net%2F#token=pairing-token",
-      ),
-    ).toEqual({
+  it("reads a direct LAN pairing link into backend host fields", () => {
+    expect(parsePairingUrl("http://192.168.1.100:3773/pair#token=pairing-token")).toEqual({
+      host: "http://192.168.1.100:3773",
+      code: "pairing-token",
+    });
+  });
+
+  it("reads a direct Tailscale pairing link into backend host fields", () => {
+    expect(parsePairingUrl("https://desktop.tailnet.ts.net/pair#token=pairing-token")).toEqual({
+      host: "https://desktop.tailnet.ts.net",
+      code: "pairing-token",
+    });
+  });
+
+  it("reads a pairing code from the query string", () => {
+    expect(parsePairingUrl("https://desktop.tailnet.ts.net/pair?token=pairing-token")).toEqual({
       host: "https://desktop.tailnet.ts.net",
       code: "pairing-token",
     });

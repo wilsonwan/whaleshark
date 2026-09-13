@@ -6,11 +6,7 @@ import { pipe } from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 
-import {
-  isRelayManagedConnection,
-  type SavedRemoteConnection,
-  toStableSavedRemoteConnection,
-} from "../lib/connection";
+import { type SavedRemoteConnection, toStableSavedRemoteConnection } from "../lib/connection";
 import * as MobileSecureStorage from "./mobile-secure-storage";
 
 const CONNECTIONS_KEY = "t3code.connections";
@@ -152,11 +148,7 @@ export const make = Effect.fn("MobileStorage.make")(function* () {
     Effect.map((parsed) =>
       pipe(
         parsed?.connections ?? [],
-        Arr.filter(
-          (connection) =>
-            !!connection.environmentId &&
-            (!!connection.bearerToken?.trim() || isRelayManagedConnection(connection)),
-        ),
+        Arr.filter((connection) => !!connection.environmentId && !!connection.bearerToken?.trim()),
       ),
     ),
   );

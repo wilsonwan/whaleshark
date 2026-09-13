@@ -44,7 +44,6 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useUniwindTheme } from "../../lib/useUniwindTheme";
-import { armAgentAwarenessLiveActivityForLocalWork } from "../agent-awareness/remoteRegistration";
 import { scopedThreadKey } from "../../lib/scopedEntities";
 import { composerContextImportsAtom } from "../../state/use-composer-drafts";
 import type { ComposerDocumentAttachment } from "../../lib/composerContext";
@@ -506,15 +505,6 @@ export const ThreadComposer = memo(function ThreadComposer(props: ThreadComposer
       if (messageId === null) {
         return;
       }
-      // Sending a prompt starts agent work: arm the lock-screen card while the
-      // app is foregrounded and the activity token can be registered. Armed
-      // after the send so its preference read and native Activity start don't
-      // contend with the queued-message feedback on the tap frame.
-      armAgentAwarenessLiveActivityForLocalWork({
-        environmentId: props.environmentId,
-        threadTitle: props.selectedThread.title,
-        projectTitle: props.environmentLabel ?? "T3 Code",
-      });
     } finally {
       inFlightThreadIdsRef.current.delete(threadKey);
     }
@@ -526,9 +516,7 @@ export const ThreadComposer = memo(function ThreadComposer(props: ThreadComposer
     usageLimitsOffered,
     onSendMessage,
     props.environmentId,
-    props.environmentLabel,
     props.selectedThread.id,
-    props.selectedThread.title,
     voiceInput.blocksSubmission,
   ]);
 

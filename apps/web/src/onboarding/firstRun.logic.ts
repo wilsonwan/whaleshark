@@ -48,13 +48,6 @@ interface FirstRunDecisionInput {
   readonly threadCount: number;
 }
 
-interface HostedFirstRunDecisionInput {
-  readonly hydrated: boolean;
-  readonly completed: boolean;
-  readonly catalogReady: boolean;
-  readonly environmentCount: number;
-}
-
 export function isFirstRunWorkspaceProvenanceAuthoritative(input: {
   readonly welcomeReceived: boolean;
   readonly bootstrapStatus: "pending" | "complete" | null;
@@ -159,26 +152,4 @@ export function resolveFirstRunDecision(input: FirstRunDecisionInput): {
   return input.workspaceFresh
     ? { decision: "wizard", persistCompletion: false }
     : { decision: "app", persistCompletion: input.workspaceAuthoritative };
-}
-
-/** Hosted onboarding depends on saved environments because there is no primary server. */
-export function resolveHostedFirstRunDecision(input: HostedFirstRunDecisionInput): {
-  readonly decision: FirstRunDecision;
-  readonly persistCompletion: boolean;
-} {
-  if (!input.hydrated) {
-    return { decision: "pending", persistCompletion: false };
-  }
-
-  if (input.completed) {
-    return { decision: "app", persistCompletion: false };
-  }
-
-  if (!input.catalogReady) {
-    return { decision: "pending", persistCompletion: false };
-  }
-
-  return input.environmentCount === 0
-    ? { decision: "wizard", persistCompletion: false }
-    : { decision: "app", persistCompletion: true };
 }

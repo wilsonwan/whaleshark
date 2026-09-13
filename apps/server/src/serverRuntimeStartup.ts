@@ -26,7 +26,7 @@ import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
 
 import * as ServerConfig from "./config.ts";
-import * as ServiceLauncherClient from "./cloud/serviceLauncherClient.ts";
+import * as ServiceLauncherClient from "./service/serviceLauncherClient.ts";
 import * as Keybindings from "./keybindings.ts";
 import * as ExternalLauncher from "./process/externalLauncher.ts";
 import * as EffectWorker from "./orchestration-v2/EffectWorker.ts";
@@ -38,7 +38,6 @@ import * as ThreadManagement from "./orchestration-v2/ThreadManagementService.ts
 import * as ProjectService from "./project/ProjectService.ts";
 import * as GitVcsDriver from "./vcs/GitVcsDriver.ts";
 import { ProjectionSnapshotQuery } from "./orchestration/Services/ProjectionSnapshotQuery.ts";
-import * as AgentAwarenessRelay from "./relay/AgentAwarenessRelay.ts";
 import * as ServerLifecycleEvents from "./serverLifecycleEvents.ts";
 import * as ServerSettings from "./serverSettings.ts";
 import { forkParked, forkParkedFiber } from "./serverActivation.ts";
@@ -324,31 +323,6 @@ interface StartupOptions {
   readonly abort?: (error: ServerRuntimeStartupError) => Effect.Effect<void>;
 }
 
-export const startEffectWorkerWithRelay = Effect.fn(
-  "ServerRuntimeStartup.startEffectWorkerWithRelay",
-)(function* <WorkerContext, RelayContext>(input: {
-  readonly runWorker: Effect.Effect<void, never, WorkerContext>;
-  readonly startRelay: Effect.Effect<void, never, RelayContext>;
-  readonly workerFiberRef: Ref.Ref<Fiber.Fiber<void, never> | null>;
-}) {
-  const workerFiber = yield* forkParkedFiber(input.runWorker);
-  yield* Ref.set(input.workerFiberRef, workerFiber);
-  yield* input.startRelay.pipe(
-    Effect.onExit((exit) => {
-      if (Exit.isSuccess(exit)) {
-        return Effect.void;
-      }
-      return Ref.getAndSet(input.workerFiberRef, null).pipe(
-        Effect.flatMap((ownedWorkerFiber) =>
-          ownedWorkerFiber === null
-            ? Effect.void
-            : Fiber.interrupt(ownedWorkerFiber).pipe(Effect.asVoid),
-        ),
-      );
-    }),
-  );
-});
-
 export function runOrderedV2StartupPhases<
   Import,
   Recovery,
@@ -383,7 +357,6 @@ const make = (options?: StartupOptions) =>
     const legacyV1ThreadImporter = yield* LegacyV1ThreadImporter.LegacyV1ThreadImporter;
     const providerRuntimeRecovery = yield* ProviderRuntimeRecovery.ProviderRuntimeRecoveryService;
     const providerSessions = yield* ProviderSessionManager.ProviderSessionManagerV2;
-    const agentAwarenessRelay = yield* AgentAwarenessRelay.AgentAwarenessRelay;
     const lifecycleEvents = yield* ServerLifecycleEvents.ServerLifecycleEvents;
     const serverSettings = yield* ServerSettings.ServerSettingsService;
     const serverEnvironment = yield* ServerEnvironment.ServerEnvironment;
@@ -480,10 +453,9 @@ const make = (options?: StartupOptions) =>
         recover: runStartupPhase("orchestration-v2.recovery", providerRuntimeRecovery.recover),
         startEffectWorker: runStartupPhase(
           "orchestration-v2.effect-worker.start",
-          startEffectWorkerWithRelay({
-            runWorker: EffectWorker.runDaemon,
-            startRelay: agentAwarenessRelay.start(),
-            workerFiberRef: effectWorkerFiber,
+          Effect.gen(function* () {
+            const workerFiber = yield* forkParkedFiber(EffectWorker.runDaemon);
+            yield* Ref.set(effectWorkerFiber, workerFiber);
           }),
         ),
         autoBootstrap: (serverConfig.autoBootstrapProjectFromCwd
