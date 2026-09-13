@@ -974,8 +974,9 @@ export function NewTaskDraftScreen(props: {
     }
     const draft = getComposerDraftSnapshot(draftKey);
     if (appAtomRegistry.get(composerContextImportsAtom)[draftKey]) return;
-    // Read the latest explicit pick. Antigravity selections stay unchanged
-    // when setup or a catalog change makes them unavailable.
+    // Read the latest explicit pick. Snapshot read keeps just-typed selector
+    // state; the availability gate below still blocks a selection whose
+    // provider cannot run in this environment.
     const modelSelection =
       resolveSelectableModelSelection(
         selectedEnvironmentServerConfig,
@@ -999,8 +1000,8 @@ export function NewTaskDraftScreen(props: {
       isModelSelectionUnavailable(selectedEnvironmentServerConfig, modelSelection)
     ) {
       Alert.alert(
-        "Antigravity model unavailable",
-        "Set up Antigravity on web or desktop, or choose another model.",
+        "Model unavailable",
+        "Set up this provider on web or desktop, or select another model.",
       );
       return;
     }

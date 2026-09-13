@@ -1,9 +1,4 @@
-import {
-  ANTIGRAVITY_DEFAULT_MODEL,
-  ProviderDriverKind,
-  ProviderInstanceId,
-  type ServerProvider,
-} from "@t3tools/contracts";
+import { ProviderDriverKind, ProviderInstanceId, type ServerProvider } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
 import { deriveProviderInstanceEntries } from "../../providerInstances";
@@ -32,34 +27,37 @@ function entry(status: ServerProvider["status"], driver = "opencode") {
 }
 
 describe("shouldIncludeModelPickerOption", () => {
-  it.each(["ready", "error"] as const)(
-    "never offers the internal Antigravity default marker as a model when %s",
-    (status) => {
-      const providerEntry = entry(status, "antigravity");
+  it.each(["codex", "claudeAgent", "cursor", "grok", "pi", "acpRegistry"] as const)(
+    "never offers an unavailable saved model while the %s instance is not ready",
+    (driver) => {
+      const providerEntry = entry("error", driver);
       expect(
         shouldIncludeModelPickerOption({
           entry: providerEntry,
-          option: {
-            slug: ANTIGRAVITY_DEFAULT_MODEL,
-            name: ANTIGRAVITY_DEFAULT_MODEL,
-            isUnavailable: true,
-          },
+          option: { slug: "stale/model", name: "Stale model", isUnavailable: true },
           activeInstanceId: providerEntry.instanceId,
-          activeModel: ANTIGRAVITY_DEFAULT_MODEL,
+          activeModel: "stale/model",
         }),
       ).toBe(false);
     },
   );
 
-  it.each([
-    ["opencode", "error"],
-    ["opencode", "warning"],
-    ["antigravity", "error"],
-    ["antigravity", "warning"],
-  ] as const)(
-    "keeps only the active synthetic %s row when the provider status is %s",
-    (driver, status) => {
-      const providerEntry = entry(status, driver);
+  it("offers every catalog model while the provider instance is ready", () => {
+    const providerEntry = entry("ready", "codex");
+    expect(
+      shouldIncludeModelPickerOption({
+        entry: providerEntry,
+        option: { slug: "gpt-5", name: "GPT 5", isUnavailable: true },
+        activeInstanceId: ProviderInstanceId.make("codex_personal"),
+        activeModel: "gpt-5",
+      }),
+    ).toBe(true);
+  });
+
+  it.each(["error", "warning"] as const)(
+    "keeps only the active synthetic OpenCode row when the provider status is %s",
+    (status) => {
+      const providerEntry = entry(status, "opencode");
       const activeInstanceId = providerEntry.instanceId;
       const activeModel = "missing-model";
 
@@ -99,7 +97,7 @@ describe("shouldIncludeModelPickerOption", () => {
         shouldIncludeModelPickerOption({
           entry: providerEntry,
           option: { slug: activeModel, name: activeModel, isUnavailable: true },
-          activeInstanceId: ProviderInstanceId.make(`${driver}_personal`),
+          activeInstanceId: ProviderInstanceId.make("opencode_personal"),
           activeModel,
         }),
       ).toBe(false);
@@ -108,65 +106,69 @@ describe("shouldIncludeModelPickerOption", () => {
 });
 
 describe("resolveModelPickerSelectedModel", () => {
-  it("follows the catalog default for the marker but keeps an explicit native model", () => {
-    const driverKind = ProviderDriverKind.make("antigravity");
-    const previousOptions = [
-      { slug: "gemini-fast", name: "Gemini Fast", aliases: [ANTIGRAVITY_DEFAULT_MODEL] },
-      { slug: "gemini-pro", name: "Gemini Pro" },
-    ];
-    const nextOptions = [
-      { slug: "gemini-fast", name: "Gemini Fast" },
-      { slug: "gemini-pro", name: "Gemini Pro", aliases: [ANTIGRAVITY_DEFAULT_MODEL] },
+  it("matches the stored model against the catalog by slug", () => {
+    const options = [
+      { slug: "gpt-5", name: "GPT 5" },
+      { slug: "gpt-5-mini", name: "GPT 5 Mini" },
     ];
 
     expect(
       resolveModelPickerSelectedModel({
-        driverKind,
-        model: ANTIGRAVITY_DEFAULT_MODEL,
-        options: previousOptions,
+        driverKind: ProviderDriverKind.make("codex"),
+        model: "gpt-5-mini",
+        options,
       })?.slug,
-    ).toBe("gemini-fast");
+    ).toBe("gpt-5-mini");
     expect(
       resolveModelPickerSelectedModel({
-        driverKind,
-        model: ANTIGRAVITY_DEFAULT_MODEL,
-        options: nextOptions,
+        driverKind: ProviderDriverKind.make("codex"),
+        model: "gpt-5",
+        options,
       })?.slug,
-    ).toBe("gemini-pro");
-    expect(
-      resolveModelPickerSelectedModel({
-        driverKind,
-        model: "gemini-fast",
-        options: nextOptions,
-      })?.slug,
-    ).toBe("gemini-fast");
+    ).toBe("gpt-5");
   });
 
   it("does not guess the default from the first model in a catalog", () => {
     expect(
       resolveModelPickerSelectedModel({
-        driverKind: ProviderDriverKind.make("antigravity"),
-        model: ANTIGRAVITY_DEFAULT_MODEL,
-        options: [{ slug: "gemini-fast", name: "Gemini Fast" }],
+        driverKind: ProviderDriverKind.make("codex"),
+        model: "gpt-5-codex",
+        options: [{ slug: "gpt-5", name: "GPT 5" }],
       }),
     ).toBeUndefined();
   });
 });
 
 describe("shouldOfferModelPickerSetup", () => {
-  const availableModel = { slug: "gemini-3.1-pro", name: "Gemini 3.1 Pro" };
+  const availableModel = { slug: "gpt-5", name: "GPT 5" };
 
-  it("offers setup before an Antigravity account has models", () => {
-    expect(shouldOfferModelPickerSetup(entry("error", "antigravity"), [])).toBe(true);
-  });
-
-  it("offers setup after sign-out even if a model remains cached", () => {
-    const providerEntry = entry("ready", "antigravity");
+  it("offers setup while a provider with environment setup has no catalog yet", () => {
+    const providerEntry = entry("error", "acpRegistry");
     expect(
       shouldOfferModelPickerSetup(
         {
           ...providerEntry,
-          snapshot: { ...providerEntry.snapshot, auth: { status: "unauthenticated" } },
+          snapshot: {
+            ...providerEntry.snapshot,
+            setup: { canAuthenticate: true, canInstall: false },
+          },
+        },
+        [],
+      ),
+    ).toBe(true);
+  });
+
+  it("offers setup after sign-out even if a model remains cached", () => {
+    const providerEntry = entry("ready", "acpRegistry");
+    expect(
+      shouldOfferModelPickerSetup(
+        {
+          ...providerEntry,
+          snapshot: {
+            ...providerEntry.snapshot,
+            setup: { canAuthenticate: true, canInstall: false },
+            auth: { status: "unauthenticated" },
+          },
         },
         [availableModel],
       ),
@@ -174,22 +176,51 @@ describe("shouldOfferModelPickerSetup", () => {
   });
 
   it("offers setup when the only model is an unavailable saved selection", () => {
+    const providerEntry = entry("ready", "acpRegistry");
     expect(
-      shouldOfferModelPickerSetup(entry("ready", "antigravity"), [
-        { ...availableModel, isUnavailable: true },
-      ]),
+      shouldOfferModelPickerSetup(
+        {
+          ...providerEntry,
+          snapshot: {
+            ...providerEntry.snapshot,
+            setup: { canAuthenticate: true, canInstall: false },
+          },
+        },
+        [{ ...availableModel, isUnavailable: true }],
+      ),
     ).toBe(true);
   });
 
   it("does not offer setup for a ready account with available models", () => {
-    expect(shouldOfferModelPickerSetup(entry("ready", "antigravity"), [availableModel])).toBe(
-      false,
-    );
+    const providerEntry = entry("ready", "acpRegistry");
+    expect(
+      shouldOfferModelPickerSetup(
+        {
+          ...providerEntry,
+          snapshot: {
+            ...providerEntry.snapshot,
+            setup: { canAuthenticate: true, canInstall: false },
+          },
+        },
+        [availableModel],
+      ),
+    ).toBe(false);
   });
 
   it("does not restore a disabled provider while its status snapshot is stale", () => {
+    const providerEntry = entry("error", "acpRegistry");
     expect(
-      shouldOfferModelPickerSetup({ ...entry("error", "antigravity"), enabled: false }, []),
+      shouldOfferModelPickerSetup(
+        {
+          ...providerEntry,
+          enabled: false,
+          snapshot: {
+            ...providerEntry.snapshot,
+            setup: { canAuthenticate: true, canInstall: false },
+          },
+        },
+        [],
+      ),
     ).toBe(false);
   });
 

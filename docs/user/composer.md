@@ -32,8 +32,7 @@ messages survive app restarts and stay on your device until they reach the serve
 ## Custom models
 
 On web and desktop, use Settings → Providers → **Models** to add an unlisted model with a custom
-name and options. Only options supported by the provider integration affect turns. Antigravity
-uses its account catalog and does not support custom models.
+name and options. Only options supported by the provider integration affect turns.
 
 ## Model defaults
 

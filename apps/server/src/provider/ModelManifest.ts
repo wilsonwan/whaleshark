@@ -244,7 +244,7 @@ export function applyModelManifest(
 }
 
 /** The manifest's chat default for `driverKind`, when it names one. */
-export function manifestDefaultModel(
+function manifestDefaultModel(
   manifest: ModelManifestData,
   driverKind: ProviderDriverKind,
 ): string | undefined {
@@ -253,10 +253,9 @@ export function manifestDefaultModel(
 
 /**
  * Moves `isDefault` to the manifest's chat default when the catalog carries
- * it. Providers that learn their default from the runtime (Antigravity takes
- * Google's current model) can be overridden here without a release. Aliases
- * that pointed at the old default move with the flag so the shared
- * "provider default" alias keeps resolving.
+ * it. Providers that learn their default from the runtime can be overridden
+ * here without a release. Aliases that pointed at the old default move with
+ * the flag so the shared "provider default" alias keeps resolving.
  */
 export function applyManifestDefault(
   models: ReadonlyArray<ServerProviderModel>,
