@@ -111,6 +111,10 @@ Developers deploy personal stages locally rather than through pull-request autom
 vp run --filter t3code-relay deploy -- --stage "$USER" --env-file .env.local
 ```
 
+This repository does not build or deploy the public `t3.codes` site. Its legal,
+download, and `t3.json` schema routes are hosted externally; clients that point
+to those URLs continue to depend on that external site.
+
 ## Hosted web app release deployment
 
 The hosted app is intentionally not deployed by Vercel's Git integration. The
