@@ -33,11 +33,11 @@ describe("remote", () => {
     });
   });
 
-  it("derives backend urls from hosted app pairing links", () => {
+  it("derives backend urls from a pairing link that carries a host param", () => {
     expect(
       resolveRemotePairingTarget({
         pairingUrl:
-          "https://app.t3.codes/pair?host=https%3A%2F%2Fdesktop.tailnet.ts.net%3A44342%2F#token=pairing-token",
+          "https://pair.example.com/pair?host=https%3A%2F%2Fdesktop.tailnet.ts.net%3A44342%2F#token=pairing-token",
       }),
     ).toEqual({
       credential: "pairing-token",
@@ -85,10 +85,11 @@ describe("remote", () => {
     });
   });
 
-  it("normalizes a protocol-relative host from a hosted pairing link", () => {
+  it("normalizes a protocol-relative host from a pairing link", () => {
     expect(
       resolveRemotePairingTarget({
-        pairingUrl: "https://app.t3.codes/pair?host=%2F%2Fremote.example.com#token=pairing-token",
+        pairingUrl:
+          "https://pair.example.com/pair?host=%2F%2Fremote.example.com#token=pairing-token",
       }),
     ).toEqual({
       credential: "pairing-token",
@@ -156,7 +157,7 @@ describe("remote", () => {
     try {
       resolveRemotePairingTarget({
         pairingUrl:
-          "https://app.t3.codes/pair?host=ftp%3A%2F%2Fremote.example.com#token=pairing-token",
+          "https://pair.example.com/pair?host=ftp%3A%2F%2Fremote.example.com#token=pairing-token",
       });
     } catch (cause) {
       hostError = cause;
