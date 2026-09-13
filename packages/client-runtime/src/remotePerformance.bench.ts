@@ -6,7 +6,6 @@ import {
   type OrchestrationV2ThreadProjection,
 } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
-import * as Option from "effect/Option";
 import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 import { bench, describe } from "vite-plus/test";
 
@@ -80,7 +79,6 @@ const requests: Record<
       target,
     },
     threadId: thread.thread.id,
-    signer: Option.none(),
   }),
 };
 

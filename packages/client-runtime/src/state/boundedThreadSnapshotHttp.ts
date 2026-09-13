@@ -2,13 +2,10 @@ import type { ThreadId } from "@t3tools/contracts";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
 import { HttpClient } from "effect/unstable/http";
 
-import { RemoteEnvironmentAuthorization } from "../authorization/service.ts";
 import type { PreparedConnection } from "../connection/model.ts";
 import { environmentEndpointUrl } from "../environment/endpoint.ts";
-import { ManagedRelayDpopSigner } from "../relay/managedRelay.ts";
 import {
   executeAuthenticatedEnvironmentHttpRequest,
   withOrchestrationProtocolHeader,
@@ -28,14 +25,11 @@ export const fetchEnvironmentBoundedThreadSnapshot = Effect.fn(
 )(function* (input: {
   readonly prepared: PreparedConnection;
   readonly threadId: ThreadId;
-  readonly signer: Option.Option<ManagedRelayDpopSigner["Service"]>;
-  readonly remoteAuthorization?: Option.Option<RemoteEnvironmentAuthorization["Service"]>;
   readonly timeoutMs?: number;
 }) {
   return yield* executeAuthenticatedEnvironmentHttpRequest({
     ...input,
     group: "orchestration",
-    method: "GET",
     url: (httpBaseUrl) =>
       environmentEndpointUrl(httpBaseUrl, `/api/orchestration/threads/${input.threadId}/bounded`),
     timeoutMs: input.timeoutMs ?? DEFAULT_BOUNDED_THREAD_SNAPSHOT_TIMEOUT_MS,
@@ -63,15 +57,11 @@ export const boundedThreadSnapshotLoaderLayer: Layer.Layer<
   ThreadSnapshotLoader,
   Effect.gen(function* () {
     const httpClient = yield* HttpClient.HttpClient;
-    const signer = yield* Effect.serviceOption(ManagedRelayDpopSigner);
-    const remoteAuthorization = yield* Effect.serviceOption(RemoteEnvironmentAuthorization);
     return ThreadSnapshotLoader.of({
       load: (prepared: PreparedConnection, threadId: ThreadId) => {
         const loadFullFallback = fetchEnvironmentThreadSnapshot({
           prepared,
           threadId,
-          signer,
-          remoteAuthorization,
         }).pipe(
           Effect.map((snapshot): ThreadSnapshotLoadResult => ({
             _tag: "present",
@@ -100,8 +90,6 @@ export const boundedThreadSnapshotLoaderLayer: Layer.Layer<
         return fetchEnvironmentBoundedThreadSnapshot({
           prepared,
           threadId,
-          signer,
-          remoteAuthorization,
         }).pipe(
           Effect.map((bounded): ThreadSnapshotLoadResult => ({
             _tag: "present",

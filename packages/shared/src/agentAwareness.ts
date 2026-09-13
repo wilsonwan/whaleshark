@@ -50,7 +50,7 @@ export interface ProjectThreadAwarenessV2Input {
   >;
 }
 
-/** Build relay activity directly from the V2 shell projection. */
+/** Build agent awareness directly from the V2 shell projection. */
 export function projectThreadAwarenessV2(
   input: ProjectThreadAwarenessV2Input,
 ): AgentAwarenessState | null {

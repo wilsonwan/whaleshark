@@ -106,14 +106,14 @@ describe("connection presentation", () => {
           attempt: 2,
           lastFailure: new ConnectionTransientError({
             reason: "transport",
-            detail: "Relay connection timed out.",
+            detail: "SSH connection timed out.",
             traceId: "trace-retry",
           }),
         }),
       ),
     ).toEqual({
       phase: "reconnecting",
-      error: "Relay connection timed out.",
+      error: "SSH connection timed out.",
       traceId: "trace-retry",
     });
   });
@@ -121,11 +121,11 @@ describe("connection presentation", () => {
   it("combines reconnect progress with the latest failure", () => {
     const connection = {
       phase: "reconnecting",
-      error: "Relay request timed out.",
+      error: "SSH request timed out.",
       traceId: "trace-retry",
     } as const;
     expect(connectionStatusText(connection)).toBe(
-      "Failed to connect. Reconnecting... Reason: Relay request timed out.",
+      "Failed to connect. Reconnecting... Reason: SSH request timed out.",
     );
     expect(connectionStatusTitle(connection)).toBe("Failed to connect. Reconnecting...");
   });

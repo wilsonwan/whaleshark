@@ -13,7 +13,6 @@ import * as ElectronSafeStorage from "../electron/ElectronSafeStorage.ts";
 import { installDesktopIpcHandlers } from "../ipc/DesktopIpcHandlers.ts";
 import * as DesktopAppActivation from "./DesktopAppActivation.ts";
 import * as DesktopAppIdentity from "./DesktopAppIdentity.ts";
-import * as DesktopClerk from "./DesktopClerk.ts";
 import * as DesktopApplicationMenu from "../window/DesktopApplicationMenu.ts";
 import * as DesktopWindow from "../window/DesktopWindow.ts";
 import * as DesktopBackendPool from "../backend/DesktopBackendPool.ts";
@@ -187,7 +186,6 @@ const bootstrap = Effect.gen(function* () {
     scheme: ElectronProtocol.getDesktopScheme(environment.isDevelopment),
     targetOrigin: rendererTarget,
     backendOrigin: backendConfig.httpBaseUrl,
-    clerkFrontendApiHostname: DesktopClerk.desktopClerkFrontendApiHostname,
   });
   yield* logBootstrapInfo("bootstrap resolved backend endpoint", {
     baseUrl: backendConfig.httpBaseUrl.href,
@@ -237,7 +235,6 @@ const startup = Effect.gen(function* () {
   const electronApp = yield* ElectronApp.ElectronApp;
   const lifecycle = yield* DesktopLifecycle.DesktopLifecycle;
   const linuxUrlHandler = yield* DesktopLinuxUrlHandler.DesktopLinuxUrlHandler;
-  const clerk = yield* DesktopClerk.DesktopClerk;
   const shellEnvironment = yield* DesktopShellEnvironment.DesktopShellEnvironment;
   const desktopSettings = yield* DesktopAppSettings.DesktopAppSettings;
   const preReadyElectronOptions = yield* DesktopPreReadyPlatform.DesktopPreReadyElectronOptions;
@@ -268,6 +265,18 @@ const startup = Effect.gen(function* () {
   }
   const userDataPath = yield* appIdentity.resolveUserDataPath;
   yield* electronApp.setPath("userData", userDataPath);
+  // Electron scopes the single-instance lock to the userData directory, so it is
+  // taken here rather than earlier: acquiring it under the default
+  // productName-derived path would create that directory and make the
+  // legacy-install detection in resolveUserDataPath match on fresh installs.
+  const isPrimaryInstance = yield* electronApp.requestSingleInstanceLock;
+  if (!isPrimaryInstance) {
+    // Another instance owns this userData directory and Electron has already
+    // asked this process to quit. app.quit() is asynchronous, so stop startup
+    // here instead of letting `whenReady` fire in a doomed second instance.
+    yield* electronApp.quit;
+    return yield* Effect.interrupt;
+  }
   yield* logStartupInfo("runtime logging configured", { logDir: environment.logDir });
   yield* desktopSettings.load;
 
@@ -283,7 +292,6 @@ const startup = Effect.gen(function* () {
 
   yield* appIdentity.configure;
   yield* lifecycle.register;
-  yield* clerk.configure;
 
   yield* electronApp.whenReady.pipe(
     Effect.withSpan("desktop.electron.whenReady"),

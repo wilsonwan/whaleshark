@@ -252,9 +252,9 @@ export function SettingsUnavailableGroup({
 
 /**
  * One setting. `serverScoped` marks rows whose value lives in the primary
- * environment's settings.json; where there is no primary (the hosted app)
- * the control goes inert with a tooltip instead of showing an editable
- * default that would never save.
+ * environment's settings.json; where there is no primary the control goes
+ * inert with a tooltip instead of showing an editable default that would
+ * never save.
  *
  * Keep descriptions short enough for one line where possible. Allow wrapping
  * for clarity or narrow screens instead of truncating or forcing no-wrap.

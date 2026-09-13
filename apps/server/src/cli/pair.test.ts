@@ -17,8 +17,8 @@ import { cli } from "../binCli.ts";
 import {
   SERVICE_LAUNCHER_CONTEXT_ENV,
   SERVICE_LAUNCHER_PROTOCOL,
-} from "../cloud/serviceProtocol.ts";
-import * as ServiceLauncherClient from "../cloud/serviceLauncherClient.ts";
+} from "../service/serviceProtocol.ts";
+import * as ServiceLauncherClient from "../service/serviceLauncherClient.ts";
 import {
   makePersistedServerRuntimeState,
   persistServerRuntimeState,
@@ -217,7 +217,7 @@ describe("t3 pair", () => {
     ).pipe(Effect.provide(NodeServices.layer)),
   );
 
-  it.effect("directs to t3 serve or t3 connect when no server is running", () =>
+  it.effect("directs to t3 serve when no server is running", () =>
     Effect.gen(function* () {
       const baseDir = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "t3-pair-none-test-"));
 
@@ -230,7 +230,6 @@ describe("t3 pair", () => {
       );
       assert.include(rendered, "No running T3 Code server found.");
       assert.include(rendered, "npx t3 serve");
-      assert.include(rendered, "npx t3 connect");
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 

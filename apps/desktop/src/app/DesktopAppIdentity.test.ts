@@ -47,6 +47,7 @@ const makeElectronAppLayer = (calls: ElectronAppCalls) =>
     exit: () => Effect.void,
     relaunch: () => Effect.void,
     setPath: () => Effect.void,
+    requestSingleInstanceLock: Effect.succeed(true),
     setName: (name) =>
       Effect.sync(() => {
         calls.setName.push(name);

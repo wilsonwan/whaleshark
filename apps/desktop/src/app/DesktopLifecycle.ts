@@ -241,6 +241,18 @@ export const make = DesktopLifecycle.of({
         }).pipe(Effect.withSpan("desktop.lifecycle.activate")),
       );
     });
+    yield* electronApp.on("second-instance", () => {
+      // A second launch hands its command line to the running instance and
+      // quits, so it must surface that window instead of silently doing
+      // nothing.
+      void runEffect(
+        Effect.gen(function* () {
+          const state = yield* DesktopState.DesktopState;
+          if (yield* Ref.get(state.quitting)) return;
+          yield* desktopWindow.activate;
+        }).pipe(Effect.withSpan("desktop.lifecycle.secondInstance")),
+      );
+    });
     yield* electronApp.on("window-all-closed", () => {
       void runEffect(
         Effect.gen(function* () {

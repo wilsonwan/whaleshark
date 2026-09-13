@@ -2,7 +2,6 @@ import {
   BearerConnectionCredential,
   BearerConnectionProfile,
   BearerConnectionTarget,
-  RelayConnectionTarget,
   SshConnectionProfile,
   SshConnectionTarget,
 } from "@t3tools/client-runtime/connection";
@@ -285,6 +284,15 @@ function connectionId(prefix: "bearer" | "ssh", environmentId: string): string {
   return `${prefix}:${environmentId}`;
 }
 
+/**
+ * Legacy relay-managed rows are no longer supported. Their stored shape is
+ * versioned data we must keep decoding, but the migration drops them so
+ * they never resurface as usable connections.
+ */
+function isLegacyRelayRecord(record: PersistedSavedEnvironmentRecord): boolean {
+  return (record as { readonly relayManaged?: unknown }).relayManaged !== undefined;
+}
+
 const migrateSavedEnvironmentRecords = Effect.fn(
   "desktop.connectionCatalogStore.migrateSavedEnvironmentRecords",
 )(function* (
@@ -300,13 +308,7 @@ const migrateSavedEnvironmentRecords = Effect.fn(
   const credentials: Array<RuntimeConnectionCatalogDocumentType["credentials"][number]> = [];
 
   for (const record of records) {
-    if (record.relayManaged !== undefined) {
-      targets.push(
-        new RelayConnectionTarget({
-          environmentId: record.environmentId,
-          label: record.label,
-        }),
-      );
+    if (isLegacyRelayRecord(record)) {
       continue;
     }
 
@@ -371,7 +373,6 @@ const migrateSavedEnvironmentRecords = Effect.fn(
     targets,
     profiles,
     credentials,
-    remoteDpopTokens: [],
   };
 });
 
