@@ -338,15 +338,6 @@ describe("EventNdjsonLogger", () => {
         yield* native.write(
           {
             event: {
-              method: "claude/stream_event/content_block_delta/text_delta",
-              payload: circularDelta,
-            },
-          },
-          threadId,
-        );
-        yield* native.write(
-          {
-            event: {
               method: "session/update",
               payload: { update: { sessionUpdate: "agent_message_chunk" } },
             },

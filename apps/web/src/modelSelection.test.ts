@@ -48,12 +48,12 @@ function settingsWithProviderInstances(): UnifiedSettings {
   return {
     ...DEFAULT_UNIFIED_SETTINGS,
     providerInstances: {
-      [ProviderInstanceId.make("claudeAgent")]: {
-        driver: ProviderDriverKind.make("claudeAgent"),
+      [ProviderInstanceId.make("pi")]: {
+        driver: ProviderDriverKind.make("pi"),
         config: { customModels: [] },
       },
       [ProviderInstanceId.make("claude_openrouter")]: {
-        driver: ProviderDriverKind.make("claudeAgent"),
+        driver: ProviderDriverKind.make("pi"),
         config: { customModels: ["openai/gpt-5.5"] },
       },
     },
@@ -63,7 +63,7 @@ function settingsWithProviderInstances(): UnifiedSettings {
 describe("instance-scoped model selection", () => {
   it("preserves server-provided legacy model metadata", () => {
     const baseProvider = provider({
-      instanceId: "claudeAgent",
+      instanceId: "pi",
       models: ["claude-opus-4-8"],
     });
     const providers = [
@@ -82,7 +82,7 @@ describe("instance-scoped model selection", () => {
   it("keeps custom models on the provider instance that declared them", () => {
     const providers = [
       provider({
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         models: ["claude-sonnet-4-6"],
       }),
       provider({
@@ -91,7 +91,7 @@ describe("instance-scoped model selection", () => {
       }),
     ];
     const entries = deriveProviderInstanceEntries(providers);
-    const stock = entries.find((entry) => entry.instanceId === "claudeAgent")!;
+    const stock = entries.find((entry) => entry.instanceId === "pi")!;
     const openrouter = entries.find((entry) => entry.instanceId === "claude_openrouter")!;
 
     expect(
@@ -108,9 +108,9 @@ describe("instance-scoped model selection", () => {
 
   it("resolves a custom slug against the selected custom instance", () => {
     const providers = [
-      provider({ provider: ProviderDriverKind.make("claudeAgent"), instanceId: "claudeAgent" }),
+      provider({ provider: ProviderDriverKind.make("pi"), instanceId: "pi" }),
       provider({
-        provider: ProviderDriverKind.make("claudeAgent"),
+        provider: ProviderDriverKind.make("pi"),
         instanceId: "claude_openrouter",
       }),
     ];
@@ -128,7 +128,7 @@ describe("instance-scoped model selection", () => {
   it("preserves a custom slug that collides with a provider alias", () => {
     const providers = [
       provider({
-        provider: ProviderDriverKind.make("claudeAgent"),
+        provider: ProviderDriverKind.make("pi"),
         instanceId: "claude_openrouter",
         models: ["claude-opus-4-8"],
       }),
@@ -138,7 +138,7 @@ describe("instance-scoped model selection", () => {
       providerInstances: {
         ...settingsWithProviderInstances().providerInstances,
         [ProviderInstanceId.make("claude_openrouter")]: {
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("pi"),
           config: { customModels: ["opus"] },
         },
       },
@@ -180,7 +180,7 @@ describe("instance-scoped model selection", () => {
   it("does not inject an unknown selected slug into the stock instance list", () => {
     const providers = [
       provider({
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         models: ["claude-sonnet-4-6"],
       }),
       provider({
@@ -189,7 +189,7 @@ describe("instance-scoped model selection", () => {
       }),
     ];
     const stock = deriveProviderInstanceEntries(providers).find(
-      (entry) => entry.instanceId === "claudeAgent",
+      (entry) => entry.instanceId === "pi",
     )!;
 
     expect(
@@ -202,21 +202,21 @@ describe("instance-scoped model selection", () => {
   it("hides server models from the instance option list", () => {
     const providers = [
       provider({
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         models: ["claude-opus-4-6", "claude-sonnet-4-6"],
       }),
     ];
     const settings: UnifiedSettings = {
       ...settingsWithProviderInstances(),
       providerModelPreferences: {
-        [ProviderInstanceId.make("claudeAgent")]: {
+        [ProviderInstanceId.make("pi")]: {
           hiddenModels: ["claude-opus-4-6"],
           modelOrder: [],
         },
       },
     };
     const stock = deriveProviderInstanceEntries(providers).find(
-      (entry) => entry.instanceId === "claudeAgent",
+      (entry) => entry.instanceId === "pi",
     )!;
 
     expect(getAppModelOptionsForInstance(settings, stock).map((option) => option.slug)).toEqual([
@@ -250,21 +250,21 @@ describe("instance-scoped model selection", () => {
   it("applies persisted per-instance model ordering", () => {
     const providers = [
       provider({
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         models: ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5"],
       }),
     ];
     const settings: UnifiedSettings = {
       ...settingsWithProviderInstances(),
       providerModelPreferences: {
-        [ProviderInstanceId.make("claudeAgent")]: {
+        [ProviderInstanceId.make("pi")]: {
           hiddenModels: [],
           modelOrder: ["claude-haiku-4-5", "claude-opus-4-6"],
         },
       },
     };
     const stock = deriveProviderInstanceEntries(providers).find(
-      (entry) => entry.instanceId === "claudeAgent",
+      (entry) => entry.instanceId === "pi",
     )!;
 
     expect(getAppModelOptionsForInstance(settings, stock).map((option) => option.slug)).toEqual([
@@ -277,14 +277,14 @@ describe("instance-scoped model selection", () => {
   it("falls back when the selected model is hidden", () => {
     const providers = [
       provider({
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         models: ["claude-opus-4-6", "claude-sonnet-4-6"],
       }),
     ];
     const settings: UnifiedSettings = {
       ...settingsWithProviderInstances(),
       providerModelPreferences: {
-        [ProviderInstanceId.make("claudeAgent")]: {
+        [ProviderInstanceId.make("pi")]: {
           hiddenModels: ["claude-opus-4-6"],
           modelOrder: [],
         },
@@ -293,7 +293,7 @@ describe("instance-scoped model selection", () => {
 
     expect(
       resolveAppModelSelectionForInstance(
-        ProviderInstanceId.make("claudeAgent"),
+        ProviderInstanceId.make("pi"),
         settings,
         providers,
         "claude-opus-4-6",
@@ -301,7 +301,7 @@ describe("instance-scoped model selection", () => {
     ).toBe("claude-sonnet-4-6");
     expect(
       resolveAppModelSelectionForInstance(
-        ProviderInstanceId.make("claudeAgent"),
+        ProviderInstanceId.make("pi"),
         settings,
         providers,
         "claude-opus-4-6",
@@ -313,7 +313,7 @@ describe("instance-scoped model selection", () => {
   it("falls back instead of resolving a custom slug against the wrong instance", () => {
     const providers = [
       provider({
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         models: ["claude-sonnet-4-6"],
       }),
       provider({
@@ -324,7 +324,7 @@ describe("instance-scoped model selection", () => {
 
     expect(
       resolveAppModelSelectionForInstance(
-        ProviderInstanceId.make("claudeAgent"),
+        ProviderInstanceId.make("pi"),
         settingsWithProviderInstances(),
         providers,
         "openai/gpt-5.5",
@@ -613,9 +613,9 @@ describe("instance-scoped model selection", () => {
 
   it("keeps a custom-instance draft model while dropping unsupported options", () => {
     const instanceId = ProviderInstanceId.make("claude_openrouter");
-    const driver = ProviderDriverKind.make("claudeAgent");
+    const driver = ProviderDriverKind.make("pi");
     const providers = [
-      provider({ provider: driver, instanceId: "claudeAgent", models: ["claude-opus-5"] }),
+      provider({ provider: driver, instanceId: "pi", models: ["claude-opus-5"] }),
       provider({ provider: driver, instanceId, models: ["claude-opus-5"] }),
     ];
     const threadSelection = createModelSelection(instanceId, "claude-opus-5", [
@@ -652,7 +652,7 @@ describe("instance-scoped model selection", () => {
   it("preserves custom provider instances in settings model selection", () => {
     const providers = [
       provider({
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         models: ["claude-sonnet-4-6"],
       }),
       provider({

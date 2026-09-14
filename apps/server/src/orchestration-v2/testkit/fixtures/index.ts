@@ -32,7 +32,6 @@ import { assertClaudeThreadRollbackOutput } from "./thread_rollback/claude_outpu
 import { threadRollbackInput } from "./thread_rollback/input.ts";
 import { assertTodoListAcpOutput } from "./todo_list/acp_output.ts";
 import { todoListInput } from "./todo_list/input.ts";
-import { assertToolCallReadOnlyClaudeOutput } from "./tool_call_read_only/claude_output.ts";
 import { assertToolCallReadOnlyAcpOutput } from "./tool_call_read_only/acp_output.ts";
 import { toolCallReadOnlyInput } from "./tool_call_read_only/input.ts";
 import { assertToolCallReadOnlyOnRequestClaudeOutput } from "./tool_call_read_only_on_request/claude_output.ts";
@@ -63,63 +62,6 @@ import {
 } from "./shared.ts";
 
 export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixture> = [
-  {
-    name: "claude_background_task_after_root",
-    buildInput: claudeBackgroundTaskAfterRootInput,
-    providers: [
-      {
-        driver: ProviderDriverKind.make("claudeAgent"),
-        transcriptFile: new URL(
-          "./claude_background_task_after_root/claude_transcript.ndjson",
-          import.meta.url,
-        ),
-        modelSelection: CLAUDE_MODEL_SELECTION,
-        assertOutput: assertClaudeBackgroundTaskAfterRootOutput,
-      },
-    ],
-  },
-  {
-    name: "claude_local_bash_task",
-    buildInput: claudeLocalBashTaskInput,
-    providers: [
-      {
-        driver: ProviderDriverKind.make("claudeAgent"),
-        transcriptFile: new URL(
-          "./claude_local_bash_task/claude_transcript.ndjson",
-          import.meta.url,
-        ),
-        modelSelection: CLAUDE_MODEL_SELECTION,
-        assertOutput: assertClaudeLocalBashTaskOutput,
-      },
-    ],
-  },
-  {
-    name: "claude_idle_resume",
-    buildInput: claudeIdleResumeInput,
-    providers: [
-      {
-        driver: ProviderDriverKind.make("claudeAgent"),
-        transcriptFile: new URL("./claude_idle_resume/claude_transcript.ndjson", import.meta.url),
-        modelSelection: CLAUDE_MODEL_SELECTION,
-        assertOutput: assertClaudeIdleResumeOutput,
-      },
-    ],
-  },
-  {
-    name: "claude_result_is_error",
-    buildInput: claudeResultIsErrorInput,
-    providers: [
-      {
-        driver: ProviderDriverKind.make("claudeAgent"),
-        transcriptFile: new URL(
-          "./claude_result_is_error/claude_transcript.ndjson",
-          import.meta.url,
-        ),
-        modelSelection: CLAUDE_MODEL_SELECTION,
-        assertOutput: assertClaudeResultIsErrorOutput,
-      },
-    ],
-  },
   {
     name: "acp_elicitation",
     buildInput: planQuestionsInput,
@@ -165,13 +107,6 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
     name: "tool_call_read_only",
     buildInput: toolCallReadOnlyInput,
     providers: [
-      {
-        driver: ProviderDriverKind.make("claudeAgent"),
-        transcriptFile: new URL("./tool_call_read_only/claude_transcript.ndjson", import.meta.url),
-        modelSelection: CLAUDE_MODEL_SELECTION,
-        runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
-        assertOutput: assertToolCallReadOnlyClaudeOutput,
-      },
       {
         driver: ProviderDriverKind.make("acpRegistry"),
         transcriptFile: new URL("./tool_call_read_only/acp_transcript.ndjson", import.meta.url),
@@ -453,20 +388,3 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
     ],
   },
 ];
-
-// TODO(claude-v2/approvals-denied): add denied write fixtures after the live query runner records
-// Claude denial callback responses. Cross-reference
-// `tool_call_read_only_on_request/claude_transcript.ndjson`,
-// `tool_call_workspace_never/claude_transcript.ndjson`,
-// `tool_call_restricted_granular/claude_transcript.ndjson`, and
-// docs/orchestration-v2/provider-capability-system.md.
-
-// TODO(claude-v2/context-transfer): add provider-switch handoff and return fixtures when portable
-// context handoff is implemented. Cross-reference docs/orchestration-v2/provider-switching-and-context.md
-// and docs/orchestration-v2/thread-lineage-and-context-transfer.md. The return fixture should
-// prefer a delta handoff into an existing Claude provider thread.
-
-// TODO(claude-v2/context-transfer-fixtures): register provider-switch, merge-back, and cross-provider
-// fork fixtures after each path has a real provider transcript. Cross-reference
-// docs/orchestration-v2/provider-switching-and-context.md and
-// docs/orchestration-v2/thread-lineage-and-context-transfer.md.

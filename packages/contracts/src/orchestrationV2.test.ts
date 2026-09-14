@@ -377,7 +377,7 @@ describe("orchestration V2 contracts", () => {
       task: "Inspect the API boundary.",
       title: "API inspection",
       modelSelection: {
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         model: "claude-sonnet-4-6",
       },
       runtimeMode: "approval-required",
@@ -877,7 +877,7 @@ describe("orchestration V2 contracts", () => {
     if (handoff.type !== "handoff") {
       throw new Error("expected handoff");
     }
-    expect(handoff.toProviderInstanceId).toBe("claudeAgent");
+    expect(handoff.toProviderInstanceId).toBe("pi");
     expect(fork.type).toBe("fork");
   });
 
@@ -894,13 +894,13 @@ describe("orchestration V2 contracts", () => {
   it("decodes historical provider-thread JSON without pendingBackgroundTasks as empty roster", () => {
     const providerThread = decodeOrchestrationV2ProviderThreadJson({
       id: "provider-thread-1",
-      driver: "claude",
-      providerInstanceId: "claudeAgent",
+      driver: "pi",
+      providerInstanceId: "pi",
       providerSessionId: "provider-session-1",
       appThreadId: "thread-1",
       ownerNodeId: null,
       nativeThreadRef: {
-        driver: "claude",
+        driver: "pi",
         nativeId: "native-session-1",
         strength: "strong",
       },
@@ -920,8 +920,8 @@ describe("orchestration V2 contracts", () => {
 
     const runtimeThread = decodeOrchestrationV2ProviderThread({
       id: "provider-thread-2",
-      driver: "claude",
-      providerInstanceId: "claudeAgent",
+      driver: "pi",
+      providerInstanceId: "pi",
       providerSessionId: null,
       appThreadId: "thread-2",
       ownerNodeId: null,
@@ -947,9 +947,9 @@ describe("orchestration V2 contracts", () => {
       id: "thread-1",
       projectId: "project-1",
       title: "Thread",
-      providerInstanceId: "claudeAgent",
+      providerInstanceId: "pi",
       modelSelection: {
-        instanceId: ProviderInstanceId.make("claudeAgent"),
+        instanceId: ProviderInstanceId.make("pi"),
         model: "claude-sonnet",
       },
       runtimeMode: "full-access",

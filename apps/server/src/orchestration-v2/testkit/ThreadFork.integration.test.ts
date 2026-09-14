@@ -91,25 +91,6 @@ function readTranscript(transcriptPath: string) {
   });
 }
 
-function metadataString(transcript: ProviderReplayTranscript, key: string): string {
-  const value = transcript.metadata?.[key];
-  if (typeof value !== "string") {
-    throw new Error(`Transcript ${transcript.scenario} is missing metadata string ${key}.`);
-  }
-  return value;
-}
-
-function metadataStringArray(
-  transcript: ProviderReplayTranscript,
-  key: string,
-): ReadonlyArray<string> {
-  const value = transcript.metadata?.[key];
-  if (!Array.isArray(value) || !value.every((entry) => typeof entry === "string")) {
-    throw new Error(`Transcript ${transcript.scenario} is missing metadata string array ${key}.`);
-  }
-  return value;
-}
-
 function userAndAssistantText(
   projection: Pick<OrchestrationV2ThreadProjection, "visibleTurnItems">,
 ): string {

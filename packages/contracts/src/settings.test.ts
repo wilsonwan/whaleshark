@@ -5,7 +5,7 @@ import { ProviderDriverKind, ProviderInstanceId } from "./providerInstance.ts";
 import {
   ClientSettingsSchema,
   ClientSettingsPatch,
-  ClaudeSettings,
+  CodexSettings,
   DEFAULT_SERVER_SETTINGS,
   resolveProviderInstanceEnabled,
   ServerSettings,
@@ -18,7 +18,7 @@ const encodeClientSettings = Schema.encodeSync(ClientSettingsSchema);
 const decodeServerSettings = Schema.decodeUnknownSync(ServerSettings);
 const decodeServerSettingsPatch = Schema.decodeUnknownSync(ServerSettingsPatch);
 const encodeServerSettings = Schema.encodeSync(ServerSettings);
-const decodeClaudeSettings = Schema.decodeUnknownSync(ClaudeSettings);
+const decodeCodexSettings = Schema.decodeUnknownSync(CodexSettings);
 
 describe("ServerSettings default permissions", () => {
   it("keeps full access for settings saved before a default was configured", () => {
@@ -114,7 +114,7 @@ describe("custom model settings", () => {
   };
 
   it("accepts legacy bare slugs alongside full entries", () => {
-    const decoded = decodeClaudeSettings({
+    const decoded = decodeCodexSettings({
       customModels: ["bare-slug", { slug: "named", name: "Named", capabilities }],
     });
     expect(decoded.customModels).toEqual([
@@ -134,35 +134,6 @@ describe("custom model settings", () => {
         providers: { claudeAgent: { customModels: [{ name: "no slug" }] } },
       }),
     ).toThrow();
-  });
-});
-
-describe("ClaudeSettings auto-compaction", () => {
-  it("uses Claude's default threshold when no override is configured", () => {
-    expect(decodeClaudeSettings({}).autoCompactWindow).toBe("");
-  });
-
-  it.each(["100000", "300000", "1000000"])(
-    "accepts a supported auto-compaction threshold: %s",
-    (value) => {
-      expect(decodeClaudeSettings({ autoCompactWindow: value }).autoCompactWindow).toBe(value);
-    },
-  );
-
-  it.each(["99999", "1000001", "300k", "invalid"])(
-    "rejects an unsupported auto-compaction threshold: %s",
-    (value) => {
-      expect(() => decodeClaudeSettings({ autoCompactWindow: value })).toThrow();
-    },
-  );
-
-  it("rejects an unsupported threshold at the settings patch boundary", () => {
-    expect(() =>
-      decodeServerSettingsPatch({ providers: { claudeAgent: { autoCompactWindow: "300k" } } }),
-    ).toThrow();
-    expect(
-      decodeServerSettingsPatch({ providers: { claudeAgent: { autoCompactWindow: "300000" } } }),
-    ).toBeDefined();
   });
 });
 

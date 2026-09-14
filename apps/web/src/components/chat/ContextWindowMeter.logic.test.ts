@@ -4,21 +4,19 @@ import { deriveProviderInstanceEntries } from "../../providerInstances";
 import {
   formatContextWindowCompactionMessage,
   hasAvailableCompactionProvider,
-  hasDismissedResumeCompaction,
   formatContextWindowCost,
   resolveContextWindowModelDisplayName,
-  shouldOfferResumeCompaction,
   shouldReserveContextWindowMeter,
 } from "./ContextWindowMeter.logic";
 
-function claudeProvider(input: {
+function codexProvider(input: {
   instanceId: string;
   continuationGroupKey: string;
   enabled?: boolean;
 }): ServerProvider {
   return {
     instanceId: ProviderInstanceId.make(input.instanceId),
-    driver: ProviderDriverKind.make("claudeAgent"),
+    driver: ProviderDriverKind.make("codex"),
     continuation: { groupKey: input.continuationGroupKey },
     enabled: input.enabled ?? true,
     installed: true,
@@ -33,25 +31,25 @@ function claudeProvider(input: {
 }
 
 describe("hasAvailableCompactionProvider", () => {
-  const originalInstanceId = ProviderInstanceId.make("claude_original");
+  const originalInstanceId = ProviderInstanceId.make("codex_original");
 
   it("rejects a fallback in a different locked continuation group", () => {
     const providers = deriveProviderInstanceEntries([
-      claudeProvider({
+      codexProvider({
         instanceId: originalInstanceId,
-        continuationGroupKey: "claude:home:/original",
+        continuationGroupKey: "codex:home:/original",
         enabled: false,
       }),
-      claudeProvider({
-        instanceId: "claude_other",
-        continuationGroupKey: "claude:home:/other",
+      codexProvider({
+        instanceId: "codex_other",
+        continuationGroupKey: "codex:home:/other",
       }),
     ]);
 
     expect(
       hasAvailableCompactionProvider({
         providers,
-        driverKind: ProviderDriverKind.make("claudeAgent"),
+        driverKind: ProviderDriverKind.make("codex"),
         instanceId: originalInstanceId,
         lockedInstanceId: originalInstanceId,
       }),
@@ -60,21 +58,21 @@ describe("hasAvailableCompactionProvider", () => {
 
   it("accepts an enabled fallback in the locked continuation group", () => {
     const providers = deriveProviderInstanceEntries([
-      claudeProvider({
+      codexProvider({
         instanceId: originalInstanceId,
-        continuationGroupKey: "claude:home:/original",
+        continuationGroupKey: "codex:home:/original",
         enabled: false,
       }),
-      claudeProvider({
-        instanceId: "claude_fallback",
-        continuationGroupKey: "claude:home:/original",
+      codexProvider({
+        instanceId: "codex_fallback",
+        continuationGroupKey: "codex:home:/original",
       }),
     ]);
 
     expect(
       hasAvailableCompactionProvider({
         providers,
-        driverKind: ProviderDriverKind.make("claudeAgent"),
+        driverKind: ProviderDriverKind.make("codex"),
         instanceId: originalInstanceId,
         lockedInstanceId: originalInstanceId,
       }),

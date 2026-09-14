@@ -299,7 +299,7 @@ describe("getComposerProviderState", () => {
 
   it("validates options for a known model selected through a legacy alias", () => {
     const state = getComposerProviderState({
-      provider: ProviderDriverKind.make("claudeAgent"),
+      provider: ProviderDriverKind.make("pi"),
       model: "legacy-test-model",
       models: [
         {

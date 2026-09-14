@@ -62,27 +62,34 @@ describe("splitSharedServerPatch", () => {
       options: [{ id: "reasoningEffort", value: "low" }],
     },
     {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
-      model: "claude-sonnet-4-6",
-      options: [{ id: "effort", value: "high" }],
+      instanceId: ProviderInstanceId.make("codex_work"),
+      model: "gpt-5.6-sol-mini",
+      options: [{ id: "serviceTier", value: "fast" }],
     },
     DEFAULT_SERVER_SETTINGS.textGenerationModelSelection,
   ])("shares the text generation model and options, including reset (%j)", (selection) => {
     const patch = { textGenerationModelSelection: selection };
     expect(splitSharedServerPatch(patch)).toEqual({ sharedPatch: patch, localPatch: {} });
-    expect(pickSharedServerSettings({ ...DEFAULT_SERVER_SETTINGS, ...patch })).toMatchObject(patch);
+    // A custom instance only syncs while its envelope is registered and enabled.
+    const providerInstances = {
+      codex_work: { driver: ProviderDriverKind.make("codex"), enabled: true, config: {} },
+    };
+    expect(
+      pickSharedServerSettings({ ...DEFAULT_SERVER_SETTINGS, ...patch, providerInstances }),
+    ).toMatchObject(patch);
     const environment = {
       environmentId: boxId,
       label: "Remote Box",
       syncEligible: true,
       settings: {
         ...DEFAULT_SERVER_SETTINGS,
+        providerInstances,
         textGenerationModelSelection: { ...selection, model: "different-model" },
       },
     };
     const input = {
       primaryEnvironmentId: primaryId,
-      primarySettings: { ...DEFAULT_SERVER_SETTINGS, ...patch },
+      primarySettings: { ...DEFAULT_SERVER_SETTINGS, ...patch, providerInstances },
       environments: [environment],
     };
     expect(findSharedSettingsMismatches(input)).toEqual([
@@ -148,7 +155,7 @@ describe("filterSharedServerPatch", () => {
           pi: { driver: ProviderDriverKind.make("pi"), enabled: true, config: {} },
         },
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "claude-opus-4-6",
         },
       };

@@ -21,8 +21,8 @@ const SECOND_PROVIDER = "acpRegistry";
 function bucket(overrides: Partial<UsageBucket> = {}): UsageBucket {
   return {
     day: "2026-08-07" as UsageDay,
-    provider: "claude",
-    model: "claude-fable-5",
+    provider: "codex",
+    model: "gpt-5.6-sol",
     totals: {
       uncachedInputTokens: 100,
       cachedInputTokens: 1000,
@@ -87,11 +87,11 @@ describe("mergeUsage", () => {
       [
         environment(
           "env-a",
-          summary([bucket()], [{ provider: "claude", hostId: "mac", homePath: "/a/.claude" }]),
+          summary([bucket()], [{ provider: "codex", hostId: "mac", homePath: "/a/.codex" }]),
         ),
         environment(
           "env-b",
-          summary([bucket()], [{ provider: "claude", hostId: "linux", homePath: "/b/.claude" }]),
+          summary([bucket()], [{ provider: "codex", hostId: "linux", homePath: "/b/.codex" }]),
         ),
       ],
       USAGE_CONTRACT_VERSION,
@@ -104,7 +104,7 @@ describe("mergeUsage", () => {
 
   it("counts a shared transcript directory once", () => {
     // Two worktree servers on one machine resolve the same provider home.
-    const shared = { provider: "claude" as const, hostId: "mac", homePath: "/home/theo/.claude" };
+    const shared = { provider: "codex" as const, hostId: "mac", homePath: "/home/theo/.codex" };
     const merged = mergeUsage(
       [
         environment("env-a", summary([bucket()], [shared])),
@@ -120,15 +120,11 @@ describe("mergeUsage", () => {
     expect(merged.contributingEnvironments).toEqual(["env-a"]);
   });
 
-  it("drops only the duplicated provider, keeping the environment's other one", () => {
-    const sharedClaude = {
-      provider: "claude" as const,
-      hostId: "mac",
-      homePath: "/home/theo/.claude",
-    };
+  it("still counts an environment that owns a directory of its own alongside a duplicate", () => {
+    const shared = { provider: "codex" as const, hostId: "mac", homePath: "/home/theo/.codex" };
     const merged = mergeUsage(
       [
-        environment("env-a", summary([bucket()], [sharedClaude])),
+        environment("env-a", summary([bucket()], [shared])),
         environment(
           "env-b",
           summary(
@@ -173,13 +169,13 @@ describe("mergeUsage", () => {
       [
         environment(
           "env-a",
-          summary([bucket()], [{ provider: "claude", hostId: "mac", homePath: "/a" }]),
+          summary([bucket()], [{ provider: "codex", hostId: "mac", homePath: "/a" }]),
         ),
         environment(
           "env-b",
           summary(
             [bucket()],
-            [{ provider: "claude", hostId: "linux", homePath: "/b" }],
+            [{ provider: "codex", hostId: "linux", homePath: "/b" }],
             USAGE_CONTRACT_VERSION - 2,
           ),
         ),
@@ -198,7 +194,7 @@ describe("mergeUsage", () => {
           "env-a",
           summary(
             [bucket({ costUsd: 10 })],
-            [{ provider: "claude", hostId: "mac", homePath: "/a" }],
+            [{ provider: "codex", hostId: "mac", homePath: "/a" }],
           ),
         ),
         environment(
@@ -240,14 +236,15 @@ describe("mergeUsage", () => {
                 homePath: "/a/.acp",
               },
             ],
+            [{ provider: "codex", hostId: "mac", homePath: "/a/.codex" }],
           ),
         ),
       ],
       USAGE_CONTRACT_VERSION,
     );
 
-    expect(merged.providers[0]?.provider).toBe("claude");
-    expect(merged.providers[0]?.costShare).toBeCloseTo(0.75, 5);
+    expect(merged.providers[0]?.provider).toBe("codex");
+    expect(merged.providers[0]?.costShare).toBeCloseTo(1, 5);
     expect(merged.costQuality.unpricedShare).toBeCloseTo(0.5, 5);
     expect(merged.costQuality.cacheSavingsUsd).toBe(4);
   });
@@ -281,9 +278,9 @@ describe("mergeUsage", () => {
   });
 
   it("keeps two machines apart when hostname and home path collide", () => {
-    // Every Mac resolves /Users/theo/.claude, so a hostname clash used to make
+    // Every Mac resolves /Users/theo/.codex, so a hostname clash used to make
     // one machine's usage vanish. Filesystem identity separates them.
-    const shape = { provider: "claude" as const, hostId: "mac", homePath: "/Users/theo/.claude" };
+    const shape = { provider: "codex" as const, hostId: "mac", homePath: "/Users/theo/.codex" };
     const merged = mergeUsage(
       [
         environment("env-a", summary([bucket()], [{ ...shape, volumeId: "16777220:1234" }])),
@@ -298,9 +295,9 @@ describe("mergeUsage", () => {
 
   it("still collapses two servers reading the same directory", () => {
     const same = {
-      provider: "claude" as const,
+      provider: "codex" as const,
       hostId: "mac",
-      homePath: "/Users/theo/.claude",
+      homePath: "/Users/theo/.codex",
       volumeId: "16777220:1234",
     };
     const merged = mergeUsage(
@@ -326,9 +323,9 @@ describe("mergeUsage", () => {
             [bucket({ day: "2026-08-06" as UsageDay }), bucket({ day: "2026-08-07" as UsageDay })],
             [
               {
-                provider: "claude",
+                provider: "codex",
                 hostId: "mac",
-                homePath: "/a/.claude",
+                homePath: "/a/.codex",
                 distinctSessions: 1,
               },
             ],
@@ -358,9 +355,9 @@ describe("mergeUsage", () => {
             [],
             [
               {
-                provider: "claude",
+                provider: "codex",
                 hostId: "mac",
-                homePath: "/a/.claude",
+                homePath: "/a/.codex",
                 distinctSessions: 0,
               },
             ],
@@ -383,7 +380,7 @@ describe("mergeUsage", () => {
               bucket({ hourStart: "2026-08-07T09:37:00.000Z", costUsd: 3 }),
               bucket({ hourStart: "2026-08-07T10:37:00.000Z", costUsd: 7 }),
             ],
-            [{ provider: "claude", hostId: "mac", homePath: "/a/.claude" }],
+            [{ provider: "codex", hostId: "mac", homePath: "/a/.codex" }],
           ),
         ),
       ],

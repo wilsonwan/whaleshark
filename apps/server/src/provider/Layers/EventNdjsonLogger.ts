@@ -216,11 +216,7 @@ export function shouldPersistProviderEvent(stream: EventNdjsonStream, event: unk
         ? decodedPayload
         : envelope;
     const method = Reflect.get(nativeEvent, "method");
-    if (
-      typeof method === "string" &&
-      (transientNativeMethods.has(method) ||
-        method.startsWith("claude/stream_event/content_block_delta/"))
-    ) {
+    if (typeof method === "string" && transientNativeMethods.has(method)) {
       return false;
     }
 

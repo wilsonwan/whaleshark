@@ -60,7 +60,7 @@ describe("buildPeriodColumns", () => {
         day: "2026-08-03",
         costUsd: 5,
         totalTokens: 50,
-        byProvider: new Map([["claude" as const, { costUsd: 5, totalTokens: 50 }]]),
+        byProvider: new Map([["codex" as const, { costUsd: 5, totalTokens: 50 }]]),
       },
     ],
   ]);

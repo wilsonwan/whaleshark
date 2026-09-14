@@ -33,10 +33,6 @@ export const MULTI_TURN_FIRST_PROMPT = "Respond with exactly: first fixture turn
 export const MULTI_TURN_SECOND_PROMPT = "Respond with exactly: second fixture turn complete";
 export const TOOL_CALL_READ_ONLY_WORKSPACE_ROOT = "/tmp/claude-replay-tool_call_read_only";
 export const TOOL_CALL_READ_ONLY_PROMPT = `Read ${TOOL_CALL_READ_ONLY_WORKSPACE_ROOT}/package.json and ${TOOL_CALL_READ_ONLY_WORKSPACE_ROOT}/tsconfig.json, then answer exactly: read only tool fixture complete`;
-export const CLAUDE_LOCAL_BASH_TASK_PROMPT =
-  "Run a local Bash typecheck command, then answer exactly: claude local bash task fixture complete";
-export const CLAUDE_RESULT_IS_ERROR_PROMPT = "Say hello before the credentials expire.";
-export const CLAUDE_RESULT_IS_ERROR_FOLLOW_UP = "Try again now that auth is back.";
 export const TOOL_CALL_WRITE_PROMPT =
   "Create or overwrite .probe-write-action.txt with exactly this text: provider approval fixture. Use a local shell command or file edit only, then briefly report what happened. Do not read package metadata, use GitHub, use web, or use MCP.";
 export const MESSAGE_STEERING_INITIAL_PROMPT =
@@ -49,8 +45,6 @@ export const TURN_INTERRUPT_PROMPT =
   "Do not answer immediately. First run the local shell command `sleep 30`, then respond with exactly: interrupt fixture should not finish naturally.";
 export const TURN_INTERRUPT_MID_TOOL_PROMPT =
   "Run this exact local command: `node -e \"console.log('interrupt fixture tool started'); setTimeout(() => {}, 30000)\"`. Do not answer until it completes, then respond exactly: interrupt fixture should not finish naturally.";
-export const TURN_INTERRUPT_RECOVERY_PROMPT =
-  "Respond with exactly: interrupt recovery fixture complete";
 export const MESSAGE_STEERING_STEER_PROMPT =
   "Actually, respond with exactly: steering fixture observed";
 export const THREAD_ROLLBACK_FIRST_PROMPT =

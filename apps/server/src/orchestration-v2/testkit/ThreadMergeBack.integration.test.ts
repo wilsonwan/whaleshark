@@ -132,13 +132,6 @@ function parameterizeHandoffs(
 }
 
 function nativeSourceThreadId(transcript: ProviderReplayTranscript): string {
-  if (transcript.provider === "claudeAgent") {
-    const value = transcript.metadata?.nativeSessionId;
-    if (typeof value !== "string") {
-      throw new Error(`${transcript.scenario} is missing metadata.nativeSessionId.`);
-    }
-    return value;
-  }
   for (const entry of transcript.entries) {
     if (entry.type !== "emit_inbound") {
       continue;

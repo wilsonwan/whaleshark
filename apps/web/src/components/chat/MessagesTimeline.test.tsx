@@ -1500,8 +1500,8 @@ describe("MessagesTimeline", () => {
         skills: [],
       },
       {
-        instanceId: "claudeAgent",
-        driver: "claudeAgent",
+        instanceId: "pi",
+        driver: "pi",
         enabled: true,
         installed: true,
         version: null,
@@ -1584,8 +1584,8 @@ describe("MessagesTimeline", () => {
       {
         id: "run-2",
         ordinal: 2,
-        providerInstanceId: "claudeAgent",
-        modelSelection: { instanceId: "claudeAgent", model: "claude-fable-5" },
+        providerInstanceId: "pi",
+        modelSelection: { instanceId: "pi", model: "claude-fable-5" },
       },
     ] as never;
     const legacyMarkup = renderToStaticMarkup(
@@ -1801,8 +1801,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "claudeAgent",
-                providerInstanceId: "claudeAgent",
+                driver: "pi",
+                providerInstanceId: "pi",
                 childThreadId: "thread-subagent-1",
                 prompt: "Inspect the package",
                 progress: "Reading src/index.ts",

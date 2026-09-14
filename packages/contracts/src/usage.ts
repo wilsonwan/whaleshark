@@ -124,7 +124,7 @@ export const UsageSourceFingerprint = Schema.Struct({
    * Filesystem identity of the transcript directory, as `device:inode`.
    *
    * Hostname and path alone are not enough: every Mac in a fleet resolves
-   * `/Users/<user>/.claude`, so two machines that happen to share a hostname
+   * `/Users/<user>/.codex`, so two machines that happen to share a hostname
    * would look like one source and have their usage silently dropped. The
    * device/inode pair is stable for two servers reading the same directory and
    * effectively never collides across machines. Empty when it cannot be read.

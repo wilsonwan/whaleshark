@@ -49,8 +49,8 @@ const replacementSelection = {
   instanceId: providerInstanceId,
   model: "restart-model-b",
 } satisfies ModelSelection;
-const handoffDriver = ProviderDriverKind.make("claudeAgent");
-const handoffProviderInstanceId = ProviderInstanceId.make("claude-handoff-test");
+const handoffDriver = ProviderDriverKind.make("pi");
+const handoffProviderInstanceId = ProviderInstanceId.make("pi-handoff-test");
 const handoffSelection = {
   instanceId: handoffProviderInstanceId,
   model: "handoff-model",

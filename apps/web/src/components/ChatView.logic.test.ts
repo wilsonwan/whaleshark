@@ -1478,7 +1478,7 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it("keeps the session driver authoritative over instance and draft selections", () => {
-    const selected = entry("claudeAgent", "claude_work");
+    const selected = entry("pi", "pi_work");
     const sessionEntry = entry("ollama", "local_models");
     const thread = importedThread(selected.instanceId);
 
@@ -1565,7 +1565,7 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it("uses the fallback provider's plan capability after the draft's instance is disabled", () => {
-    const disabledEntry = entry("claudeAgent", "claude_work", {
+    const disabledEntry = entry("pi", "pi_work", {
       enabled: false,
       showInteractionModeToggle: false,
     });
@@ -1588,7 +1588,7 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it("keeps a signed-out selection instead of silently switching providers", () => {
-    const signedOutEntry = entry("claudeAgent", "claude_work", {
+    const signedOutEntry = entry("pi", "pi_work", {
       status: "error",
       auth: { status: "unauthenticated" },
       models: [],

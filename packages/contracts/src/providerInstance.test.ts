@@ -127,7 +127,7 @@ describe("ProviderInstanceConfig", () => {
 
   it("decodes generic environment variables on the instance envelope", () => {
     const decoded = decodeProviderInstanceConfig({
-      driver: "claudeAgent",
+      driver: "pi",
       environment: [
         { name: "ANTHROPIC_BASE_URL", value: "https://openrouter.ai/api", sensitive: false },
         { name: "OPENROUTER_API_KEY", value: "sk-or-test", sensitive: true },
@@ -187,7 +187,7 @@ describe("ProviderInstanceConfigMap", () => {
         driver: "claudeAgent",
         config: { homePath: "~/.claude_work" },
       },
-      claudeAgent: { driver: "claudeAgent" },
+      pi: { driver: "pi" },
       ollama_local: { driver: "ollama", config: { endpoint: "http://localhost:11434" } },
     });
     expect(new Set(Object.keys(decoded))).toEqual(

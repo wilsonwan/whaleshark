@@ -197,10 +197,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
             binaryPath: "/usr/local/bin/opencode",
             serverUrl: "http://127.0.0.1:4096",
           },
-          claudeAgent: {
-            binaryPath: "/usr/local/bin/claude",
-            customModels: ["claude-custom"],
-          },
         },
         textGenerationModelSelection: {
           instanceId: ProviderInstanceId.make("claudeAgent"),
@@ -234,14 +230,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         serverUrl: "http://127.0.0.1:4096",
         serverPassword: "",
         customModels: [],
-      });
-      assert.deepEqual(next.providers.claudeAgent, {
-        enabled: true,
-        binaryPath: "/usr/local/bin/claude",
-        homePath: "",
-        customModels: ["claude-custom"],
-        launchArgs: "",
-        autoCompactWindow: "",
       });
       assert.deepEqual(
         next.textGenerationModelSelection,
@@ -413,16 +401,14 @@ it.layer(NodeServices.layer)("server settings", (it) => {
     Effect.gen(function* () {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
 
-      // Start with Claude text generation selection
+      // Start with a Pi text generation selection
       yield* serverSettings.updateSettings({
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
-          model: "claude-sonnet-4-6",
-          options: createModelSelection(
-            ProviderInstanceId.make("claudeAgent"),
-            "claude-sonnet-4-6",
-            [{ id: "effort", value: "high" }],
-          ).options!,
+          instanceId: ProviderInstanceId.make("pi"),
+          model: "openai/gpt-5.4",
+          options: createModelSelection(ProviderInstanceId.make("pi"), "openai/gpt-5.4", [
+            { id: "thinking", value: "high" },
+          ]).options!,
         },
       });
 
@@ -453,20 +439,20 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       const next = yield* serverSettings.updateSettings({
         providerInstances: {
-          [ProviderInstanceId.make("claude_openrouter")]: {
-            driver: ProviderDriverKind.make("claudeAgent"),
+          [ProviderInstanceId.make("pi_openrouter")]: {
+            driver: ProviderDriverKind.make("pi"),
             enabled: true,
             config: { customModels: ["openai/gpt-5.5"] },
           },
         },
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("claude_openrouter"),
+          instanceId: ProviderInstanceId.make("pi_openrouter"),
           model: "openai/gpt-5.5",
         },
       });
 
       assert.deepEqual(next.textGenerationModelSelection, {
-        instanceId: ProviderInstanceId.make("claude_openrouter"),
+        instanceId: ProviderInstanceId.make("pi_openrouter"),
         model: "openai/gpt-5.5",
       });
     }).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -477,17 +463,13 @@ it.layer(NodeServices.layer)("server settings", (it) => {
     () =>
       Effect.gen(function* () {
         const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
-        const instanceId = ProviderInstanceId.make("claude_openrouter");
+        const instanceId = ProviderInstanceId.make("pi_openrouter");
 
         const next = yield* serverSettings.updateSettings({
-          providers: {
-            claudeAgent: {
-              enabled: false,
-            },
-          },
+          providers: { pi: { enabled: false } },
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("claudeAgent"),
+              driver: ProviderDriverKind.make("pi"),
               enabled: true,
               config: { customModels: ["openai/gpt-5.5"] },
             },
@@ -998,9 +980,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
           pi: {
             binaryPath: "  /opt/homebrew/bin/pi  ",
           },
-          claudeAgent: {
-            binaryPath: "  /opt/homebrew/bin/claude  ",
-          },
           opencode: {
             binaryPath: "  /opt/homebrew/bin/opencode  ",
             serverUrl: "  http://127.0.0.1:4096  ",
@@ -1015,14 +994,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         binaryPath: "/opt/homebrew/bin/pi",
         launchArgs: "",
         customModels: [],
-      });
-      assert.deepEqual(next.providers.claudeAgent, {
-        enabled: true,
-        binaryPath: "/opt/homebrew/bin/claude",
-        homePath: "",
-        customModels: [],
-        launchArgs: "",
-        autoCompactWindow: "",
       });
       assert.deepEqual(next.providers.opencode, {
         // OpenCode is disabled by default; this update only touches paths.
@@ -1063,9 +1034,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         providers: {
           pi: {
             binaryPath: "   ",
-          },
-          claudeAgent: {
-            binaryPath: "",
           },
         },
       });

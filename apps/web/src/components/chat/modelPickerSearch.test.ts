@@ -71,7 +71,7 @@ describe("scoreModelPickerSearch", () => {
   it("gives favorite models a strong enough ranking boost for partial queries", () => {
     const favoriteScore = scoreModelPickerSearch(
       {
-        driverKind: "claudeAgent",
+        driverKind: "pi",
         providerDisplayName: "Claude",
         name: "Claude Opus 4.7",
         isFavorite: true,
@@ -95,7 +95,7 @@ describe("scoreModelPickerSearch", () => {
   it("does not let the favorite boost outrank clearly better textual matches", () => {
     const favoriteScore = scoreModelPickerSearch(
       {
-        driverKind: "claudeAgent",
+        driverKind: "pi",
         providerDisplayName: "Claude",
         name: "Claude Opus 4.7",
         isFavorite: true,

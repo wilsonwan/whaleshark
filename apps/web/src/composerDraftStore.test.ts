@@ -1900,38 +1900,29 @@ describe("composerDraftStore modelSelection", () => {
 
     store.setModelSelection(
       threadRef,
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", {
+      modelSelection(PI_DRIVER, "claude-opus-4-6", {
         effort: "max",
         fastMode: true,
       }),
     );
     store.setStickyModelSelection(
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", {
+      modelSelection(PI_DRIVER, "claude-opus-4-6", {
         effort: "max",
         fastMode: true,
       }),
     );
 
-    store.setProviderModelOptions(
-      threadRef,
-      CLAUDE_AGENT_DRIVER,
-      toSelections({ thinking: false }),
-      {
-        persistSticky: true,
-      },
-    );
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ thinking: false }), {
+      persistSticky: true,
+    });
 
-    expect(
-      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE],
-    ).toEqual(
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", {
+    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "claude-opus-4-6", {
         thinking: false,
       }),
     );
-    expect(
-      useComposerDraftStore.getState().stickyModelSelectionByProvider[CLAUDE_AGENT_INSTANCE],
-    ).toEqual(
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", {
+    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "claude-opus-4-6", {
         thinking: false,
       }),
     );
@@ -1955,17 +1946,15 @@ describe("composerDraftStore modelSelection", () => {
 
     store.setModelSelection(
       threadRef,
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", {
+      modelSelection(PI_DRIVER, "claude-opus-4-6", {
         effort: "max",
       }),
     );
 
-    store.setProviderModelOptions(threadRef, CLAUDE_AGENT_DRIVER, toSelections({ thinking: true }));
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ thinking: true }));
 
-    expect(
-      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE],
-    ).toEqual(
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", {
+    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "claude-opus-4-6", {
         thinking: true,
       }),
     );
@@ -2047,30 +2036,22 @@ describe("composerDraftStore modelSelection", () => {
   it("updates only the draft when sticky persistence is omitted", () => {
     const store = useComposerDraftStore.getState();
 
-    store.setStickyModelSelection(
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", { effort: "max" }),
-    );
+    store.setStickyModelSelection(modelSelection(PI_DRIVER, "claude-opus-4-6", { effort: "max" }));
     store.setModelSelection(
       threadRef,
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", { effort: "max" }),
+      modelSelection(PI_DRIVER, "claude-opus-4-6", { effort: "max" }),
     );
 
-    store.setProviderModelOptions(
-      threadRef,
-      CLAUDE_AGENT_DRIVER,
-      toSelections({ thinking: false }),
-    );
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ thinking: false }));
 
-    expect(
-      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE],
-    ).toEqual(
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", {
+    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "claude-opus-4-6", {
         thinking: false,
       }),
     );
-    expect(
-      useComposerDraftStore.getState().stickyModelSelectionByProvider[CLAUDE_AGENT_INSTANCE],
-    ).toEqual(modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", { effort: "max" }));
+    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "claude-opus-4-6", { effort: "max" }),
+    );
   });
 
   it("does not clear other provider options when setting options for a single provider", () => {
@@ -2096,12 +2077,9 @@ describe("composerDraftStore modelSelection", () => {
       createModelSelection(OPENCODE_INSTANCE, "gpt-5.4", toSelections({ reasoningEffort: "xhigh" }))
         .options,
     );
-    expect(draft?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE]?.options).toEqual(
-      createModelSelection(
-        CLAUDE_AGENT_INSTANCE,
-        "claude-opus-4-6",
-        toSelections({ effort: "max" }),
-      ).options,
+    expect(draft?.modelSelectionByProvider[OPENCODE_INSTANCE]?.options).toEqual(
+      createModelSelection(OPENCODE_INSTANCE, "openai/gpt-5", toSelections({ variant: "high" }))
+        .options,
     );
   });
 
@@ -2116,16 +2094,16 @@ describe("composerDraftStore modelSelection", () => {
       }),
     );
 
-    store.setModelSelection(threadRef, modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6"));
+    store.setModelSelection(threadRef, modelSelection(OPENCODE_DRIVER, "openai/gpt-5"));
 
     const draft = draftFor(threadId, TEST_ENVIRONMENT_ID);
-    expect(draft?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE]).toEqual(
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", { effort: "max" }),
+    expect(draft?.modelSelectionByProvider[OPENCODE_INSTANCE]).toEqual(
+      modelSelection(OPENCODE_DRIVER, "openai/gpt-5", { variant: "high" }),
     );
     expect(draft?.modelSelectionByProvider[OPENCODE_INSTANCE]?.options).toEqual(
       createModelSelection(OPENCODE_INSTANCE, "gpt-5.4", toSelections({ fastMode: true })).options,
     );
-    expect(draft?.activeProvider).toBe("claudeAgent");
+    expect(draft?.activeProvider).toBe("opencode");
   });
 
   it("creates the first sticky snapshot from provider option changes", () => {
@@ -2179,33 +2157,24 @@ describe("composerDraftStore modelSelection", () => {
   it("updates only the draft when sticky persistence is disabled", () => {
     const store = useComposerDraftStore.getState();
 
-    store.setStickyModelSelection(
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", { effort: "max" }),
-    );
+    store.setStickyModelSelection(modelSelection(PI_DRIVER, "claude-opus-4-6", { effort: "max" }));
     store.setModelSelection(
       threadRef,
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", { effort: "max" }),
+      modelSelection(PI_DRIVER, "claude-opus-4-6", { effort: "max" }),
     );
 
-    store.setProviderModelOptions(
-      threadRef,
-      CLAUDE_AGENT_DRIVER,
-      toSelections({ thinking: false }),
-      {
-        persistSticky: false,
-      },
-    );
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ thinking: false }), {
+      persistSticky: false,
+    });
 
-    expect(
-      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE],
-    ).toEqual(
-      modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", {
+    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "claude-opus-4-6", {
         thinking: false,
       }),
     );
-    expect(
-      useComposerDraftStore.getState().stickyModelSelectionByProvider[CLAUDE_AGENT_INSTANCE],
-    ).toEqual(modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", { effort: "max" }));
+    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "claude-opus-4-6", { effort: "max" }),
+    );
   });
 });
 
@@ -2415,14 +2384,14 @@ describe("composerDraftStore sticky composer settings", () => {
     const threadId = ThreadId.make("thread-sticky-active-provider");
     const threadRef = scopeThreadRef(TEST_ENVIRONMENT_ID, threadId);
 
-    store.setStickyModelSelection(modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6"));
+    store.setStickyModelSelection(modelSelection(PI_DRIVER, "claude-opus-4-6"));
     store.applyStickyState(threadRef);
 
     expect(draftFor(threadId, TEST_ENVIRONMENT_ID)).toMatchObject({
       modelSelectionByProvider: {
-        claudeAgent: modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6"),
+        pi: modelSelection(PI_DRIVER, "claude-opus-4-6"),
       },
-      activeProvider: "claudeAgent",
+      activeProvider: "pi",
     });
   });
 
@@ -2733,17 +2702,13 @@ describe("composerDraftStore provider-scoped option updates", () => {
         reasoningEffort: "medium",
       }),
     );
-    store.setProviderModelOptions(threadRef, CLAUDE_AGENT_DRIVER, toSelections({ effort: "max" }));
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ effort: "max" }));
     const draft = draftFor(threadId, TEST_ENVIRONMENT_ID);
     expect(draft?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
       modelSelection(PI_DRIVER, "anthropic/claude-opus-4-6", { reasoningEffort: "medium" }),
     );
-    expect(draft?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE]?.options).toEqual(
-      createModelSelection(
-        CLAUDE_AGENT_INSTANCE,
-        "claude-opus-4-6",
-        toSelections({ effort: "max" }),
-      ).options,
+    expect(draft?.modelSelectionByProvider[PI_INSTANCE]?.options).toEqual(
+      createModelSelection(PI_INSTANCE, "claude-opus-4-6", toSelections({ effort: "max" })).options,
     );
     expect(draft?.activeProvider).toBe("pi");
   });

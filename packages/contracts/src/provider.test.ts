@@ -58,13 +58,13 @@ describe("ProviderSessionStartInput", () => {
     ).toThrow();
   });
 
-  it("accepts claude runtime knobs", () => {
+  it("accepts pi runtime knobs", () => {
     const parsed = decodeProviderSessionStartInput({
       threadId: "thread-1",
-      provider: "claudeAgent",
+      provider: "pi",
       cwd: "/tmp/workspace",
       modelSelection: {
-        provider: "claudeAgent",
+        provider: "pi",
         model: "claude-sonnet-4-6",
         options: [
           { id: "thinking", value: true },
@@ -74,8 +74,8 @@ describe("ProviderSessionStartInput", () => {
       },
       runtimeMode: "full-access",
     });
-    expect(parsed.provider).toBe("claudeAgent");
-    expect(parsed.modelSelection?.instanceId).toBe("claudeAgent");
+    expect(parsed.provider).toBe("pi");
+    expect(parsed.modelSelection?.instanceId).toBe("pi");
     expect(parsed.modelSelection?.model).toBe("claude-sonnet-4-6");
     expect(getOptionValue(parsed.modelSelection?.options, "thinking")).toBe(true);
     expect(getOptionValue(parsed.modelSelection?.options, "effort")).toBe("max");
@@ -140,11 +140,11 @@ describe("ProviderSendTurnInput", () => {
     expect(getOptionValue(parsed.modelSelection?.options, "fastMode")).toBe(true);
   });
 
-  it("accepts claude modelSelection including ultrathink", () => {
+  it("accepts pi modelSelection including ultrathink", () => {
     const parsed = decodeProviderSendTurnInput({
       threadId: "thread-1",
       modelSelection: {
-        provider: "claudeAgent",
+        provider: "pi",
         model: "claude-sonnet-4-6",
         options: [
           { id: "effort", value: "ultrathink" },
@@ -153,7 +153,7 @@ describe("ProviderSendTurnInput", () => {
       },
     });
 
-    expect(parsed.modelSelection?.instanceId).toBe("claudeAgent");
+    expect(parsed.modelSelection?.instanceId).toBe("pi");
     expect(getOptionValue(parsed.modelSelection?.options, "effort")).toBe("ultrathink");
     expect(getOptionValue(parsed.modelSelection?.options, "fastMode")).toBe(true);
   });

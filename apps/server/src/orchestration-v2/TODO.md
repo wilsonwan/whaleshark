@@ -126,9 +126,9 @@ TODO:
 - [ ] Record Claude `multi_turn` from real usage and prove native session/thread continuation.
 - [ ] Record Claude `tool_call_read_only` from real usage and prove read-only tool projection without
       approvals.
-- [ ] Keep unrecorded Claude fixtures out of `testkit/fixtures/index.ts` until each has a real
+- [ ] Keep unrecorded fixtures out of `testkit/fixtures/index.ts` until each has a real
       transcript and real adapter assertions.
-- [ ] Add the second adapter once these vv0 Claude slices are stable enough to validate
+- [ ] Add the second adapter once these vv0 replay slices are stable enough to validate
       cross-provider behavior.
 - [ ] Use the second adapter to test:
       cross-provider fork, same-thread provider switch, returning to a previous provider thread with

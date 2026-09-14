@@ -28,7 +28,7 @@ describe("orchestrator MCP contracts", () => {
     const request = decodeDelegateTaskInput({
       task: "Inspect the workspace and report the result.",
       target: {
-        providerInstanceId: "claudeAgent",
+        providerInstanceId: "pi",
         model: "claude-sonnet-4-6",
       },
       mode: "wait",
@@ -45,7 +45,7 @@ describe("orchestrator MCP contracts", () => {
       status: "completed",
       workState: "result_available",
       hasPendingChildRuns: false,
-      providerInstanceId: "claudeAgent",
+      providerInstanceId: "pi",
       model: "claude-sonnet-4-6",
       summary: "Workspace inspected.",
       resultContextTransferId: "context-transfer-result-1",
@@ -56,7 +56,7 @@ describe("orchestrator MCP contracts", () => {
       waitTimedOut: false,
     });
 
-    expect(request.target?.providerInstanceId).toBe("claudeAgent");
+    expect(request.target?.providerInstanceId).toBe("pi");
     expect(result.status).toBe("completed");
     expect(result.summary).toBe("Workspace inspected.");
   });
@@ -117,7 +117,7 @@ describe("orchestrator MCP contracts", () => {
         { title: "Inherited empty thread" },
         {
           prompt: "Review the API.",
-          target: { driverKind: "claudeAgent" },
+          target: { driverKind: "pi" },
           runtimeMode: "approval-required",
         },
       ],
@@ -125,7 +125,7 @@ describe("orchestrator MCP contracts", () => {
 
     expect(request.threads).toHaveLength(2);
     expect(request.threads[0]?.prompt).toBeUndefined();
-    expect(request.threads[1]?.target?.driverKind).toBe("claudeAgent");
+    expect(request.threads[1]?.target?.driverKind).toBe("pi");
   });
 
   it("decodes project-scoped thread orchestration requests", () => {

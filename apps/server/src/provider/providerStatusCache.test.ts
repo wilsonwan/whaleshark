@@ -91,7 +91,7 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
       });
       const claudePath = yield* resolveProviderStatusCachePath({
         cacheDir: tempDir,
-        instanceId: defaultInstanceIdForDriver(ProviderDriverKind.make("claudeAgent")),
+        instanceId: defaultInstanceIdForDriver(ProviderDriverKind.make("pi")),
       });
       const piPath = yield* resolveProviderStatusCachePath({
         cacheDir: tempDir,

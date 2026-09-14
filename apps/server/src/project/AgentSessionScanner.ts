@@ -923,9 +923,81 @@ export const make = Effect.gen(function* () {
         recordsRemaining: MAX_METADATA_RECORDS_PER_SOURCE,
         truncated: false,
       };
-      raw.push(...(yield* groupTranscriptsByCwd(source, selectedTranscripts, metadataBudget)));
-      truncated ||= metadataBudget.truncated;
+      if (resolveProviderInstanceEnabled(legacyInstance.config)) {
+        instances.push(legacyInstance);
+      }
     }
+
+    // A shared home contains one copy of each session. Prefer the built-in
+    // instance as its owner, then keep configured order for custom accounts.
+    instances.sort((left, right) => {
+      const leftDefault = left.instanceId === source ? 0 : 1;
+      const rightDefault = right.instanceId === source ? 0 : 1;
+      return leftDefault - rightDefault;
+    });
+    const homes: Array<{ homePath: string; providerInstanceId: ProviderInstanceId }> = [];
+    const seenHomes = new Set<string>();
+    for (const { instanceId, config: instance } of instances) {
+      const homeVariable = "CODEX_HOME";
+      const environmentHome =
+        instance.environment?.findLast((variable) => variable.name === homeVariable)?.value ??
+        hostEnvironment[homeVariable];
+
+      const config = decodeCodexSettings(instance.config ?? {});
+      if (Option.isNone(config)) continue;
+      const codexSettings =
+        config.value.homePath.trim().length === 0 &&
+        config.value.shadowHomePath.trim().length === 0 &&
+        environmentHome?.trim()
+          ? { ...config.value, homePath: environmentHome }
+          : config.value;
+      const layout = yield* resolveCodexHomeLayout(codexSettings).pipe(
+        Effect.provideService(Path.Path, path),
+      );
+      const homePath = layout.sharedHomePath;
+
+      const homeKey = `${source}\0${yield* directoryIdentity(homePath)}`;
+      if (seenHomes.has(homeKey)) continue;
+      seenHomes.add(homeKey);
+      homes.push({ homePath, providerInstanceId: instanceId });
+    }
+
+    const transcriptCandidates: Array<TranscriptCandidate> = [];
+    const baseOperationBudget = Math.floor(
+      MAX_DISCOVERY_OPERATIONS_PER_SOURCE / Math.max(1, homes.length),
+    );
+    const extraOperationBudgets = MAX_DISCOVERY_OPERATIONS_PER_SOURCE % Math.max(1, homes.length);
+    for (const [index, home] of homes.entries()) {
+      const operationBudget = baseOperationBudget + (index < extraOperationBudgets ? 1 : 0);
+      if (operationBudget === 0) {
+        truncated = true;
+        continue;
+      }
+      const discovered = yield* discoverCodexTranscripts(
+        home.homePath,
+        home.providerInstanceId,
+        operationBudget,
+      );
+      truncated ||= discovered.truncated;
+      transcriptCandidates.push(...discovered.transcripts);
+    }
+
+    transcriptCandidates.sort(
+      (left, right) => right.mtimeMs - left.mtimeMs || left.filePath.localeCompare(right.filePath),
+    );
+    if (transcriptCandidates.length > MAX_TRANSCRIPTS_PER_SOURCE) {
+      truncated = true;
+    }
+    // Give each account a turn before taking another file from the same home.
+    const selectedTranscripts = selectMetadataTranscripts(transcriptCandidates);
+    const metadataBudget: MetadataReadBudget = {
+      bytesRemaining: MAX_METADATA_BYTES_PER_SOURCE,
+      operationsRemaining: MAX_METADATA_OPERATIONS_PER_SOURCE,
+      recordsRemaining: MAX_METADATA_RECORDS_PER_SOURCE,
+      truncated: false,
+    };
+    raw.push(...(yield* groupTranscriptsByCwd(source, selectedTranscripts, metadataBudget)));
+    truncated ||= metadataBudget.truncated;
 
     return { candidates: raw, truncated };
   });

@@ -2472,7 +2472,7 @@ it.effect("cascade helper is provider-neutral for Claude and Pi-shaped child pro
       const subagentId = NodeId.make(`node:cascade-helper:${driverKind}:subagent`);
       const childNodeId = NodeId.make(`node:cascade-helper:${driverKind}:child-root`);
       const providerInstanceId = ProviderInstanceId.make(String(driverKind));
-      const terminalStatus = driverKind === "claudeAgent" ? "failed" : "cancelled";
+      const terminalStatus = driverKind === "pi" ? "failed" : "cancelled";
       const subagent: OrchestrationV2Subagent = {
         id: subagentId,
         threadId,
@@ -2559,7 +2559,7 @@ it.effect("cascade helper is provider-neutral for Claude and Pi-shaped child pro
         completedAt: null,
       };
       const childTurnItem: OrchestrationV2TurnItem =
-        driverKind === "claudeAgent"
+        driverKind === "pi"
           ? {
               id: TurnItemId.make(`turn-item:cascade-helper:${driverKind}:child-reasoning`),
               threadId: childThreadId,

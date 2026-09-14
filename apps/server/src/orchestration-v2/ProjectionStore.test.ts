@@ -1387,8 +1387,8 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
       const now = yield* DateTime.now;
       const projectId = ProjectId.make("project:provider-history");
       const threadId = ThreadId.make("thread:provider-history");
-      const claudeInstanceId = ProviderInstanceId.make("claude");
-      const claudeDriver = ProviderDriverKind.make("claudeAgent");
+      const piInstanceId = ProviderInstanceId.make("pi");
+      const piDriver = ProviderDriverKind.make("pi");
       yield* projectionStore.apply({
         id: EventId.make("event:provider-history:thread"),
         type: "thread.created",
@@ -1423,8 +1423,8 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
         // (owned by a node, so not a handoff), then the handoff target.
         { suffix: "claudeAgent", instanceId: providerInstanceId, ownerNodeId: null, seconds: 0 },
         {
-          suffix: "claude-subagent",
-          instanceId: claudeInstanceId,
+          suffix: "pi-subagent",
+          instanceId: piInstanceId,
           ownerNodeId: NodeId.make("node:provider-history"),
           seconds: 1,
         },
@@ -1443,11 +1443,11 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           id: EventId.make(`event:provider-history:${providerThread.suffix}`),
           type: "provider-thread.updated",
           threadId,
-          driver: providerThread.instanceId === claudeInstanceId ? claudeDriver : driver,
+          driver: providerThread.instanceId === piInstanceId ? piDriver : driver,
           occurredAt: createdAt,
           payload: {
             id: ProviderThreadId.make(`provider-thread:provider-history:${providerThread.suffix}`),
-            driver: providerThread.instanceId === claudeInstanceId ? claudeDriver : driver,
+            driver: providerThread.instanceId === piInstanceId ? piDriver : driver,
             providerInstanceId: providerThread.instanceId,
             providerSessionId: null,
             appThreadId: threadId,
@@ -1468,7 +1468,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
       const shell = (yield* projectionStore.getShellSnapshot()).threads.find(
         (thread) => thread.id === threadId,
       );
-      assert.deepEqual(shell?.providerInstanceHistory, [providerInstanceId, claudeInstanceId]);
+      assert.deepEqual(shell?.providerInstanceHistory, [providerInstanceId, piInstanceId]);
     }),
   );
 

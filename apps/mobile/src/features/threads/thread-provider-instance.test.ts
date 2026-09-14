@@ -100,7 +100,7 @@ describe("resolveThreadProviderInstance", () => {
       ],
     ]);
     const thread = {
-      ...makeThread(environmentId, "claudeAgent"),
+      ...makeThread(environmentId, "pi"),
       runtime: {
         status: "running" as const,
         activeRunId: null,

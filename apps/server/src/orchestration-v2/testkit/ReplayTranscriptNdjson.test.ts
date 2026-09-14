@@ -38,14 +38,14 @@ describe("decodeProviderReplayNdjson", () => {
           {"type":"runtime_exit","status":"success"}
         `,
         {
-          provider: "claudeAgent",
-          protocol: "claude-agent-sdk",
+          provider: "pi",
+          protocol: "codex.app-server",
           version: "0.2.111",
           scenario: "entry-only",
         },
       );
 
-      assert.equal(transcript.provider, "claudeAgent");
+      assert.equal(transcript.provider, "pi");
       assert.equal(transcript.entries.length, 2);
     }),
   );

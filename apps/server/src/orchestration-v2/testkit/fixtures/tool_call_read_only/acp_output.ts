@@ -48,8 +48,8 @@ export function assertToolCallReadOnlyAcpOutput(
   );
   assert.isTrue(fileSearches.some((item) => JSON.stringify(item.results ?? []).includes("ES2022")));
   const expectedPaths = [
-    "/tmp/claude-replay-tool_call_read_only/package.json",
-    "/tmp/claude-replay-tool_call_read_only/tsconfig.json",
+    "/tmp/t3-replay-tool_call_read_only/package.json",
+    "/tmp/t3-replay-tool_call_read_only/tsconfig.json",
   ];
   assert.deepEqual(
     fileSearches.map((item) => item.pattern).toSorted(),

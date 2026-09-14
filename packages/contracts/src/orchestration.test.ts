@@ -210,12 +210,12 @@ it.effect("decodes project.meta-updated payloads with explicit default provider"
     const parsed = yield* decodeProjectMetaUpdatedPayload({
       projectId: "project-1",
       defaultModelSelection: {
-        provider: "claudeAgent",
+        provider: "pi",
         model: "claude-opus-4-6",
       },
       updatedAt: "2026-01-01T00:00:00.000Z",
     });
-    assert.strictEqual(parsed.defaultModelSelection?.instanceId, "claudeAgent");
+    assert.strictEqual(parsed.defaultModelSelection?.instanceId, "pi");
   }),
 );
 
@@ -589,14 +589,14 @@ it.effect("decodes thread.meta-updated payloads with explicit provider", () =>
         startedAt: "2026-01-01T00:00:00.000Z",
       },
       modelSelection: {
-        provider: "claudeAgent",
+        provider: "pi",
         model: "claude-opus-4-6",
       },
       updatedAt: "2026-01-01T00:00:00.000Z",
     });
     assert.strictEqual(parsed.previousTitle, "Previous title");
     assert.strictEqual(parsed.titleRegeneration?.requestId, "cmd-title-regenerate");
-    assert.strictEqual(parsed.modelSelection?.instanceId, "claudeAgent");
+    assert.strictEqual(parsed.modelSelection?.instanceId, "pi");
   }),
 );
 
@@ -918,7 +918,7 @@ it.effect("normalizes legacy object-shaped modelSelection.options on decode", ()
       projectId: "project-1",
       title: "Legacy options thread",
       modelSelection: {
-        provider: "claudeAgent",
+        provider: "pi",
         model: "claude-opus-4-6",
         options: {
           effort: "max",
@@ -935,7 +935,7 @@ it.effect("normalizes legacy object-shaped modelSelection.options on decode", ()
       updatedAt: "2026-01-01T00:00:00.000Z",
     });
 
-    assert.strictEqual(parsed.modelSelection.instanceId, ProviderInstanceId.make("claudeAgent"));
+    assert.strictEqual(parsed.modelSelection.instanceId, ProviderInstanceId.make("pi"));
     assert.deepStrictEqual(parsed.modelSelection.options, [
       { id: "effort", value: "max" },
       { id: "fastMode", value: true },

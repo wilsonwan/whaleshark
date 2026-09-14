@@ -324,10 +324,10 @@ describe("orchestration v2 provider switching", () => {
             failedRunOrdinals: new Set([1]),
           }),
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("claudeAgent"),
-            driver: CLAUDE_DRIVER,
-            capabilities: ClaudeProviderCapabilitiesV2,
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            instanceId: ProviderInstanceId.make("pi"),
+            driver: PI_DRIVER,
+            capabilities: PiProviderCapabilitiesV2,
+            modelSelection: PI_MODEL_SELECTION,
             responseByRunOrdinal: { 2: "The imported release marker is violet." },
             capturedTurns,
           }),
@@ -494,7 +494,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:provider-switch:legacy-import:recovery"),
             text: recoveryPrompt,
             attachments: [],
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           });
           return yield* waitForIdle(importedThreadId);
@@ -548,11 +548,11 @@ describe("orchestration v2 provider switching", () => {
             failResume: true,
           }),
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("claudeAgent"),
-            driver: CLAUDE_DRIVER,
-            capabilities: ClaudeProviderCapabilitiesV2,
-            modelSelection: CLAUDE_MODEL_SELECTION,
-            responseByRunOrdinal: { 2: "claude switched response" },
+            instanceId: ProviderInstanceId.make("pi"),
+            driver: PI_DRIVER,
+            capabilities: PiProviderCapabilitiesV2,
+            modelSelection: PI_MODEL_SELECTION,
+            responseByRunOrdinal: { 2: "pi switched response" },
             capturedTurns,
           }),
         ]);
@@ -587,12 +587,12 @@ describe("orchestration v2 provider switching", () => {
             type: "message.dispatch",
             createdBy: "user",
             creationSource: "web",
-            commandId: CommandId.make("command:provider-switch:claude"),
+            commandId: CommandId.make("command:provider-switch:pi"),
             threadId,
-            messageId: MessageId.make("message:provider-switch:claude"),
-            text: claudePrompt,
+            messageId: MessageId.make("message:provider-switch:pi"),
+            text: piPrompt,
             attachments: [],
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
           {
@@ -669,7 +669,7 @@ describe("orchestration v2 provider switching", () => {
           projection.turnItems
             .filter((item) => item.type === "user_message")
             .map((item) => item.text),
-          [firstPrompt, claudePrompt, returnPrompt],
+          [firstPrompt, piPrompt, returnPrompt],
         );
         assert.deepEqual(
           projection.providerThreads.map((providerThread) => [
@@ -687,7 +687,7 @@ describe("orchestration v2 provider switching", () => {
         assert.include(turns[1]?.text ?? "", "pi before switch");
         assert.include(turns[1]?.text ?? "", claudePrompt);
         assert.include(turns[2]?.text ?? "", "Context handoff (delta_since_target_last_seen):");
-        assert.include(turns[2]?.text ?? "", "claude switched response");
+        assert.include(turns[2]?.text ?? "", "pi switched response");
         assert.include(turns[2]?.text ?? "", returnPrompt);
         assert.notInclude(turns[2]?.text ?? "", "pi before switch");
         assert.equal(turns[0]?.providerThreadId, turns[2]?.providerThreadId);
@@ -714,10 +714,10 @@ describe("orchestration v2 provider switching", () => {
             capturedTurns,
           }),
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("claudeAgent"),
-            driver: CLAUDE_DRIVER,
-            capabilities: ClaudeProviderCapabilitiesV2,
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            instanceId: ProviderInstanceId.make("pi"),
+            driver: PI_DRIVER,
+            capabilities: PiProviderCapabilitiesV2,
+            modelSelection: PI_MODEL_SELECTION,
             responseByRunOrdinal: { 1: "I will remember violet." },
             capturedTurns,
           }),
@@ -731,7 +731,7 @@ describe("orchestration v2 provider switching", () => {
             threadId: sourceThreadId,
             projectId,
             title: "Cross-provider fork source",
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             runtimeMode: "full-access",
             interactionMode: "default",
             branch: null,
@@ -746,7 +746,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-fork:source"),
             text: sourcePrompt,
             attachments: [],
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
           {
@@ -998,10 +998,10 @@ describe("orchestration v2 provider switching", () => {
             capturedTurns,
           }),
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("claudeAgent"),
-            driver: CLAUDE_DRIVER,
-            capabilities: ClaudeProviderCapabilitiesV2,
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            instanceId: ProviderInstanceId.make("pi"),
+            driver: PI_DRIVER,
+            capabilities: PiProviderCapabilitiesV2,
+            modelSelection: PI_MODEL_SELECTION,
             responseByRunOrdinal: { 2: "I will remember violet." },
             capturedTurns,
           }),
@@ -1042,7 +1042,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-merge:second-source"),
             text: secondSourcePrompt,
             attachments: [],
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
           {

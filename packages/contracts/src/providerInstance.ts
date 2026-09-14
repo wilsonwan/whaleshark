@@ -43,7 +43,7 @@ const PROVIDER_SLUG_MAX_CHARS = 64;
  * dashes, underscores. The first character must be a letter so slugs remain
  * JS-identifier friendly when used as object keys, log fields, or telemetry
  * attributes. Mixed case is permitted so historical driver kinds (e.g.
- * `claudeAgent`) can be used verbatim during the migration and so external
+ * historical slugs) can be used verbatim during the migration and so external
  * fork authors retain reasonable freedom.
  */
 const PROVIDER_SLUG_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/;

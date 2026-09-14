@@ -209,8 +209,8 @@ describe("mobile model options", () => {
           models: [],
         },
         {
-          instanceId: "claudeAgent",
-          driver: "claudeAgent",
+          instanceId: "pi",
+          driver: "pi",
           enabled: false,
           installed: true,
           auth: { status: "authenticated" },
@@ -224,7 +224,7 @@ describe("mobile model options", () => {
       model: "xai/grok-4.6",
     };
     const disabled = {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "claude-sonnet-5",
     };
     const removed = {

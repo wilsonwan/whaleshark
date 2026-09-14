@@ -156,17 +156,17 @@ it("uses portable handoff for incompatible continuation identities", () => {
 });
 
 it("uses portable handoff for cross-driver transitions", () => {
-  const claudeDriver = ProviderDriverKind.make("claude");
+  const acpDriver = ProviderDriverKind.make("acpRegistry");
   assert.deepEqual(
     decideProviderSessionTransition({
       current: base,
       target: {
         ...base,
-        driver: claudeDriver,
-        continuationIdentity: { driverKind: claudeDriver, continuationKey: "claude:account:one" },
+        driver: acpDriver,
+        continuationIdentity: { driverKind: acpDriver, continuationKey: "acpRegistry:account:one" },
         modelSelection: {
-          instanceId: ProviderInstanceId.make("claude"),
-          model: "claude-opus-4-1",
+          instanceId: ProviderInstanceId.make("acpRegistry"),
+          model: "anthropic/claude-sonnet",
         },
         available: true,
       },

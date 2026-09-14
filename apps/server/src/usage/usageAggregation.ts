@@ -78,8 +78,8 @@ export interface AggregateResult {
 /**
  * Accumulates records across many files.
  *
- * De-duplication is global across the whole scan, not per file: Claude Code
- * copies a message's records forward when a session is resumed or forked, so
+ * De-duplication is global across the whole scan, not per file: a CLI can
+ * copy a message's records forward when a session is resumed or forked, so
  * the same `dedupeKey` legitimately appears in several transcripts.
  */
 export class UsageAggregator {

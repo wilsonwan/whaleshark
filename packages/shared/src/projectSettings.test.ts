@@ -48,9 +48,9 @@ describe("resolveProjectSettings", () => {
   });
 
   it("keeps the environment text generation model when the override's provider is disabled", () => {
-    const disabledSelection = createModelSelection(ProviderInstanceId.make("claudeAgent"), "opus");
+    const disabledSelection = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.5");
     const settings = applyServerSettingsPatch(DEFAULT_SERVER_SETTINGS, {
-      providers: { claudeAgent: { enabled: false } },
+      providers: { codex: { enabled: false } },
       projectSettingsOverrides: {
         [projectId]: { textGenerationModelSelection: disabledSelection },
       },
@@ -101,9 +101,9 @@ describe("resolveProjectSettings", () => {
   });
 
   it("keeps the environment default model when the override's provider is disabled", () => {
-    const disabledSelection = createModelSelection(ProviderInstanceId.make("claudeAgent"), "opus");
+    const disabledSelection = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.5");
     const settings = applyServerSettingsPatch(DEFAULT_SERVER_SETTINGS, {
-      providers: { claudeAgent: { enabled: false } },
+      providers: { codex: { enabled: false } },
       projectSettingsOverrides: { [projectId]: { defaultModelSelection: disabledSelection } },
     });
     const resolved = resolveProjectSettings(settings, projectId);
