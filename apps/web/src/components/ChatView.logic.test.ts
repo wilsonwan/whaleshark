@@ -1502,7 +1502,7 @@ describe("resolveComposerProviderSelection", () => {
   it.each(["missing", "disabled"] as const)(
     "does not move imported history to another driver when its instance is %s",
     (state) => {
-      const imported = entry("claudeAgent", "claude_work", { enabled: false });
+      const imported = entry("opencode", "opencode_work", { enabled: false });
       const other = entry("claudeAgent");
       const entries = state === "missing" ? [other] : [other, imported];
       const thread = importedThread(imported.instanceId);

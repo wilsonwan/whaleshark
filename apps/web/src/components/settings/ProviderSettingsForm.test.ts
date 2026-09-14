@@ -15,7 +15,7 @@ describe("ProviderSettingsForm helpers", () => {
     expect(deriveProviderSettingsFields(claudeAgent!).map((field) => field.key)).toEqual([
       "binaryPath",
       "homePath",
-      "shadowHomePath",
+      "autoCompactWindow",
       "launchArgs",
     ]);
   });

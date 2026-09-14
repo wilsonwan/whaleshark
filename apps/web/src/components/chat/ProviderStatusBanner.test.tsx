@@ -151,7 +151,7 @@ describe("getProviderStatusMessage", () => {
         message: "",
         setup: { canAuthenticate: true, canInstall: true },
       }),
-    ).toBe("Open provider setup to install Claude on this environment.");
+    ).toBe("Open provider setup to install Claude Agent on this environment.");
   });
 
   it("keeps CLI sign-in advice for a provider without integrated setup", () => {

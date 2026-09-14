@@ -40,7 +40,7 @@ describe("ComposerCommandMenu", () => {
             provider: ProviderDriverKind.make("claudeAgent"),
             skill: {
               name: "browser",
-              path: "/Users/maria/.claude/plugins/browser/skills/browser/SKILL.md",
+              path: "/Users/maria/.agents/plugins/browser/skills/browser/SKILL.md",
               scope: "user",
               enabled: true,
             },

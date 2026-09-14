@@ -182,14 +182,14 @@ describe("AcpRegistrySearchStep", () => {
 
   it("keeps same-query refreshes visible and announced while retaining results", () => {
     const first = render();
-    const suggestion = visitElements(first, (element) => element.props.children === "Claude");
+    const suggestion = visitElements(first, (element) => element.props.children === "Copilot");
     (suggestion?.props.onClick as (() => void) | undefined)?.();
 
     state.result = { agents: [gemini] };
     const resultTree = render();
     expect(state.search).toHaveBeenCalledWith({
       environmentId,
-      input: { query: "Claude" },
+      input: { query: "Copilot" },
     });
     const form = visitElements(resultTree, (element) => element.type === "form");
     (form?.props.onSubmit as ((event: { preventDefault: () => void }) => void) | undefined)?.({

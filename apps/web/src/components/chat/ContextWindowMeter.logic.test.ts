@@ -176,7 +176,7 @@ describe("shouldOfferResumeCompaction", () => {
   it("does not show Claude's resume prompt for another provider", () => {
     expect(
       shouldOfferResumeCompaction({
-        provider: "claudeAgent",
+        provider: "opencode",
         usedTokens: 300_000,
         updatedAt: "2026-08-24T09:00:00.000Z",
         now,
