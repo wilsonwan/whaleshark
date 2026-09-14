@@ -10,7 +10,6 @@ import { claudeResultIsErrorInput } from "./claude_result_is_error/input.ts";
 import { assertClaudeResultIsErrorOutput } from "./claude_result_is_error/output.ts";
 import { assertClaudeMessageSteeringOutput } from "./message_steering/claude_output.ts";
 import { assertMessageSteeringOutput } from "./message_steering/codex_output.ts";
-import { assertCursorMessageSteeringOutput } from "./message_steering/cursor_output.ts";
 import { assertAcpMessageSteeringOutput } from "./message_steering/acp_output.ts";
 import { messageSteeringInput } from "./message_steering/input.ts";
 import { assertMultiTurnClaudeOutput } from "./multi_turn/claude_output.ts";
@@ -24,7 +23,6 @@ import { assertPlanQuestionsOutput } from "./plan_questions/codex_output.ts";
 import { assertOpenCodePlanQuestionsOutput } from "./plan_questions/opencode_output.ts";
 import { planQuestionsInput } from "./plan_questions/input.ts";
 import { assertProposedPlanOutput } from "./proposed_plan/codex_output.ts";
-import { assertProposedPlanCursorOutput } from "./proposed_plan/cursor_output.ts";
 import { proposedPlanInput } from "./proposed_plan/input.ts";
 import { assertQueuedCancelledWhileActiveOutput } from "./queued_cancelled_while_active/codex_output.ts";
 import { queuedCancelledWhileActiveInput } from "./queued_cancelled_while_active/input.ts";
@@ -36,7 +34,6 @@ import { simpleInput } from "./simple/input.ts";
 import { assertSubagentOutput } from "./subagent/codex_output.ts";
 import { assertClaudeSubagentOutput } from "./subagent/claude_output.ts";
 import { subagentInput } from "./subagent/input.ts";
-import { assertCursorSubagentOutput } from "./subagent/cursor_output.ts";
 import { assertSubagentContinueOutput } from "./subagent_continue/codex_output.ts";
 import { subagentContinueInput } from "./subagent_continue/input.ts";
 import { assertSubagentV2Output } from "./subagent_v2/codex_output.ts";
@@ -46,11 +43,10 @@ import { assertClaudeThreadRollbackOutput } from "./thread_rollback/claude_outpu
 import { assertThreadRollbackOutput } from "./thread_rollback/codex_output.ts";
 import { threadRollbackInput } from "./thread_rollback/input.ts";
 import { assertTodoListOutput } from "./todo_list/codex_output.ts";
-import { assertTodoListCursorOutput } from "./todo_list/cursor_output.ts";
 import { assertTodoListAcpOutput } from "./todo_list/acp_output.ts";
 import { todoListInput } from "./todo_list/input.ts";
 import { assertToolCallReadOnlyClaudeOutput } from "./tool_call_read_only/claude_output.ts";
-import { assertToolCallReadOnlyCursorOutput } from "./tool_call_read_only/cursor_output.ts";
+import { assertToolCallReadOnlyAcpOutput } from "./tool_call_read_only/acp_output.ts";
 import { toolCallReadOnlyInput } from "./tool_call_read_only/input.ts";
 import { assertToolCallReadOnlyOnRequestClaudeOutput } from "./tool_call_read_only_on_request/claude_output.ts";
 import { assertToolCallReadOnlyOnRequestOutput } from "./tool_call_read_only_on_request/codex_output.ts";
@@ -66,7 +62,6 @@ import { assertTurnInterruptOutput } from "./turn_interrupt/codex_output.ts";
 import { turnInterruptInput } from "./turn_interrupt/input.ts";
 import { assertTurnInterruptMidToolClaudeOutput } from "./turn_interrupt_mid_tool/claude_output.ts";
 import { assertTurnInterruptMidToolCodexOutput } from "./turn_interrupt_mid_tool/codex_output.ts";
-import { assertTurnInterruptMidToolCursorOutput } from "./turn_interrupt_mid_tool/cursor_output.ts";
 import { turnInterruptMidToolInput } from "./turn_interrupt_mid_tool/input.ts";
 import { assertTurnInterruptRestartClaudeOutput } from "./turn_interrupt_restart/claude_output.ts";
 import { turnInterruptRestartInput } from "./turn_interrupt_restart/input.ts";
@@ -77,7 +72,6 @@ import {
   ACP_REGISTRY_MODEL_SELECTION,
   CLAUDE_MODEL_SELECTION,
   CODEX_MODEL_SELECTION,
-  CURSOR_MODEL_SELECTION,
   OPENCODE_MODEL_SELECTION,
   READ_ONLY_NEVER_POLICY,
   READ_ONLY_ON_REQUEST_POLICY,
@@ -178,12 +172,6 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertSimpleClaudeOutput,
       },
       {
-        driver: ProviderDriverKind.make("cursor"),
-        transcriptFile: new URL("./simple/cursor_transcript.ndjson", import.meta.url),
-        modelSelection: CURSOR_MODEL_SELECTION,
-        assertOutput: assertSimpleOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
         transcriptFile: new URL("./simple/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
@@ -209,18 +197,11 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertToolCallReadOnlyClaudeOutput,
       },
       {
-        driver: ProviderDriverKind.make("cursor"),
-        transcriptFile: new URL("./tool_call_read_only/cursor_transcript.ndjson", import.meta.url),
-        modelSelection: CURSOR_MODEL_SELECTION,
-        runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
-        assertOutput: assertToolCallReadOnlyCursorOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
         transcriptFile: new URL("./tool_call_read_only/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
         runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
-        assertOutput: assertToolCallReadOnlyCursorOutput,
+        assertOutput: assertToolCallReadOnlyAcpOutput,
       },
     ],
   },
@@ -329,13 +310,6 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         modelSelection: CLAUDE_MODEL_SELECTION,
         assertOutput: assertClaudeSubagentOutput,
       },
-      {
-        driver: ProviderDriverKind.make("cursor"),
-        transcriptFile: new URL("./subagent/cursor_transcript.ndjson", import.meta.url),
-        modelSelection: CURSOR_MODEL_SELECTION,
-        runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
-        assertOutput: assertCursorSubagentOutput,
-      },
     ],
   },
   {
@@ -418,12 +392,6 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertMultiTurnClaudeOutput,
       },
       {
-        driver: ProviderDriverKind.make("cursor"),
-        transcriptFile: new URL("./multi_turn/cursor_transcript.ndjson", import.meta.url),
-        modelSelection: CURSOR_MODEL_SELECTION,
-        assertOutput: assertMultiTurnOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
         transcriptFile: new URL("./multi_turn/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
@@ -474,12 +442,6 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         assertOutput: assertQueuedTurnOutput,
       },
       {
-        driver: ProviderDriverKind.make("cursor"),
-        transcriptFile: new URL("./queued_turn/cursor_transcript.ndjson", import.meta.url),
-        modelSelection: CURSOR_MODEL_SELECTION,
-        assertOutput: assertQueuedTurnOutput,
-      },
-      {
         driver: ProviderDriverKind.make("acpRegistry"),
         transcriptFile: new URL("./queued_turn/acp_transcript.ndjson", import.meta.url),
         modelSelection: ACP_REGISTRY_MODEL_SELECTION,
@@ -497,13 +459,6 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         modelSelection: CODEX_MODEL_SELECTION,
         runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
         assertOutput: assertTodoListOutput,
-      },
-      {
-        driver: ProviderDriverKind.make("cursor"),
-        transcriptFile: new URL("./todo_list/cursor_transcript.ndjson", import.meta.url),
-        modelSelection: CURSOR_MODEL_SELECTION,
-        runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
-        assertOutput: assertTodoListCursorOutput,
       },
       {
         driver: ProviderDriverKind.make("acpRegistry"),
@@ -562,13 +517,6 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
         assertOutput: assertProposedPlanOutput,
       },
-      {
-        driver: ProviderDriverKind.make("cursor"),
-        transcriptFile: new URL("./proposed_plan/cursor_transcript.ndjson", import.meta.url),
-        modelSelection: CURSOR_MODEL_SELECTION,
-        runtimePolicyOverride: READ_ONLY_NEVER_POLICY,
-        assertOutput: assertProposedPlanCursorOutput,
-      },
     ],
   },
   {
@@ -586,12 +534,6 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         transcriptFile: new URL("./message_steering/claude_transcript.ndjson", import.meta.url),
         modelSelection: CLAUDE_MODEL_SELECTION,
         assertOutput: assertClaudeMessageSteeringOutput,
-      },
-      {
-        driver: ProviderDriverKind.make("cursor"),
-        transcriptFile: new URL("./message_steering/cursor_transcript.ndjson", import.meta.url),
-        modelSelection: CURSOR_MODEL_SELECTION,
-        assertOutput: assertCursorMessageSteeringOutput,
       },
       {
         driver: ProviderDriverKind.make("acpRegistry"),
@@ -658,16 +600,6 @@ export const ORCHESTRATOR_REPLAY_FIXTURES: ReadonlyArray<OrchestratorReplayFixtu
         modelSelection: CLAUDE_MODEL_SELECTION,
         runtimePolicyOverride: WORKSPACE_NEVER_POLICY,
         assertOutput: assertTurnInterruptMidToolClaudeOutput,
-      },
-      {
-        driver: ProviderDriverKind.make("cursor"),
-        transcriptFile: new URL(
-          "./turn_interrupt_mid_tool/cursor_transcript.ndjson",
-          import.meta.url,
-        ),
-        modelSelection: CURSOR_MODEL_SELECTION,
-        runtimePolicyOverride: WORKSPACE_NEVER_POLICY,
-        assertOutput: assertTurnInterruptMidToolCursorOutput,
       },
     ],
   },

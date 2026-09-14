@@ -26,7 +26,7 @@ nodeServicesIt("ACP native logging", (it) => {
       const makeLogger = yield* makeAcpNativeLoggerFactory();
       const logger = makeLogger({
         nativeEventLogger,
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: ThreadId.make("thread-1"),
         verboseProtocolLogging: true,
       });
@@ -105,7 +105,7 @@ nodeServicesIt("ACP native logging", (it) => {
           write: (event) => Effect.sync(() => void records.push(event)),
           close: () => Effect.void,
         },
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: ThreadId.make("thread-1"),
         verboseProtocolLogging: true,
       });
@@ -162,7 +162,7 @@ nodeServicesIt("ACP native logging", (it) => {
           write: (event) => Effect.sync(() => void records.push(event)),
           close: () => Effect.void,
         },
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: ThreadId.make("thread-1"),
         verboseProtocolLogging: true,
       });
@@ -255,7 +255,7 @@ nodeServicesIt("ACP native logging", (it) => {
           write: () => Effect.die(new Error(secret)),
           close: () => Effect.void,
         },
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: ThreadId.make("thread-1"),
       });
       const requestLogger = logger.requestLogger;
@@ -284,7 +284,7 @@ nodeServicesIt("ACP native logging", (it) => {
           write: () => Effect.interrupt,
           close: () => Effect.void,
         },
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: ThreadId.make("thread-1"),
       });
       const requestLogger = logger.requestLogger;

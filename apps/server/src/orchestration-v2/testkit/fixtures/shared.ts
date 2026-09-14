@@ -280,15 +280,15 @@ export const CLAUDE_MODEL_SELECTION = {
   model: "claude-sonnet-4-6",
 } satisfies ModelSelection;
 
-export const CURSOR_MODEL_SELECTION = {
-  instanceId: ProviderInstanceId.make("cursor"),
-  model: "composer-2.5",
-} satisfies ModelSelection;
-
 export const OPENCODE_MODEL_SELECTION = {
   instanceId: ProviderInstanceId.make("opencode"),
   model: "openai/gpt-5.4-mini",
   options: [{ id: "agent", value: "build" }],
+} satisfies ModelSelection;
+
+export const PI_MODEL_SELECTION = {
+  instanceId: ProviderInstanceId.make("pi"),
+  model: "default",
 } satisfies ModelSelection;
 
 export const ACP_REGISTRY_MODEL_SELECTION = {

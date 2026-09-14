@@ -21,8 +21,8 @@ describe("buildRuntimeInstructions", () => {
   });
 
   it.each([undefined, "", "auto", "default"])("omits unresolved model %s", (model) => {
-    const instructions = buildRuntimeInstructions({ harness: "Cursor", model });
-    expect(instructions).toContain("through the Cursor harness.");
+    const instructions = buildRuntimeInstructions({ harness: "Codex", model });
+    expect(instructions).toContain("through the Codex harness.");
     expect(instructions).not.toContain("reasoning effort");
   });
 });

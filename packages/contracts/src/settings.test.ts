@@ -598,19 +598,23 @@ describe("provider enabled defaults", () => {
     const decoded = decodeServerSettings({});
     expect(decoded.providers.codex.enabled).toBe(true);
     expect(decoded.providers.claudeAgent.enabled).toBe(true);
-    expect(decoded.providers.cursor.enabled).toBe(false);
     expect(decoded.providers.pi.enabled).toBe(false);
     expect(decoded.providers.opencode.enabled).toBe(false);
   });
 
-  it("ignores a legacy providers.grok entry and never encodes one", () => {
-    const decoded = decodeServerSettings({ providers: { grok: { enabled: true } } });
+  it("ignores legacy providers.grok and providers.cursor entries and never encodes them", () => {
+    const decoded = decodeServerSettings({
+      providers: { grok: { enabled: true }, cursor: { enabled: true } },
+    });
 
     expect(decoded.providers).not.toHaveProperty("grok");
-    expect(encodeServerSettings(decoded).providers).not.toHaveProperty("grok");
+    expect(decoded.providers).not.toHaveProperty("cursor");
+    const encoded = encodeServerSettings(decoded).providers;
+    expect(encoded).not.toHaveProperty("grok");
+    expect(encoded).not.toHaveProperty("cursor");
   });
 
-  it("keeps Cursor enabled when an existing user explicitly opted in", () => {
+  it("keeps a persisted Cursor instance envelope readable after the provider was removed", () => {
     const cursor = ProviderDriverKind.make("cursor");
     const cursorId = ProviderInstanceId.make("cursor");
     const decoded = decodeServerSettings({
@@ -620,7 +624,8 @@ describe("provider enabled defaults", () => {
       },
     });
 
-    expect(decoded.providers.cursor.enabled).toBe(true);
+    expect(decoded.providers).not.toHaveProperty("cursor");
+    expect(decoded.providerInstances[cursorId]?.driver).toBe("cursor");
     expect(resolveProviderInstanceEnabled(decoded.providerInstances[cursorId]!)).toBe(true);
   });
 
@@ -660,40 +665,6 @@ describe("ServerSettings worktree defaults", () => {
     expect(
       decodeServerSettingsPatch({ newWorktreesStartFromOrigin: false }).newWorktreesStartFromOrigin,
     ).toBe(false);
-  });
-});
-
-describe("ServerSettings Cursor legacy settings", () => {
-  it("ignores obsolete Cursor CLI settings when reading server settings", () => {
-    const decoded = decodeServerSettings({
-      providers: {
-        cursor: {
-          enabled: true,
-          binaryPath: "cursor-agent",
-          apiEndpoint: "http://127.0.0.1:3774",
-        },
-      },
-    });
-
-    expect(decoded.providers.cursor.enabled).toBe(true);
-    expect(decoded.providers.cursor).not.toHaveProperty("binaryPath");
-    expect(decoded.providers.cursor).not.toHaveProperty("apiEndpoint");
-  });
-
-  it("ignores obsolete Cursor CLI settings in patches", () => {
-    const patch = decodeServerSettingsPatch({
-      providers: {
-        cursor: {
-          enabled: true,
-          binaryPath: "cursor-agent",
-          apiEndpoint: "http://127.0.0.1:3774",
-        },
-      },
-    });
-
-    expect(patch.providers?.cursor?.enabled).toBe(true);
-    expect(patch.providers?.cursor).not.toHaveProperty("binaryPath");
-    expect(patch.providers?.cursor).not.toHaveProperty("apiEndpoint");
   });
 });
 

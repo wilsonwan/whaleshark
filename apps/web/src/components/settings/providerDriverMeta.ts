@@ -2,21 +2,12 @@ import {
   AcpRegistrySettings,
   ClaudeSettings,
   CodexSettings,
-  CursorSettings,
   OpenCodeSettings,
   PiSettings,
   ProviderDriverKind,
 } from "@t3tools/contracts";
 import type * as Schema from "effect/Schema";
-import {
-  ACPRegistryIcon,
-  ClaudeAI,
-  CursorIcon,
-  type Icon,
-  OpenAI,
-  OpenCodeIcon,
-  PiAgentIcon,
-} from "../Icons";
+import { ACPRegistryIcon, ClaudeAI, type Icon, OpenAI, OpenCodeIcon, PiAgentIcon } from "../Icons";
 
 type ProviderSettingsSchema = {
   readonly fields: Readonly<Record<string, Schema.Top>>;
@@ -66,21 +57,6 @@ const PROVIDER_CLIENT_DEFINITIONS: readonly ProviderClientDefinition[] = [
     label: "Claude",
     icon: ClaudeAI,
     settingsSchema: ClaudeSettings,
-  },
-  {
-    value: ProviderDriverKind.make("cursor"),
-    label: "Cursor",
-    icon: CursorIcon,
-    settingsSchema: CursorSettings,
-    environmentFields: [
-      {
-        name: "CURSOR_API_KEY",
-        label: "Cursor API key",
-        description: "Required by the Cursor Agent SDK.",
-        placeholder: "Paste API key",
-        sensitive: true,
-      },
-    ],
   },
   {
     value: ProviderDriverKind.make("acpRegistry"),

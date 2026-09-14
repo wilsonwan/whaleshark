@@ -96,12 +96,7 @@ export function materializeReplayTranscriptRuntimeInstructions(
   transcript: ProviderReplayTranscript,
   runtime: { readonly driver: ProviderDriverKind; readonly model: string },
 ): ProviderReplayTranscript {
-  const harness =
-    runtime.driver === "cursor"
-      ? "Cursor"
-      : runtime.driver === "acpRegistry"
-        ? "acpRegistry"
-        : undefined;
+  const harness = runtime.driver === "acpRegistry" ? "acpRegistry" : undefined;
   if (harness === undefined) return transcript;
   const instructions = buildRuntimeInstructions({ harness, model: runtime.model });
 
@@ -111,17 +106,6 @@ export function materializeReplayTranscriptRuntimeInstructions(
       if (entry.type !== "expect_outbound") return entry;
       const frame = entry.frame;
       if (typeof frame !== "object" || frame === null) return entry;
-      if (
-        runtime.driver === "cursor" &&
-        "type" in frame &&
-        frame.type === "run.start" &&
-        "message" in frame &&
-        typeof frame.message === "string"
-      ) {
-        return frame.message.endsWith(instructions)
-          ? entry
-          : { ...entry, frame: { ...frame, message: `${frame.message}\n\n${instructions}` } };
-      }
       if (
         "method" in frame &&
         frame.method === "session/prompt" &&

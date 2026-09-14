@@ -29,7 +29,7 @@ describe("AcpCoreRuntimeEvents", () => {
 
     const openedEvent = makeAcpRequestOpenedEvent({
       stamp,
-      provider: ProviderDriverKind.make("cursor"),
+      provider: ProviderDriverKind.make("acpRegistry"),
       threadId: "thread-1" as never,
       turnId,
       requestId: RuntimeRequestId.make("request-1"),
@@ -52,7 +52,7 @@ describe("AcpCoreRuntimeEvents", () => {
     expect(
       makeAcpRequestResolvedEvent({
         stamp,
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: "thread-1" as never,
         turnId,
         requestId: RuntimeRequestId.make("request-1"),
@@ -105,7 +105,7 @@ describe("AcpCoreRuntimeEvents", () => {
       const permissionRequest = { kind };
       const request = {
         stamp,
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: "thread-1" as never,
         turnId: TurnId.make("turn-1"),
         requestId: RuntimeRequestId.make(`request-${kind}`),
@@ -145,7 +145,7 @@ describe("AcpCoreRuntimeEvents", () => {
     expect(
       makeAcpPlanUpdatedEvent({
         stamp,
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: "thread-1" as never,
         turnId,
         payload: {
@@ -153,21 +153,21 @@ describe("AcpCoreRuntimeEvents", () => {
           kind: "items",
           plan: [{ step: "Inspect state", status: "inProgress" }],
         },
-        source: "acp.cursor.extension",
-        method: "cursor/update_todos",
+        source: "acp.example.extension",
+        method: "example/update_todos",
         rawPayload: { todos: [] },
       }),
     ).toMatchObject({
       type: "turn.plan.updated",
       raw: {
-        method: "cursor/update_todos",
+        method: "example/update_todos",
       },
     });
 
     expect(
       makeAcpToolCallEvent({
         stamp,
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: "thread-1" as never,
         turnId,
         toolCall: {
@@ -191,7 +191,7 @@ describe("AcpCoreRuntimeEvents", () => {
     expect(
       makeAcpContentDeltaEvent({
         stamp,
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: "thread-1" as never,
         turnId,
         itemId: "assistant:session-1:segment:0",
@@ -209,7 +209,7 @@ describe("AcpCoreRuntimeEvents", () => {
     expect(
       makeAcpAssistantItemEvent({
         stamp,
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: "thread-1" as never,
         turnId,
         itemId: "assistant:session-1:segment:0",
@@ -229,7 +229,7 @@ describe("AcpCoreRuntimeEvents", () => {
     expect(
       makeAcpContentDeltaEvent({
         stamp: { eventId: "thought-1" as never, createdAt: "2026-09-02T00:00:00.000Z" },
-        provider: ProviderDriverKind.make("cursor"),
+        provider: ProviderDriverKind.make("acpRegistry"),
         threadId: "thread-1" as never,
         turnId: TurnId.make("turn-1"),
         streamKind: "reasoning_text",

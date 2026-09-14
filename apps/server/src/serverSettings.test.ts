@@ -682,7 +682,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       assert.isFalse(settings.providers.pi.enabled);
       assert.isTrue(settings.providers.opencode.enabled);
-      assert.isFalse(settings.providers.cursor.enabled);
       assert.equal(settings.providers.opencode.serverUrl, "http://127.0.0.1:4096");
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
@@ -694,18 +693,20 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providerInstances":{"cursor_work":{"driver":"cursor","config":{}},"pi":{"driver":"pi","config":{}},"opencode_work":{"driver":"opencode","config":{"serverUrl":"http://127.0.0.1:4096"}},"opencode_unused":{"driver":"opencode","config":{}}}}',
+        '{"providerInstances":{"example_work":{"driver":"example","config":{}},"pi":{"driver":"pi","config":{}},"opencode_work":{"driver":"opencode","config":{"serverUrl":"http://127.0.0.1:4096"}},"opencode_unused":{"driver":"opencode","config":{}}}}',
       );
-      yield* recordProviderUsage("cursor", "cursor_work");
+      yield* recordProviderUsage("example", "example_work");
       yield* recordProviderUsage("opencode", "opencode_work");
 
       const settings = yield* serverSettings.getSettings;
 
-      assert.isTrue(settings.providers.cursor.enabled);
-      assert.isTrue(settings.providerInstances[ProviderInstanceId.make("cursor_work")]?.enabled);
       assert.isTrue(settings.providerInstances[ProviderInstanceId.make("opencode_work")]?.enabled);
-      // History restoration is scoped to the opt-in drivers above; an instance
-      // for any other driver stays on its driver default.
+      // A driver this build no longer ships keeps its row untouched: history
+      // restoration never runs for it, and unknown drivers stay enabled.
+      assert.deepEqual(settings.providerInstances[ProviderInstanceId.make("example_work")], {
+        driver: ProviderDriverKind.make("example"),
+        config: {},
+      });
       const pi = settings.providerInstances[ProviderInstanceId.make("pi")];
       assert.isDefined(pi);
       assert.isFalse(resolveProviderInstanceEnabled(pi));
@@ -722,20 +723,17 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providers":{"pi":{"enabled":false},"opencode":{"enabled":false},"cursor":{"enabled":false}},"providerInstances":{"pi":{"driver":"pi","enabled":false,"config":{}},"opencode":{"driver":"opencode","config":{"enabled":false}},"cursor":{"driver":"cursor","enabled":false,"config":{}}}}',
+        '{"providers":{"pi":{"enabled":false},"opencode":{"enabled":false}},"providerInstances":{"pi":{"driver":"pi","enabled":false,"config":{}},"opencode":{"driver":"opencode","config":{"enabled":false}}}}',
       );
       yield* recordProviderUsage("pi");
       yield* recordProviderUsage("opencode");
-      yield* recordProviderUsage("cursor");
 
       const settings = yield* serverSettings.getSettings;
 
       assert.isFalse(settings.providers.pi.enabled);
       assert.isFalse(settings.providers.opencode.enabled);
-      assert.isFalse(settings.providers.cursor.enabled);
       assert.isFalse(settings.providerInstances[ProviderInstanceId.make("pi")]?.enabled);
       assert.isFalse(settings.providerInstances[ProviderInstanceId.make("opencode")]?.enabled);
-      assert.isFalse(settings.providerInstances[ProviderInstanceId.make("cursor")]?.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
 
@@ -768,7 +766,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       assert.isFalse(settings.providers.pi.enabled);
       assert.isFalse(settings.providers.opencode.enabled);
-      assert.isFalse(settings.providers.cursor.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
 
@@ -780,7 +777,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const settings = yield* serverSettings.getSettings;
 
       assert.isTrue(settings.providers.opencode.enabled);
-      assert.isFalse(settings.providers.cursor.enabled);
       assert.isFalse(settings.providers.pi.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
@@ -791,13 +787,12 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const fileSystem = yield* FileSystem.FileSystem;
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
       yield* fileSystem.writeFileString(serverConfig.settingsPath, "{invalid json");
-      yield* recordProviderUsage("cursor");
+      yield* recordProviderUsage("opencode");
 
       const settings = yield* serverSettings.getSettings;
 
-      assert.isTrue(settings.providers.cursor.enabled);
+      assert.isTrue(settings.providers.opencode.enabled);
       assert.isFalse(settings.providers.pi.enabled);
-      assert.isFalse(settings.providers.opencode.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
 
@@ -808,14 +803,15 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"addProjectBaseDirectory":42,"providers":{"cursor":{"enabled":false},"opencode":{"enabled":true}}}',
+        '{"addProjectBaseDirectory":42,"providers":{"opencode":{"enabled":true}}}',
       );
-      yield* recordProviderUsage("cursor");
 
       const settings = yield* serverSettings.getSettings;
 
-      assert.isFalse(settings.providers.cursor.enabled);
+      // The opt-in flag survives its invalid sibling field instead of the whole
+      // file being discarded.
       assert.isTrue(settings.providers.opencode.enabled);
+      // Providers the restore path does not cover fall back to their defaults.
       assert.isFalse(settings.providers.pi.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
@@ -847,7 +843,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       assert.isFalse(settings.providers.pi.enabled);
       assert.isTrue(settings.providers.opencode.enabled);
-      assert.isFalse(settings.providers.cursor.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
 
@@ -879,7 +874,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       yield* serverSettings.updateSettings({
         providers: {
-          cursor: { enabled: true },
           pi: { enabled: true },
           opencode: { enabled: true },
         },
@@ -889,7 +883,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const raw = yield* fileSystem.readFileString(serverConfig.settingsPath);
       // @effect-diagnostics-next-line preferSchemaOverJson:off
       const persisted = JSON.parse(raw);
-      assert.isTrue(persisted.providers.cursor.enabled);
       assert.isTrue(persisted.providers.pi.enabled);
       assert.isTrue(persisted.providers.opencode.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -904,7 +897,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const initial = yield* serverSettings.getSettings;
       assert.isFalse(initial.providers.pi.enabled);
       assert.isFalse(initial.providers.opencode.enabled);
-      assert.isFalse(initial.providers.cursor.enabled);
 
       const piId = ProviderInstanceId.make("pi");
       const next = yield* serverSettings.updateSettings({
@@ -919,7 +911,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       assert.isFalse(next.providers.pi.enabled);
       assert.isFalse(next.providers.opencode.enabled);
-      assert.isFalse(next.providers.cursor.enabled);
       const pi = next.providerInstances[piId];
       assert.isDefined(pi);
       assert.isFalse(resolveProviderInstanceEnabled(pi));
@@ -927,7 +918,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const raw = yield* fileSystem.readFileString(serverConfig.settingsPath);
       // @effect-diagnostics-next-line preferSchemaOverJson:off
       const persisted = JSON.parse(raw);
-      assert.isFalse(persisted.providers.cursor.enabled);
       assert.isFalse(persisted.providers.opencode.enabled);
       assert.isUndefined(persisted.providerInstances.pi.enabled);
     }).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -942,7 +932,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       // The explicit false must win so a user's disable sticks.
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providerInstances":{"pi":{"driver":"pi","enabled":true,"config":{"enabled":false}},"codex_work":{"driver":"codex","config":{"enabled":true,"homePath":"~/.codex"}},"cursor":{"driver":"cursor","config":{"enabled":"nope"}}}}',
+        '{"providerInstances":{"pi":{"driver":"pi","enabled":true,"config":{"enabled":false}},"codex_work":{"driver":"codex","config":{"enabled":true,"homePath":"~/.codex"}},"example":{"driver":"example","config":{"enabled":"nope"}}}}',
       );
 
       const settings = yield* serverSettings.getSettings;
@@ -962,8 +952,8 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       });
       // A malformed flag is left alone so driver schema validation can
       // surface it instead of the fold silently repairing the config.
-      assert.deepEqual(settings.providerInstances[ProviderInstanceId.make("cursor")], {
-        driver: ProviderDriverKind.make("cursor"),
+      assert.deepEqual(settings.providerInstances[ProviderInstanceId.make("example")], {
+        driver: ProviderDriverKind.make("example"),
         config: { enabled: "nope" },
       });
     }).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -1110,6 +1100,8 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const persisted = JSON.parse(raw);
       // The removed Grok provider must not leave a legacy `providers.grok` key.
       assert.isUndefined(persisted.providers.grok);
+      // Same contract for Cursor: no legacy `providers.cursor` key is written.
+      assert.isUndefined(persisted.providers.cursor);
       assert.deepEqual(persisted, {
         addProjectBaseDirectory: "~/Development",
         observability: {
@@ -1119,9 +1111,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         providers: {
           codex: {
             binaryPath: "/opt/homebrew/bin/codex",
-          },
-          cursor: {
-            enabled: false,
           },
           opencode: {
             enabled: false,

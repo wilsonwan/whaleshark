@@ -131,7 +131,10 @@ describe("customModelEditor.logic", () => {
       };
       const copied = definitionFromDraft(
         draft({
-          descriptors: descriptorsFromCapabilities(capabilities, ProviderDriverKind.make("cursor")),
+          descriptors: descriptorsFromCapabilities(
+            capabilities,
+            ProviderDriverKind.make("opencode"),
+          ),
         }),
       );
       expect(copied.capabilities).toEqual(capabilities);
@@ -167,8 +170,11 @@ describe("customModelEditor.logic", () => {
     expect(
       presets.capabilities?.optionDescriptors?.some((option) => option.id === "contextWindow"),
     ).toBe(false);
-    const cursorCopy = descriptorsFromCapabilities(capabilities, ProviderDriverKind.make("cursor"));
-    expect(cursorCopy.map((option) => option.id)).toEqual(["contextWindow", "thinking"]);
+    const otherProviderCopy = descriptorsFromCapabilities(
+      capabilities,
+      ProviderDriverKind.make("opencode"),
+    );
+    expect(otherProviderCopy.map((option) => option.id)).toEqual(["contextWindow", "thinking"]);
     const authored = { slug: "custom", name: "Custom", capabilities };
     expect(
       definitionFromDraft(draftFromDefinition(authored)).capabilities?.optionDescriptors?.[0],

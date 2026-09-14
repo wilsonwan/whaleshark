@@ -106,8 +106,8 @@ describe("providersWithLimits", () => {
       providersWithLimits([
         codex,
         provider({
-          instanceId: ProviderInstanceId.make("cursor"),
-          driver: ProviderDriverKind.make("cursor"),
+          instanceId: ProviderInstanceId.make("example"),
+          driver: ProviderDriverKind.make("example"),
         }),
         provider({
           instanceId: ProviderInstanceId.make("off"),
