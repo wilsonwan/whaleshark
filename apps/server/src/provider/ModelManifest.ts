@@ -33,7 +33,6 @@ import { ServerConfig } from "../config.ts";
 import * as ServerSettings from "../serverSettings.ts";
 import { hasValidClaudeManifestAdapters } from "./ClaudeModelManifest.ts";
 import bundledManifestJson from "./model-manifest.json" with { type: "json" };
-import type { ServerProviderDraft } from "./providerSnapshot.ts";
 
 const MODEL_MANIFEST_URL =
   "https://raw.githubusercontent.com/pingdotgg/t3code/main/apps/server/src/provider/model-manifest.json";
@@ -218,25 +217,6 @@ function isLegacyModel(
   const currentModels = manifest.currentModels[driverKind];
   if (!currentModels) return false;
   return !currentModels.includes(slug);
-}
-
-/**
- * Reclassifies every built-in model on a snapshot draft against the manifest.
- * Custom models are user-defined and never reclassified.
- */
-export function applyModelManifest(
-  draft: ServerProviderDraft,
-  manifest: ModelManifestData,
-  driverKind: ProviderDriverKind,
-): ServerProviderDraft {
-  return {
-    ...draft,
-    models: applyManifestDefault(
-      classifyModels(draft.models, manifest, driverKind),
-      manifest,
-      driverKind,
-    ),
-  };
 }
 
 /** The manifest's chat default for `driverKind`, when it names one. */

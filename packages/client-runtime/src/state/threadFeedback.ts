@@ -57,30 +57,6 @@ export function beginFeedbackSubmission(
   return () => submissionsInFlight.delete(threadKey);
 }
 
-export function feedbackMessage(
-  submission: FeedbackSubmission,
-  role: "user" | "assistant" = "user",
-): OrchestrationMessage {
-  const text =
-    role === "user"
-      ? submission.command
-      : submission.status === "sent"
-        ? `Feedback sent.\n\nThread ID: \`${submission.feedbackId}\``
-        : submission.status === "failed"
-          ? `Could not send feedback.\n\n${submission.errorMessage}`
-          : "Sending feedback...";
-
-  return {
-    id: role === "user" ? submission.id : MessageId.make(`${submission.id}:feedback`),
-    role,
-    text,
-    turnId: null,
-    streaming: false,
-    createdAt: submission.createdAt,
-    updatedAt: submission.createdAt,
-  };
-}
-
 export async function submitFeedback<E>(input: {
   readonly submission: FeedbackSubmissionDetails;
   readonly clearDraft: () => void;
