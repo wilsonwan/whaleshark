@@ -6,7 +6,7 @@ import type { ThreadEnvMode } from "@t3tools/contracts";
  *
  * An explicit composer pick outranks all of these; callers apply it before
  * consulting the defaults. Web resolves the sources imperatively at draft
- * creation, mobile reactively — both must route through this function so the
+ * creation, desktop reactively — both must route through this function so the
  * platforms cannot disagree on the order.
  */
 export function resolveDefaultThreadEnvMode(sources: {

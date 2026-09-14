@@ -3,9 +3,9 @@
 // not expose atomically.
 /**
  * `t3 theme` - inspect and set the environment's theme. Connected web and
- * desktop clients switch when it is set; mobile keeps its own appearance
- * settings. Each client applies one set once, so a theme the user picks in
- * Settings afterwards sticks until the next `t3 theme set`.
+ * desktop clients switch when it is set. Each client applies one set once, so
+ * a theme the user picks in Settings afterwards sticks until the next `t3
+ * theme set`.
  *
  * Writes `defaultTheme` (and `defaultThemeSetAt`, so a re-set of the same
  * value still acts) into the environment's `settings.json`. A running server
@@ -452,9 +452,9 @@ const publishThemeFile = Effect.fn(function* (input: {
 /**
  * Ids a client can actually resolve: this build's built-ins plus what the
  * machine publishes, read through the same function the watcher uses so a file
- * it would skip can never be accepted here. The mobile default is absent on
- * purpose -- web and desktop cannot resolve it and mobile does not follow this
- * setting, so naming it would be the silent no-op this check exists to stop.
+ * it would skip can never be accepted here. The legacy default is absent on
+ * purpose -- web and desktop cannot resolve it, so naming it would be the
+ * silent no-op this check exists to stop.
  */
 const resolvableThemeIds = Effect.fn(function* (themesDir: string) {
   const published = yield* readPublishedThemes(themesDir);

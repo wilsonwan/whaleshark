@@ -108,7 +108,7 @@ the referenced ids against the draft array and drops records no chip points at.
 
 Version 1 deliberately keeps kind presentation explicit in each client instead of exposing a
 runtime handler registry. The contract and codecs are shared; web/desktop render rich chips and
-mobile renders the readable label. Add a registry only when a third-party or runtime-defined kind
+the client renders the readable label. Add a registry only when a third-party or runtime-defined kind
 must provide behaviour that cannot ship with the client. Likewise, a durable occurrence id belongs
 in the canonical reference syntax only if a future feature needs to address one occurrence across
 serialization boundaries.

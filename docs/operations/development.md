@@ -19,7 +19,6 @@ Prefer a container? See [Dev container](../internals/devcontainer.md) for VS Cod
 
 Use `vp run dev` for server and web, or `vp run dev:desktop` for the Electron client.
 `dev:server` and `dev:web` start those processes separately.
-See the [mobile README](../../apps/mobile/README.md) for native builds and Metro.
 
 Flags go directly after the task name, for example `vp run dev --home-dir /tmp/t3code-dev`.
 Add `--browser` to open a browser automatically.
@@ -58,17 +57,11 @@ The workarounds live in the [web entry](../../apps/web/src/bootstrap.ts) and
 
 ## Checks
 
-This fork temporarily runs the pull-request CI and mobile fingerprint checks on
-GitHub-hosted `ubuntu-24.04` and `macos-26` runners because its Blacksmith
-runner labels are not configured. Restore `blacksmith-8vcpu-ubuntu-2404` for
-the Ubuntu CI and fingerprint jobs, `blacksmith-4vcpu-ubuntu-2404` for Rust,
-`blacksmith-2vcpu-ubuntu-2404` for mobile change detection, and
-`blacksmith-6vcpu-macos-26` for native analysis when that capacity is
-available, together with the `setup-apt-mirrors` step and apt source rewrite
-that only work on Blacksmith's images. The label-gated preview workflows still
-name Blacksmith runners; they never run for an ordinary pull request. Until
-then, the local commands below are the fallback validation path and should
-cover the packages and files being changed.
+This fork temporarily runs pull-request CI on GitHub-hosted `ubuntu-24.04` runners because its
+Blacksmith runner labels are not configured. Restore the configured Blacksmith labels when that
+capacity is available, together with the `setup-apt-mirrors` step and apt source rewrite that only
+work on Blacksmith's images. Until then, the local commands below are the fallback validation path
+and should cover the packages and files being changed.
 
 Run checks for the files and packages you changed:
 
@@ -78,7 +71,7 @@ vp lint <files>
 vp run --filter <package> typecheck
 ```
 
-Use `vp run lint:mobile` for native mobile changes. CI owns the full suite; see
+The commands above cover the packages and files being changed. CI owns the full suite; see
 [ci.yml](../../.github/workflows/ci.yml) for its current jobs.
 The [manual Windows lane](../../.github/workflows/windows-tests.yml) is available for focused
 Windows investigation while that suite is not a required gate.

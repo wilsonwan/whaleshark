@@ -242,7 +242,7 @@ function selectProjectIdentitySource<TProject extends EnvironmentProject>(
  *
  * Presentation-specific metadata, filtering, and activity sorting stay in
  * each client. Grouping modes, overrides, physical deduplication, labels, and
- * member preservation live here so web and mobile cannot drift.
+ * member preservation live here so web and desktop cannot drift.
  */
 export function buildProjectGroups<TProject extends EnvironmentProject>(input: {
   readonly projects: ReadonlyArray<TProject>;

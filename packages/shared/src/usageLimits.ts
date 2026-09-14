@@ -1,6 +1,6 @@
 /**
  * Selection and pace maths for the provider limits view, shared by web and
- * mobile so both agree on which providers show, what "ahead of pace" means,
+ * desktop so both agree on which providers show, what "ahead of pace" means,
  * and how a reset is phrased.
  *
  * @module usageLimits

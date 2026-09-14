@@ -28,7 +28,7 @@ export type ThreadHistoryRegistration = {
 
 /**
  * Per-thread registration for progressive history loads. Thread state fibers
- * register while active; mobile UI dispatches through `loadEarlier`.
+ * register while active; clients dispatch through `loadEarlier`.
  */
 export class ThreadHistoryController extends Context.Service<
   ThreadHistoryController,

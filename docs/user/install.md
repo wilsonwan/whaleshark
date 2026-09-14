@@ -1,7 +1,8 @@
 # Install T3 Code
 
 T3 Code runs coding agents on your computer and lets you control them from its
-desktop, web, or mobile app. Set up the machine where the agents will work first.
+desktop app or responsive web app. Set up the machine where the agents will work
+first.
 
 ## Requirements
 
@@ -52,13 +53,12 @@ Pass a path, such as `npx t3 app ../my-project`, to open another directory. It r
 the desktop app, so a standalone server or an SSH session is not enough. If the
 command cannot reach the app, start or update the desktop app and try again.
 
-## Mobile app
+## Phone and remote access
 
-Install T3 Code from the
-[App Store](https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824) or
-[Google Play](https://play.google.com/store/apps/details?id=com.t3tools.t3code).
-The phone connects to a server on another machine. Follow
-[remote access](./remote-access.md) to link it with a pairing URL.
+The responsive web app is the phone surface. Start T3 Code on the machine where
+agents run, then open its pairing URL from the phone or another computer. See
+[remote access](./remote-access.md) for pairing, local-network, Tailscale, and
+T3 Connect options.
 
 ## Providers
 
