@@ -30,7 +30,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Reject repository-owned PR assets
@@ -85,7 +84,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       # Ubuntu runner images ship gcc, but ACP process-tree live tests compile a
@@ -135,7 +133,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
@@ -198,7 +195,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Rust
@@ -310,7 +306,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
@@ -338,7 +333,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
