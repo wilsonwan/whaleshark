@@ -72,8 +72,6 @@ const disabledCodexSettings: CodexSettings = Schema.decodeSync(CodexSettings)({
   enabled: false,
 });
 
-process.env.T3CODE_CURSOR_ENABLED = "1";
-
 // ── Test helpers ────────────────────────────────────────────────────
 
 const encoder = new TextEncoder();
@@ -606,8 +604,8 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
 
       it("preserves previously discovered provider models when a refresh returns none", () => {
         const previousProvider = {
-          instanceId: ProviderInstanceId.make("cursor"),
-          driver: ProviderDriverKind.make("cursor"),
+          instanceId: ProviderInstanceId.make("example"),
+          driver: ProviderDriverKind.make("example"),
           status: "ready",
           enabled: true,
           installed: true,
@@ -1159,8 +1157,8 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
 
       it("fills missing capabilities from the previous provider snapshot", () => {
         const previousProvider = {
-          instanceId: ProviderInstanceId.make("cursor"),
-          driver: ProviderDriverKind.make("cursor"),
+          instanceId: ProviderInstanceId.make("example"),
+          driver: ProviderDriverKind.make("example"),
           status: "ready",
           enabled: true,
           installed: true,
@@ -1633,8 +1631,8 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
       it("persists merged provider snapshots for the providers that were refreshed", () => {
         const previousProviders = [
           {
-            instanceId: ProviderInstanceId.make("cursor"),
-            driver: ProviderDriverKind.make("cursor"),
+            instanceId: ProviderInstanceId.make("example"),
+            driver: ProviderDriverKind.make("example"),
             status: "ready",
             enabled: true,
             installed: true,
@@ -1674,21 +1672,21 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
             skills: [],
           },
         ] as const satisfies ReadonlyArray<ServerProvider>;
-        const refreshedCursor = {
+        const refreshedExample = {
           ...previousProviders[0],
           checkedAt: "2026-04-14T00:01:00.000Z",
           models: [],
         } satisfies ServerProvider;
 
-        const mergedProviders = mergeProviderSnapshots(previousProviders, [refreshedCursor]);
+        const mergedProviders = mergeProviderSnapshots(previousProviders, [refreshedExample]);
         const persistedProviders = selectProvidersByKind(
           mergedProviders,
-          new Set([ProviderDriverKind.make("cursor")]),
+          new Set([ProviderDriverKind.make("example")]),
         );
 
         assert.deepStrictEqual(persistedProviders, [
           {
-            ...refreshedCursor,
+            ...refreshedExample,
             models: [...previousProviders[0].models],
           },
         ]);
@@ -1696,11 +1694,11 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
 
       it.effect("persists the merged snapshot when a live update has empty models", () =>
         Effect.gen(function* () {
-          const cursorDriver = ProviderDriverKind.make("cursor");
-          const cursorInstanceId = ProviderInstanceId.make("cursor");
+          const exampleDriver = ProviderDriverKind.make("example");
+          const exampleInstanceId = ProviderInstanceId.make("example");
           const initialProvider = {
-            instanceId: cursorInstanceId,
-            driver: cursorDriver,
+            instanceId: exampleInstanceId,
+            driver: exampleDriver,
             status: "ready",
             enabled: true,
             installed: true,
@@ -1731,11 +1729,11 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
           } satisfies ServerProvider;
           const changes = yield* PubSub.unbounded<ServerProvider>();
           const instance = {
-            instanceId: cursorInstanceId,
-            driverKind: cursorDriver,
+            instanceId: exampleInstanceId,
+            driverKind: exampleDriver,
             continuationIdentity: {
-              driverKind: cursorDriver,
-              continuationKey: "cursor:instance:cursor",
+              driverKind: exampleDriver,
+              continuationKey: "example:instance:example",
             },
             displayName: undefined,
             enabled: true,
@@ -1743,7 +1741,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
               resolveMaintenance: () =>
                 Effect.succeed(
                   makeManualOnlyProviderMaintenanceCapabilities({
-                    provider: cursorDriver,
+                    provider: exampleDriver,
                     packageName: null,
                   }),
                 ),
@@ -1759,7 +1757,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
             ProviderInstanceRegistry.ProviderInstanceRegistry,
             {
               getInstance: (instanceId) =>
-                Effect.succeed(instanceId === cursorInstanceId ? instance : undefined),
+                Effect.succeed(instanceId === exampleInstanceId ? instance : undefined),
               listInstances: Effect.succeed([instance]),
               listUnavailable: Effect.succeed([]),
               streamChanges: Stream.empty,
@@ -1788,7 +1786,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
             const config = yield* ServerConfig.ServerConfig;
             const filePath = yield* resolveProviderStatusCachePath({
               cacheDir: config.providerStatusCacheDir,
-              instanceId: cursorInstanceId,
+              instanceId: exampleInstanceId,
             });
 
             assert.deepStrictEqual((yield* registry.getProviders)[0]?.models, [
@@ -2177,7 +2175,6 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
                   // machine's PATH.
                   codex: { enabled: false },
                   claudeAgent: { enabled: false },
-                  cursor: { enabled: false },
                   opencode: { enabled: false },
                 },
                 // `providerInstances` keys are branded `ProviderInstanceId`;
@@ -2287,7 +2284,6 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
                 providers: {
                   codex: { enabled: true, binaryPath: firstMissing },
                   claudeAgent: { enabled: false },
-                  cursor: { enabled: false },
                   opencode: { enabled: false },
                 },
               }),
@@ -2401,7 +2397,6 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
                 providers: {
                   codex: { enabled: false },
                   claudeAgent: { enabled: false },
-                  cursor: { enabled: false },
                   opencode: { enabled: false },
                 },
                 providerInstances: {
@@ -2473,7 +2468,6 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
                 providers: {
                   codex: { enabled: false },
                   claudeAgent: { enabled: false },
-                  cursor: { enabled: false },
                   opencode: { enabled: false },
                 },
                 providerInstances: {
@@ -2538,7 +2532,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
       );
 
       it.effect(
-        "keeps Cursor disabled and skips provider probing when settings use their defaults",
+        "keeps Pi disabled and skips provider probing when settings use their defaults",
         () =>
           Effect.gen(function* () {
             const serverSettings = yield* makeMutableServerSettingsService(
@@ -2552,7 +2546,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
                 }),
               ),
             );
-            let cursorSpawned = false;
+            let piSpawned = false;
             const scope = yield* Scope.make();
             yield* Effect.addFinalizer(() => Scope.close(scope, Exit.void));
             const providerRegistryLayer = ProviderRegistryLive.pipe(
@@ -2579,8 +2573,8 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
               Layer.provideMerge(BackgroundPolicyAlwaysRunLayer),
               Layer.provideMerge(
                 mockCommandSpawnerLayer((command, args) => {
-                  if (command === "cursor-agent") {
-                    cursorSpawned = true;
+                  if (command === "pi") {
+                    piSpawned = true;
                   }
                   const joined = args.join(" ");
                   if (joined === "--version") {
@@ -2611,24 +2605,20 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
             yield* Effect.gen(function* () {
               const registry = yield* ProviderRegistry.ProviderRegistry;
               const providers = yield* registry.getProviders;
-              const cursorProvider = providers.find(
-                (provider) => provider.instanceId === ProviderInstanceId.make("cursor"),
+              const piProvider = providers.find(
+                (provider) => provider.instanceId === ProviderInstanceId.make("pi"),
               );
 
               assert.deepStrictEqual(providers.map((provider) => provider.instanceId).toSorted(), [
                 "claudeAgent",
                 "codex",
-                "cursor",
                 "opencode",
                 "pi",
               ]);
-              assert.strictEqual(cursorProvider?.enabled, false);
-              assert.strictEqual(cursorProvider?.status, "disabled");
-              assert.strictEqual(
-                cursorProvider?.message,
-                "Cursor is disabled in T3 Code settings.",
-              );
-              assert.strictEqual(cursorSpawned, false);
+              assert.strictEqual(piProvider?.enabled, false);
+              assert.strictEqual(piProvider?.status, "disabled");
+              assert.strictEqual(piProvider?.message, "Pi is disabled in T3 Code settings.");
+              assert.strictEqual(piSpawned, false);
             }).pipe(Effect.provide(runtimeServices));
           }),
       );

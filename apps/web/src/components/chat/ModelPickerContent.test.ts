@@ -27,7 +27,7 @@ function entry(status: ServerProvider["status"], driver = "opencode") {
 }
 
 describe("shouldIncludeModelPickerOption", () => {
-  it.each(["codex", "claudeAgent", "cursor", "pi", "acpRegistry"] as const)(
+  it.each(["codex", "claudeAgent", "pi", "acpRegistry"] as const)(
     "never offers an unavailable saved model while the %s instance is not ready",
     (driver) => {
       const providerEntry = entry("error", driver);

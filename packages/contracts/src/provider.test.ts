@@ -83,21 +83,21 @@ describe("ProviderSessionStartInput", () => {
     expect(parsed.runtimeMode).toBe("full-access");
   });
 
-  it("accepts cursor provider", () => {
+  it("accepts pi provider", () => {
     const parsed = decodeProviderSessionStartInput({
       threadId: "thread-1",
-      provider: "cursor",
+      provider: "pi",
       cwd: "/tmp/workspace",
       runtimeMode: "full-access",
       modelSelection: {
-        provider: "cursor",
-        model: "composer-2",
+        provider: "pi",
+        model: "default",
         options: [{ id: "fastMode", value: true }],
       },
     });
-    expect(parsed.provider).toBe("cursor");
-    expect(parsed.modelSelection?.instanceId).toBe("cursor");
-    expect(parsed.modelSelection?.model).toBe("composer-2");
+    expect(parsed.provider).toBe("pi");
+    expect(parsed.modelSelection?.instanceId).toBe("pi");
+    expect(parsed.modelSelection?.model).toBe("default");
     expect(getOptionValue(parsed.modelSelection?.options, "fastMode")).toBe(true);
   });
 

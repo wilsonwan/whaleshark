@@ -13,7 +13,6 @@ import * as Effect from "effect/Effect";
 
 import { AcpProviderCapabilitiesV2 } from "./Adapters/AcpAdapterV2.ts";
 import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
-import { CursorProviderCapabilitiesV2 } from "./Adapters/CursorAdapterV2.ts";
 import {
   CommandPolicyCapabilityUnsupportedError,
   CommandPolicyV2,
@@ -260,15 +259,21 @@ layer("CommandPolicyV2", (it) => {
     }),
   );
 
-  it.effect("falls back to portable context when Cursor cannot fork natively", () =>
+  it.effect("falls back to portable context when a provider cannot fork natively", () =>
     Effect.gen(function* () {
       const policy = yield* CommandPolicyV2;
 
       const result = yield* policy.decideForkExecution({
         commandId,
         threadId,
-        providerInstanceId: ProviderInstanceId.make("cursor"),
-        capabilities: CursorProviderCapabilitiesV2,
+        providerInstanceId: ProviderInstanceId.make("opencode"),
+        capabilities: capabilities((current) => ({
+          ...current,
+          threads: {
+            ...current.threads,
+            canForkThread: false,
+          },
+        })),
         sameProvider: true,
         hasStrongNativeSource: true,
         fromSpecificTurn: true,
@@ -304,7 +309,7 @@ layer("CommandPolicyV2", (it) => {
         .decideForkExecution({
           commandId,
           threadId,
-          providerInstanceId: ProviderInstanceId.make("cursor"),
+          providerInstanceId: ProviderInstanceId.make("opencode"),
           capabilities: capabilities((current) => ({
             ...current,
             threads: {

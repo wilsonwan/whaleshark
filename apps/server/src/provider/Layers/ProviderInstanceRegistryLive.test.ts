@@ -11,7 +11,7 @@ import * as CodexResetCredit from "./codexResetCredit.ts";
  *
  *  2. **Many drivers, one registry** — the "all drivers slice" describe
  *     block below configures one instance of every shipped driver
- *     (`codex`, `claudeAgent`, `cursor`, `pi`, `opencode`) in a single
+ *     (`codex`, `claudeAgent`, `pi`, `opencode`) in a single
  *     `ProviderInstanceConfigMap` and asserts the registry boots them all
  *     without cross-contamination. This proves the driver SPI is uniform
  *     across every provider — any driver plugs into the registry through
@@ -28,7 +28,6 @@ import * as NodeServices from "@effect/platform-node/NodeServices";
 import {
   type ClaudeSettings,
   type CodexSettings,
-  type CursorSettings,
   type OpenCodeSettings,
   type PiSettings,
   ProviderDriverKind,
@@ -50,7 +49,6 @@ import { expandHomePath } from "../../pathExpansion.ts";
 import { ServerSettingsService } from "../../serverSettings.ts";
 import { ClaudeDriver, type ClaudeDriverEnv } from "../Drivers/ClaudeDriver.ts";
 import { CodexDriver, type CodexDriverEnv } from "../Drivers/CodexDriver.ts";
-import { CursorDriver, type CursorDriverEnv } from "../Drivers/CursorDriver.ts";
 import { OpenCodeDriver, type OpenCodeDriverEnv } from "../Drivers/OpenCodeDriver.ts";
 import { PiDriver, type PiDriverEnv } from "../Drivers/PiDriver.ts";
 import * as ModelManifest from "../ModelManifest.ts";
@@ -114,12 +112,6 @@ const makeClaudeConfig = (overrides: Partial<ClaudeSettings>): ClaudeSettings =>
   customModels: [],
   launchArgs: "",
   autoCompactWindow: "",
-  ...overrides,
-});
-
-const makeCursorConfig = (overrides: Partial<CursorSettings>): CursorSettings => ({
-  enabled: false,
-  customModels: [],
   ...overrides,
 });
 
@@ -470,13 +462,11 @@ describe("ProviderInstanceRegistryLive — all drivers slice", () => {
     Effect.gen(function* () {
       const codexId = ProviderInstanceId.make("codex_default");
       const claudeId = ProviderInstanceId.make("claude_default");
-      const cursorId = ProviderInstanceId.make("cursor_default");
       const piId = ProviderInstanceId.make("pi_default");
       const openCodeId = ProviderInstanceId.make("opencode_default");
 
       const codexDriverKind = ProviderDriverKind.make("codex");
       const claudeDriverKind = ProviderDriverKind.make("claudeAgent");
-      const cursorDriverKind = ProviderDriverKind.make("cursor");
       const piDriverKind = ProviderDriverKind.make("pi");
       const openCodeDriverKind = ProviderDriverKind.make("opencode");
 
@@ -496,12 +486,6 @@ describe("ProviderInstanceRegistryLive — all drivers slice", () => {
             launchArgs: "--verbose",
           }),
         },
-        [cursorId]: {
-          driver: cursorDriverKind,
-          displayName: "Cursor",
-          enabled: false,
-          config: makeCursorConfig({}),
-        },
         [piId]: {
           driver: piDriverKind,
           displayName: "Pi",
@@ -517,9 +501,9 @@ describe("ProviderInstanceRegistryLive — all drivers slice", () => {
       };
 
       const { registry } = yield* makeProviderInstanceRegistry<
-        CodexDriverEnv | ClaudeDriverEnv | CursorDriverEnv | PiDriverEnv | OpenCodeDriverEnv
+        CodexDriverEnv | ClaudeDriverEnv | PiDriverEnv | OpenCodeDriverEnv
       >({
-        drivers: [CodexDriver, ClaudeDriver, CursorDriver, PiDriver, OpenCodeDriver],
+        drivers: [CodexDriver, ClaudeDriver, PiDriver, OpenCodeDriver],
         configMap,
       });
 
@@ -529,9 +513,9 @@ describe("ProviderInstanceRegistryLive — all drivers slice", () => {
       expect(unavailable).toEqual([]);
 
       const instances = yield* registry.listInstances;
-      expect(instances).toHaveLength(5);
+      expect(instances).toHaveLength(4);
       expect(instances.map((instance) => instance.instanceId).toSorted()).toEqual(
-        [codexId, claudeId, cursorId, piId, openCodeId].toSorted(),
+        [codexId, claudeId, piId, openCodeId].toSorted(),
       );
 
       // Instance lookup by id resolves each instance to its own bundle —
@@ -539,29 +523,25 @@ describe("ProviderInstanceRegistryLive — all drivers slice", () => {
       // model. Each driver's bundle carries its advertised `driverKind`.
       const codex = yield* registry.getInstance(codexId);
       const claude = yield* registry.getInstance(claudeId);
-      const cursor = yield* registry.getInstance(cursorId);
       const pi = yield* registry.getInstance(piId);
       const openCode = yield* registry.getInstance(openCodeId);
       expect(codex?.driverKind).toBe(codexDriverKind);
       expect(claude?.driverKind).toBe(claudeDriverKind);
-      expect(cursor?.driverKind).toBe(cursorDriverKind);
       expect(pi?.driverKind).toBe(piDriverKind);
       expect(openCode?.driverKind).toBe(openCodeDriverKind);
       expect(codex?.displayName).toBe("Codex");
       expect(claude?.displayName).toBe("Claude");
-      expect(cursor?.displayName).toBe("Cursor");
       expect(pi?.displayName).toBe("Pi");
       expect(openCode?.displayName).toBe("OpenCode");
 
       // Every instance owns its own set of closures — no sharing across
       // drivers. `orchestrationAdapter` / `textGeneration` / `snapshot` are all
       // distinct references even when two instances happen to share a
-      // trait (e.g. Cursor + others all use a stub-or-real
+      // trait (e.g. two ACP-backed drivers share a stub-or-real
       // `textGeneration`; they must still be different object values).
       const adapters = [
         codex!.orchestrationAdapter,
         claude!.orchestrationAdapter,
-        cursor!.orchestrationAdapter,
         pi!.orchestrationAdapter,
         openCode!.orchestrationAdapter,
       ];
@@ -569,18 +549,11 @@ describe("ProviderInstanceRegistryLive — all drivers slice", () => {
       const textGenerations = [
         codex!.textGeneration,
         claude!.textGeneration,
-        cursor!.textGeneration,
         pi!.textGeneration,
         openCode!.textGeneration,
       ];
       expect(new Set(textGenerations).size).toBe(textGenerations.length);
-      const snapshots = [
-        codex!.snapshot,
-        claude!.snapshot,
-        cursor!.snapshot,
-        pi!.snapshot,
-        openCode!.snapshot,
-      ];
+      const snapshots = [codex!.snapshot, claude!.snapshot, pi!.snapshot, openCode!.snapshot];
       expect(new Set(snapshots).size).toBe(snapshots.length);
 
       // Snapshots identify themselves by `instanceId` + `driver` so
@@ -603,14 +576,6 @@ describe("ProviderInstanceRegistryLive — all drivers slice", () => {
       expect(claudeSnapshot.enabled).toBe(false);
       expect(claudeSnapshot.continuation?.groupKey).toBe(
         `claude:home:${(yield* Path.Path).resolve("/home/julius/.claude-work")}`,
-      );
-
-      const cursorSnapshot = yield* cursor!.snapshot.getSnapshot;
-      expect(cursorSnapshot.instanceId).toBe(cursorId);
-      expect(cursorSnapshot.driver).toBe(cursorDriverKind);
-      expect(cursorSnapshot.enabled).toBe(false);
-      expect(cursorSnapshot.continuation?.groupKey).toBe(
-        `${cursorDriverKind}:instance:${cursorId}`,
       );
 
       const piSnapshot = yield* pi!.snapshot.getSnapshot;

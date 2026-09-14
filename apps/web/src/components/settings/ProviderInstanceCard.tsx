@@ -655,8 +655,8 @@ export function ProviderInstanceCard({
         : (rest as ProviderInstanceConfig),
     );
   };
-  // Drivers that need a named secret (Cursor's API key) get a dedicated field;
-  // the generic editor only shows the remaining variables.
+  // A fork driver can declare named secret fields; those get a dedicated
+  // input and the generic editor only shows the remaining variables.
   const environmentFields = driverOption?.environmentFields ?? [];
   const environmentFieldNames = new Set(environmentFields.map((field) => field.name));
   const genericEnvironment = providerEnvironmentWithoutNames(

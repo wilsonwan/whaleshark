@@ -95,12 +95,6 @@ Claude receives an HTTP MCP server in its query options:
 The adapter logs only whether MCP configuration exists; it does not log the
 server headers or token.
 
-### Cursor Agent SDK V2
-
-Cursor receives the same authenticated HTTP MCP endpoint through the SDK's
-`mcpServers` agent and send options. The adapter passes the authorization header
-to the SDK but projects only redacted option metadata into protocol diagnostics.
-
 ### ACP Registry V2
 
 The `acpRegistry` driver is the generic flavor of the shared ACP adapter, and
@@ -161,7 +155,7 @@ remain ordinary dynamic tool output.
 
 ### Initial Provider Support
 
-The V2 provider adapters are Codex, Claude Agent SDK, Cursor Agent SDK, generic
+The V2 provider adapters are Codex, Claude Agent SDK, generic
 registry agents over ACP, OpenCode, OpenCode 2, and Pi.
 Capability discovery still reports other registered provider instances, but marks them
 unavailable for orchestration when no V2 adapter exists. This keeps provider
@@ -464,6 +458,6 @@ Coverage includes:
 - inheritance and per-thread provider overrides; and
 - idempotent retries.
 
-Provider adapter tests separately verify Codex, Claude, Cursor, OpenCode, Pi, and
+Provider adapter tests separately verify Codex, Claude, OpenCode, Pi, and
 ACP Registry behavior and MCP injection. The provider-session manager test verifies
 that credentials exist before an adapter opens and are revoked when it closes.

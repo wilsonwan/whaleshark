@@ -21,7 +21,7 @@ not prevent the agent from asking questions about the task.
 ## Provider differences
 
 Providers enforce permissions differently. Some read-only actions can proceed in **Supervised**.
-**Auto** uses automatic review on Codex, Claude, and Cursor; providers without an equivalent,
+**Auto** uses automatic review on Codex and Claude; providers without an equivalent,
 including OpenCode, fall back to asking.
 
 For ACP Registry agents, **Always allow this session** remembers the matching command or tool

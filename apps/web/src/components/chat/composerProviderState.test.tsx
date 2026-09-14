@@ -268,7 +268,7 @@ describe("getComposerProviderState", () => {
     );
   });
 
-  it.each(["codex", "claudeAgent", "cursor", "pi"])(
+  it.each(["codex", "claudeAgent", "pi"])(
     "does not preserve unknown options for a missing %s model",
     (provider) => {
       const state = getComposerProviderState({
@@ -387,7 +387,7 @@ describe("getComposerProviderState", () => {
 
   it("defaults fastMode to false when the provider reports true but the user has not selected it", () => {
     const state = getComposerProviderState({
-      provider: ProviderDriverKind.make("cursor"),
+      provider: ProviderDriverKind.make("pi"),
       model: MODEL,
       models: modelWith([booleanDescriptor("fastMode", true)]),
       modelOptions: undefined,
@@ -399,7 +399,7 @@ describe("getComposerProviderState", () => {
 
   it("keeps explicit fastMode true when the user selected Fast", () => {
     const state = getComposerProviderState({
-      provider: ProviderDriverKind.make("cursor"),
+      provider: ProviderDriverKind.make("pi"),
       model: MODEL,
       models: modelWith([booleanDescriptor("fastMode", true)]),
       modelOptions: selections(["fastMode", true]),
@@ -411,7 +411,7 @@ describe("getComposerProviderState", () => {
 
   it("keeps explicit fastMode false when the user selected Normal", () => {
     const state = getComposerProviderState({
-      provider: ProviderDriverKind.make("cursor"),
+      provider: ProviderDriverKind.make("pi"),
       model: MODEL,
       models: modelWith([booleanDescriptor("fastMode", true)]),
       modelOptions: selections(["fastMode", false]),
@@ -458,7 +458,7 @@ describe("withImplicitFastModeDefault", () => {
 describe("trait controls fastMode display", () => {
   it("resolves traits fastMode to Normal when the provider defaults to true without a user selection", () => {
     const models = modelWith([booleanDescriptor("fastMode", true)]);
-    const provider = ProviderDriverKind.make("cursor");
+    const provider = ProviderDriverKind.make("pi");
     const caps = getProviderModelCapabilities(models, MODEL, provider);
     const resolved = withImplicitFastModeDefault(caps, undefined);
     const descriptors = getProviderOptionDescriptors({ caps, selections: resolved });
