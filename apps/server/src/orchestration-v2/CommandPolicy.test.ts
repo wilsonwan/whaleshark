@@ -182,7 +182,13 @@ layer("CommandPolicyV2", (it) => {
         commandId,
         threadId,
         providerInstanceId: ProviderInstanceId.make("claudeAgent"),
-        capabilities: ClaudeProviderCapabilitiesV2,
+        capabilities: capabilities((current) => ({
+          ...current,
+          turns: {
+            ...current.turns,
+            supportsSteeringByInterruptRestart: true,
+          },
+        })),
         forceRestart: true,
       });
 

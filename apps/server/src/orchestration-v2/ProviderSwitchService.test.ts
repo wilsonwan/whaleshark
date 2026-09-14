@@ -90,7 +90,7 @@ it.effect(
       const service = yield* ProviderSwitch.ProviderSwitchServiceV2;
       const result = yield* service.plan({
         projection: projection(),
-        targetModelSelection: { instanceId: currentInstanceId, model: "claude-sonnet-4-6" },
+        targetModelSelection: { instanceId: currentInstanceId, model: "claude-opus-4-6" },
       });
       assert.equal(result.transition.type, "restart_and_resume");
       assert.deepEqual(result.releaseProviderSessionIds, [currentSessionId]);

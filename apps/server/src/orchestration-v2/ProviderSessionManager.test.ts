@@ -86,6 +86,18 @@ const FailingReleaseEventSinkLayer = Layer.effect(
 ).pipe(Layer.provide(TestEventSinkLayer));
 
 const ClaudeCapabilities: OrchestrationV2ProviderCapabilities = ClaudeProviderCapabilitiesV2;
+// The manager's shared-session paths (one live provider process serving several
+// app threads, and the credential reuse they depend on) are provider-neutral,
+// but no shipped adapter advertises multi-thread sessions any more. The fixture
+// provider keeps advertising them, the way the removed provider did, and
+// `ExclusiveCapabilities` covers the single-thread paths.
+const SharedCapabilities: OrchestrationV2ProviderCapabilities = {
+  ...ClaudeCapabilities,
+  sessions: {
+    ...ClaudeCapabilities.sessions,
+    supportsMultipleProviderThreadsPerSession: true,
+  },
+};
 const ExclusiveCapabilities: OrchestrationV2ProviderCapabilities = {
   ...ClaudeCapabilities,
   sessions: {
@@ -134,7 +146,7 @@ function makeProviderSession(input: {
     status: "ready",
     cwd: process.cwd(),
     model: "gpt-5.4",
-    capabilities: input.capabilities ?? ClaudeCapabilities,
+    capabilities: input.capabilities ?? SharedCapabilities,
     createdAt: input.now,
     updatedAt: input.now,
     lastError: null,
@@ -254,7 +266,7 @@ function makeProviderAdapter(
   return {
     instanceId: ProviderInstanceId.make("claudeAgent"),
     driver: CLAUDE_DRIVER,
-    getCapabilities: () => Effect.succeed(options.capabilities ?? ClaudeCapabilities),
+    getCapabilities: () => Effect.succeed(options.capabilities ?? SharedCapabilities),
     planSelectionTransition: () => Effect.succeed({ type: "apply_on_next_turn" }),
     openSession: (input) =>
       Effect.gen(function* () {

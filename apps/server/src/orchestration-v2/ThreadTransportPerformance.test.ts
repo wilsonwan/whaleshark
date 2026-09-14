@@ -29,12 +29,15 @@ const PROVIDER_INSTANCE_ID = ProviderInstanceId.make("claudeAgent");
 
 // Recorded before bounded WebSocket fallback at 91b193653ec. Keep this number
 // here so later transport changes retain a direct, reproducible comparison.
-const HISTORICAL_FULL_SNAPSHOT_APPLICATION_BYTES = 10_375_079;
+// Adjusted when the fixture moved off the removed provider's id to
+// `claudeAgent` (+12 bytes: the instance id appears as the thread projection's
+// `providerInstanceId` and its `modelSelection.instanceId`).
+const HISTORICAL_FULL_SNAPSHOT_APPLICATION_BYTES = 10_375_091;
 // Contract encoding plus the Effect RPC Chunk envelope adds 42 bytes to both
 // snapshot variants. WebSocket framing and compression are intentionally out
 // of scope for this deterministic pre-compression measurement.
-const FULL_SNAPSHOT_RPC_JSON_BYTES = 10_375_121;
-const PRE_OMISSION_BOUNDED_SNAPSHOT_RPC_JSON_BYTES = 1_038_647;
+const FULL_SNAPSHOT_RPC_JSON_BYTES = 10_375_133;
+const PRE_OMISSION_BOUNDED_SNAPSHOT_RPC_JSON_BYTES = 1_038_659;
 // The first payload-omitting projection measured 67,412 bytes.
 const MAX_PROJECTED_BOUNDED_SNAPSHOT_RPC_JSON_BYTES = 131_072;
 const PRE_OMISSION_COMMAND_EVENT_RPC_JSON_BYTES = 8_790;

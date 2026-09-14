@@ -32,7 +32,7 @@ it("uses the adapter's selection transition classification", () => {
       current: base,
       target: {
         ...base,
-        modelSelection: { ...base.modelSelection, model: "claude-sonnet-4-6" },
+        modelSelection: { ...base.modelSelection, model: "claude-opus-4-6" },
         available: true,
       },
       selectionTransition: { type: "apply_on_next_turn" },
@@ -54,7 +54,7 @@ it("uses the adapter's selection transition classification", () => {
           ...base.capabilities,
           sessions: { ...base.capabilities.sessions, supportsModelSwitchInSession: false },
         },
-        modelSelection: { ...base.modelSelection, model: "claude-sonnet-4-6" },
+        modelSelection: { ...base.modelSelection, model: "claude-opus-4-6" },
         available: true,
       },
       selectionTransition: { type: "restart_session" },
@@ -103,7 +103,7 @@ it("preserves a rejected selection when the workspace also changes", () => {
       current: base,
       target: {
         ...base,
-        modelSelection: { ...base.modelSelection, model: "claude-sonnet-4-6" },
+        modelSelection: { ...base.modelSelection, model: "claude-opus-4-6" },
         workspace: "/other",
         available: true,
       },
@@ -119,7 +119,7 @@ it("preserves a rejected selection when the workspace also changes", () => {
 it("preserves handoff and missing-classification outcomes across workspace changes", () => {
   const target = {
     ...base,
-    modelSelection: { ...base.modelSelection, model: "claude-sonnet-4-6" },
+    modelSelection: { ...base.modelSelection, model: "claude-opus-4-6" },
     workspace: "/other",
     available: true,
   };
