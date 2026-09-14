@@ -577,8 +577,8 @@ describe("resolveDefaultProviderModelSelection", () => {
   it("replaces a stale stored instance with the first ready instance and its model", () => {
     const providers = [
       provider({
-        provider: ProviderDriverKind.make("claudeAgent"),
-        instanceId: "claudeAgent",
+        provider: ProviderDriverKind.make("opencode"),
+        instanceId: "opencode",
         status: "warning",
         models: [model("gpt-5.6")],
       }),
@@ -602,8 +602,8 @@ describe("resolveDefaultProviderModelSelection", () => {
     (requestedState) => {
       const providers = [
         provider({
-          provider: ProviderDriverKind.make("claudeAgent"),
-          instanceId: "claudeAgent",
+          provider: ProviderDriverKind.make("opencode"),
+          instanceId: "opencode",
           models: [model("gpt-5.6")],
           ...requestedState,
         }),
@@ -616,7 +616,7 @@ describe("resolveDefaultProviderModelSelection", () => {
 
       expect(
         resolveDefaultProviderModelSelection(providers, {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("opencode"),
           model: "gpt-5.6",
         }),
       ).toEqual({ instanceId: "claudeAgent", model: "claude-opus-4-8" });

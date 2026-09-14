@@ -2080,17 +2080,20 @@ describe("composerDraftStore modelSelection", () => {
     store.setModelOptions(
       threadRef,
       providerModelOptions({
-        pi: { fastMode: true },
+        opencode: { fastMode: true },
         claudeAgent: { effort: "max" },
       }),
     );
 
-    // Now set options for only pi — claudeAgent should be untouched
-    store.setModelOptions(threadRef, providerModelOptions({ pi: { reasoningEffort: "xhigh" } }));
+    // Now set options for only opencode — claudeAgent should be untouched
+    store.setModelOptions(
+      threadRef,
+      providerModelOptions({ opencode: { reasoningEffort: "xhigh" } }),
+    );
 
     const draft = draftFor(threadId, TEST_ENVIRONMENT_ID);
-    expect(draft?.modelSelectionByProvider[PI_INSTANCE]?.options).toEqual(
-      createModelSelection(PI_INSTANCE, "gpt-5.4", toSelections({ reasoningEffort: "xhigh" }))
+    expect(draft?.modelSelectionByProvider[OPENCODE_INSTANCE]?.options).toEqual(
+      createModelSelection(OPENCODE_INSTANCE, "gpt-5.4", toSelections({ reasoningEffort: "xhigh" }))
         .options,
     );
     expect(draft?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE]?.options).toEqual(
@@ -2108,7 +2111,7 @@ describe("composerDraftStore modelSelection", () => {
     store.setModelOptions(
       threadRef,
       providerModelOptions({
-        pi: { fastMode: true },
+        opencode: { fastMode: true },
         claudeAgent: { effort: "max" },
       }),
     );
@@ -2119,8 +2122,8 @@ describe("composerDraftStore modelSelection", () => {
     expect(draft?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE]).toEqual(
       modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", { effort: "max" }),
     );
-    expect(draft?.modelSelectionByProvider[PI_INSTANCE]?.options).toEqual(
-      createModelSelection(PI_INSTANCE, "gpt-5.4", toSelections({ fastMode: true })).options,
+    expect(draft?.modelSelectionByProvider[OPENCODE_INSTANCE]?.options).toEqual(
+      createModelSelection(OPENCODE_INSTANCE, "gpt-5.4", toSelections({ fastMode: true })).options,
     );
     expect(draft?.activeProvider).toBe("claudeAgent");
   });
@@ -2494,11 +2497,11 @@ describe("composerDraftStore model seed migration", () => {
   });
 
   it.each([1, 2])(
-    "keeps the legacy sticky Pi selection when v%s storage omitted the provider",
+    "keeps the legacy sticky OpenCode selection when v%s storage omitted the provider",
     async (version) => {
       vi.useFakeTimers();
       try {
-        const stickySelection = modelSelection(PI_DRIVER, "gpt-5.6-terra", {
+        const stickySelection = modelSelection(OPENCODE_DRIVER, "openai/gpt-5.4", {
           reasoningEffort: "xhigh",
         });
         const storage = useComposerDraftStore.persist.getOptions().storage;
@@ -2511,7 +2514,7 @@ describe("composerDraftStore model seed migration", () => {
             projectDraftThreadIdByProjectId: {},
             stickyModel: stickySelection.model,
             stickyModelOptions: providerModelOptions({
-              [PI_DRIVER]: { reasoningEffort: "xhigh" },
+              [OPENCODE_DRIVER]: { reasoningEffort: "xhigh" },
             }),
           },
         } as never);
@@ -2520,7 +2523,13 @@ describe("composerDraftStore model seed migration", () => {
         await useComposerDraftStore.persist.rehydrate();
 
         expect(useComposerDraftStore.getState()).toMatchObject({
-          stickyModelSelectionByProvider: { [PI_INSTANCE]: stickySelection },
+          stickyModelSelectionByProvider: {
+            // A legacy entry knows its provider only from the options key, so
+            // the unbound legacy model is replaced by that provider's default.
+            [OPENCODE_INSTANCE]: modelSelection(OPENCODE_DRIVER, "openai/gpt-5", {
+              reasoningEffort: "xhigh",
+            }),
+          },
           stickyActiveProvider: null,
         });
       } finally {
