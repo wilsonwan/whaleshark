@@ -49,22 +49,6 @@ winget install T3Tools.T3Code
 brew install --cask t3-code
 ```
 
-#### Arch Linux (AUR)
-
-Stable:
-
-```bash
-yay -S t3code-bin
-```
-
-Nightly:
-
-```bash
-yay -S t3code-nightly-bin
-```
-
-The AUR packaging is maintained in this repository under [`packaging/aur`](./packaging/aur).
-
 ## Some notes
 
 We are very very early in this project. Expect bugs.
