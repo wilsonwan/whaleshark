@@ -1259,7 +1259,7 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
                 ? outcome.thread.messages.map((message) => message.text)
                 : [],
             ),
-          ).toEqual([overflow ? "Older prompt" : "First prompt"]);
+          ).toEqual(overflow ? ["Older prompt", "Done"] : ["First prompt"]);
         }),
     );
 
@@ -1745,7 +1745,9 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         });
         yield* writeTranscript({
           filePath: transcriptPaths.parse,
-          contents: encodeTranscriptRecord({ type: "summary" }),
+          // Discoverable by cwd, but it carries nothing importable: the record
+          // parses and still yields no thread.
+          contents: encodeTranscriptRecord({ type: "summary", cwd: workspace }),
           mtimeMs: nowMs,
         });
 

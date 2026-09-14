@@ -50,18 +50,18 @@ it.layer(NodeServices.layer)("discoverClaudeSkills", (it) => {
 
       assert.deepEqual(skills, [
         {
-          name: "release-review",
-          path: path.join(configDir, "skills", "release-review", "SKILL.md"),
-          enabled: true,
-          scope: "user",
-          description: "Ask for a release review.",
-        },
-        {
           name: "deploy",
           path: path.join(workspace, ".claude", "skills", "deploy", "SKILL.md"),
           enabled: true,
           scope: "project",
           description: "Deploy the app.",
+        },
+        {
+          name: "release-review",
+          path: path.join(configDir, "skills", "release-review", "SKILL.md"),
+          enabled: true,
+          scope: "user",
+          description: "Ask for a release review.",
         },
       ]);
     }),

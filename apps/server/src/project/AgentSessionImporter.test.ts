@@ -20,7 +20,7 @@ import { ProjectService } from "./ProjectService.ts";
 
 const projectId = ProjectId.make("agent-session-import-project");
 const providerInstanceId = ProviderInstanceId.make("claudeAgent");
-const providerSessionId = "native-claude-thread";
+const providerSessionId = "1f0c2b3a-4d5e-4f60-8a1b-2c3d4e5f6071";
 const threadId = ThreadId.make(`import:${providerInstanceId}:${providerSessionId}`);
 
 it.effect("imports messages once and preserves the provider native resume binding", () => {

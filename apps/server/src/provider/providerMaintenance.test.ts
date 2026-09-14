@@ -341,7 +341,7 @@ it.layer(NodeServices.layer)("providerMaintenance", (it) => {
       expect(capabilities.update).toMatchObject({
         executable: visiblePath,
         args: ["update"],
-        lockKey: "claude-native",
+        lockKey: "claudeAgent-native",
       });
     }),
   );
