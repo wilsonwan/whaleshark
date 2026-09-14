@@ -11,9 +11,9 @@ import {
 } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 
+import { AcpProviderCapabilitiesV2 } from "./Adapters/AcpAdapterV2.ts";
 import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
 import { CursorProviderCapabilitiesV2 } from "./Adapters/CursorAdapterV2.ts";
-import { GrokProviderCapabilitiesV2 } from "./Adapters/GrokAdapterV2.ts";
 import {
   CommandPolicyCapabilityUnsupportedError,
   CommandPolicyV2,
@@ -160,15 +160,15 @@ layer("CommandPolicyV2", (it) => {
     }),
   );
 
-  it.effect("uses interrupt-and-restart steering for Grok ACP", () =>
+  it.effect("uses interrupt-and-restart steering for ACP registry agents", () =>
     Effect.gen(function* () {
       const policy = yield* CommandPolicyV2;
 
       const result = yield* policy.decideSteeringExecution({
         commandId,
         threadId,
-        providerInstanceId: ProviderInstanceId.make("grok"),
-        capabilities: GrokProviderCapabilitiesV2,
+        providerInstanceId: ProviderInstanceId.make("acpRegistry"),
+        capabilities: AcpProviderCapabilitiesV2,
       });
 
       assert.equal(result, "interrupt_restart");
@@ -278,15 +278,15 @@ layer("CommandPolicyV2", (it) => {
     }),
   );
 
-  it.effect("falls back to portable context when Grok ACP cannot fork natively", () =>
+  it.effect("falls back to portable context when an ACP registry agent cannot fork natively", () =>
     Effect.gen(function* () {
       const policy = yield* CommandPolicyV2;
 
       const result = yield* policy.decideForkExecution({
         commandId,
         threadId,
-        providerInstanceId: ProviderInstanceId.make("grok"),
-        capabilities: GrokProviderCapabilitiesV2,
+        providerInstanceId: ProviderInstanceId.make("acpRegistry"),
+        capabilities: AcpProviderCapabilitiesV2,
         sameProvider: true,
         hasStrongNativeSource: true,
         fromSpecificTurn: true,

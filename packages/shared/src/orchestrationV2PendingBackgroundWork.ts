@@ -132,7 +132,7 @@ function nativeTaskIdFromTurnItem(item: PendingBackgroundWorkTurnItem): string {
  *
  * Gated on latest root run settlement. Dedupes by native task ID. Excludes
  * the roster while any interruptible foreground run remains active. Excludes
- * Grok persistent monitors (`dynamic_tool` input with `persistent: true`).
+ * persistent monitors (`dynamic_tool` input with `persistent: true`).
  * Excludes turn items whose run resolves to `rolled_back` (abandoned work);
  * items with a null or absent run id stay eligible (matches SQL shell path).
  * Does not consult subagent entities (those double-count turn items).

@@ -50,8 +50,9 @@ also offers **Log out** and stops that instance's active sessions before clearin
 For Codex, credentials belong to the Codex CLI on the server. Run `codex login status` to check
 them, or `codex login --device-auth` to sign in with a ChatGPT subscription.
 
-For Grok Build on a remote or headless server, run `grok login --device-auth`. See the
-[Grok Build authentication guide](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/02-authentication.md).
+The Grok agent is available through the Registry and signs in the same way. On a remote or
+headless server, run `grok login --device-auth`. See the
+[Grok authentication guide](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/02-authentication.md).
 
 ## Models and options
 

@@ -40,8 +40,8 @@ describe("ProviderStatusBanner", () => {
       shouldShowProviderStatusBanner(
         {
           ...status,
-          instanceId: ProviderInstanceId.make("grok"),
-          driver: ProviderDriverKind.make("grok"),
+          instanceId: ProviderInstanceId.make("pi"),
+          driver: ProviderDriverKind.make("pi"),
         },
         null,
       ),

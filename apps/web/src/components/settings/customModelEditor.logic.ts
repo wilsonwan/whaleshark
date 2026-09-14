@@ -86,9 +86,6 @@ export const DESCRIPTOR_PRESETS_BY_KIND: Partial<
     { id: "fastMode", label: "Fast Mode", type: "boolean" },
     { id: "thinking", label: "Thinking", type: "boolean" },
   ],
-  [ProviderDriverKind.make("grok")]: [
-    { id: "reasoningEffort", label: "Reasoning", type: "select", choices: EFFORT_CHOICES },
-  ],
   [ProviderDriverKind.make("pi")]: [
     {
       id: "thinking",

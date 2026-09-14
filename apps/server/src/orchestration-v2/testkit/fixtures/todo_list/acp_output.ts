@@ -14,7 +14,7 @@ import {
   TODO_LIST_PROMPT,
 } from "../shared.ts";
 
-export function assertTodoListGrokOutput(
+export function assertTodoListAcpOutput(
   result: OrchestratorV2ScenarioResult,
   transcript: ProviderReplayTranscript,
 ) {

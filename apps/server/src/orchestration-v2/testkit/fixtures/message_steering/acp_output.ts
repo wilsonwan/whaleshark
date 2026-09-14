@@ -15,7 +15,7 @@ import {
   projectionFor,
 } from "../shared.ts";
 
-export function assertGrokMessageSteeringOutput(
+export function assertAcpMessageSteeringOutput(
   result: OrchestratorV2ScenarioResult,
   transcript: ProviderReplayTranscript,
 ) {

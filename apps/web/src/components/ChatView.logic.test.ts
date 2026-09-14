@@ -461,7 +461,7 @@ describe("getStartedThreadModelChangeBlockReason", () => {
       instanceId: ProviderInstanceId.make("codex"),
     },
     {
-      instanceId: ProviderInstanceId.make("grok"),
+      instanceId: ProviderInstanceId.make("pi"),
       requiresNewThreadForModelChange: true,
     },
   ];
@@ -472,12 +472,12 @@ describe("getStartedThreadModelChangeBlockReason", () => {
         providers,
         hasStartedSession: false,
         currentModelSelection: {
-          instanceId: ProviderInstanceId.make("grok"),
-          model: "grok-build",
+          instanceId: ProviderInstanceId.make("pi"),
+          model: "pi-build",
         },
         nextModelSelection: {
-          instanceId: ProviderInstanceId.make("grok"),
-          model: "grok-other",
+          instanceId: ProviderInstanceId.make("pi"),
+          model: "pi-other",
         },
       }),
     ).toBeNull();
@@ -489,12 +489,12 @@ describe("getStartedThreadModelChangeBlockReason", () => {
         providers,
         hasStartedSession: true,
         currentModelSelection: {
-          instanceId: ProviderInstanceId.make("grok"),
-          model: "grok-build",
+          instanceId: ProviderInstanceId.make("pi"),
+          model: "pi-build",
         },
         nextModelSelection: {
-          instanceId: ProviderInstanceId.make("grok"),
-          model: "grok-build",
+          instanceId: ProviderInstanceId.make("pi"),
+          model: "pi-build",
         },
       }),
     ).toBeNull();
@@ -506,12 +506,12 @@ describe("getStartedThreadModelChangeBlockReason", () => {
         providers,
         hasStartedSession: true,
         currentModelSelection: {
-          instanceId: ProviderInstanceId.make("grok"),
-          model: "grok-build",
+          instanceId: ProviderInstanceId.make("pi"),
+          model: "pi-build",
         },
         nextModelSelection: {
-          instanceId: ProviderInstanceId.make("grok"),
-          model: "grok-other",
+          instanceId: ProviderInstanceId.make("pi"),
+          model: "pi-other",
         },
       }),
     ).toEqual({

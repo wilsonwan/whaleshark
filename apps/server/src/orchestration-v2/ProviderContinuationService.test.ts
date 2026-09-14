@@ -492,38 +492,41 @@ describe("ProviderContinuationService", () => {
     });
   });
 
-  it.effect("keeps a Grok delegated completion queued instead of restarting active work", () => {
-    return Effect.gen(function* () {
-      const dispatched = yield* Queue.unbounded<unknown>();
-      yield* Effect.gen(function* () {
-        const requests = yield* ProviderContinuationRequests;
-        yield* requests.offer({
-          threadId,
-          providerThreadId,
-          driver: ProviderDriverKind.make("grok"),
-          detail: null,
-          delivery: "message_text",
-          delegatedCompletion: {
-            parentRunId,
-            generation: 1,
-            messageId: delegatedMessageId,
-          },
-        });
-        const command = (yield* Queue.take(dispatched)) as {
-          readonly dispatchMode: { readonly type: string };
-        };
-        assert.deepEqual(command.dispatchMode, { type: "queue_after_active" });
-      }).pipe(
-        Effect.provide(
-          testLayer({
-            dispatched,
-            getThreadProjection: () => Effect.succeed(delegatedProjection()),
-          }),
-        ),
-        Effect.scoped,
-      );
-    });
-  });
+  it.effect(
+    "keeps an ACP registry delegated completion queued instead of restarting active work",
+    () => {
+      return Effect.gen(function* () {
+        const dispatched = yield* Queue.unbounded<unknown>();
+        yield* Effect.gen(function* () {
+          const requests = yield* ProviderContinuationRequests;
+          yield* requests.offer({
+            threadId,
+            providerThreadId,
+            driver: ProviderDriverKind.make("acpRegistry"),
+            detail: null,
+            delivery: "message_text",
+            delegatedCompletion: {
+              parentRunId,
+              generation: 1,
+              messageId: delegatedMessageId,
+            },
+          });
+          const command = (yield* Queue.take(dispatched)) as {
+            readonly dispatchMode: { readonly type: string };
+          };
+          assert.deepEqual(command.dispatchMode, { type: "queue_after_active" });
+        }).pipe(
+          Effect.provide(
+            testLayer({
+              dispatched,
+              getThreadProjection: () => Effect.succeed(delegatedProjection()),
+            }),
+          ),
+          Effect.scoped,
+        );
+      });
+    },
+  );
 
   it.effect(
     "drops stopped and disposed delegated completions instead of reviving them after recovery",

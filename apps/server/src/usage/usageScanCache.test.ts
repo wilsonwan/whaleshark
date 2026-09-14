@@ -60,14 +60,12 @@ describe("scan cache round trip", () => {
       ["/a.jsonl", 100, [record(), record({ dedupeKey: "msg_2:", model: "claude-opus-5" })]],
       ["/b.jsonl", 200, [record({ sessionId: "session-b", reportedCostUsd: 1.5 })]],
     ]);
-    original.set("/grok.jsonl", {
+    original.set("/with-tail.jsonl", {
       size: 40,
       mtimeMs: 300,
-      provider: "grok",
-      records: [
-        record({ provider: "grok", model: "grok-4.5-build", dedupeKey: "s:p:grok-4.5-build" }),
-      ],
-      tailRecords: [record({ provider: "grok", model: "grok-4.5-build", dedupeKey: null })],
+      provider: "claude",
+      records: [record({ model: "claude-opus-5", dedupeKey: "s:p:claude-opus-5" })],
+      tailRecords: [record({ model: "claude-opus-5", dedupeKey: null })],
       position: position({ resumeOffset: 30, guardLength: 30, guardHash: 123 }),
     });
     original.set("/codex.jsonl", {
@@ -93,8 +91,25 @@ describe("scan cache round trip", () => {
     expect(restored.size).toBe(4);
     expect(restored.get("/a.jsonl")).toEqual(original.get("/a.jsonl"));
     expect(restored.get("/b.jsonl")).toEqual(original.get("/b.jsonl"));
-    expect(restored.get("/grok.jsonl")).toEqual(original.get("/grok.jsonl"));
+    expect(restored.get("/with-tail.jsonl")).toEqual(original.get("/with-tail.jsonl"));
     expect(restored.get("/codex.jsonl")).toEqual(original.get("/codex.jsonl"));
+  });
+
+  it("ignores a persisted entry from a provider this build no longer supports", () => {
+    // An older cache can name a provider that has since been removed. The
+    // entry must be dropped rather than handed to a parser that no longer
+    // exists; that costs one cold parse of the file, never a broken page.
+    const encoded = encodeScanCache(cacheWith([["/a.jsonl", 100, [record()]]]));
+    const legacy = {
+      ...encoded,
+      files: {
+        ...encoded.files,
+        "/legacy.jsonl": { ...encoded.files["/a.jsonl"]!, p: "removed-provider" },
+      },
+    };
+
+    const restored = decodeScanCache(JSON.parse(JSON.stringify(legacy)));
+    expect([...restored.keys()]).toEqual(["/a.jsonl"]);
   });
 
   it("drops an entry whose persisted parse state is corrupt", () => {

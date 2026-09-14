@@ -94,25 +94,25 @@ describe("applyManifestDefault", () => {
     );
   });
   it("moves the default flag and its aliases to the manifest's chat default", () => {
-    const driver = ProviderDriverKind.make("grok");
+    const driver = ProviderDriverKind.make("pi");
     const manifest: ModelManifestData = {
       version: 1,
       currentModels: {},
       providers: {
-        grok: {
-          defaults: { chat: "grok-new" },
+        pi: {
+          defaults: { chat: "pi-new" },
           profiles: {},
-          models: [{ slug: "grok-new", name: "New", status: "current" }],
+          models: [{ slug: "pi-new", name: "New", status: "current" }],
         },
       },
     };
     const models = [
-      model({ slug: "grok-old", isDefault: true, aliases: ["grok-default"] }),
-      model({ slug: "grok-new" }),
+      model({ slug: "pi-old", isDefault: true, aliases: ["pi-default"] }),
+      model({ slug: "pi-new" }),
     ];
     assert.deepStrictEqual(applyManifestDefault(models, manifest, driver), [
-      model({ slug: "grok-old" }),
-      model({ slug: "grok-new", isDefault: true, aliases: ["grok-default"] }),
+      model({ slug: "pi-old" }),
+      model({ slug: "pi-new", isDefault: true, aliases: ["pi-default"] }),
     ]);
     // The account does not offer the manifest default: keep the runtime's choice.
     assert.deepStrictEqual(

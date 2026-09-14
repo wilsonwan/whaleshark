@@ -12,7 +12,6 @@ import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, describe, it } from "@effect/vitest";
 import {
   CheckpointId,
-  GrokSettings,
   EnvironmentId,
   MessageId,
   type ModelSelection,
@@ -56,12 +55,6 @@ import type * as EffectAcpSchema from "effect-acp/compat";
 import { ServerConfig } from "../../config.ts";
 import * as McpProviderSession from "../../mcp/McpProviderSession.ts";
 import * as AcpSessionRuntime from "../../provider/acp/AcpSessionRuntime.ts";
-import {
-  extractXAiAcpSubagentEndNotice,
-  extractXAiAcpSubagentUpdate,
-  normalizeXAiAcpToolCallState,
-  registerXAiBackgroundTaskTracking,
-} from "../../provider/acp/XAiAcpExtension.ts";
 import { layer as idAllocatorLayer, IdAllocatorV2 } from "../IdAllocator.ts";
 import {
   ProviderAdapterProtocolError,
@@ -89,10 +82,6 @@ import {
   type AcpAdapterV2SubagentUpdate,
 } from "./AcpAdapterV2.ts";
 
-import { makeGrokAdapterV2 } from "./GrokAdapterV2.ts";
-
-const DEFAULT_GROK_SETTINGS = Schema.decodeSync(GrokSettings)({});
-
 const serverConfigLayer = ServerConfig.layerTest(process.cwd(), {
   prefix: "t3-acp-v2-adapter-",
 }).pipe(Layer.provide(NodeServices.layer));
@@ -100,6 +89,82 @@ const serverConfigLayer = ServerConfig.layerTest(process.cwd(), {
 const testLayer = Layer.mergeAll(NodeServices.layer, idAllocatorLayer, serverConfigLayer);
 const ACP_TEST_DRIVER = ProviderDriverKind.make("acp-test");
 const decodeUnknownJson = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Unknown));
+
+/**
+ * Test flavour fixture: a structured Monitor start ACK arrives with a terminal
+ * raw status but is still a running background tool until the stream ends.
+ */
+const normalizeMonitorStartAckToolCall: NonNullable<AcpAdapterV2Flavor["normalizeToolCall"]> = (
+  toolCall,
+) => {
+  const rawOutput = toolCall.data.rawOutput;
+  const outputType =
+    typeof rawOutput === "object" && rawOutput !== null
+      ? Reflect.get(rawOutput, "type")
+      : undefined;
+  return typeof outputType === "string" && outputType.toLowerCase() === "monitor"
+    ? { ...toolCall, status: "inProgress" }
+    : toolCall;
+};
+
+/**
+ * Test flavour fixture: an empty successful Bash result is still running until
+ * the turn settles, so the adapter must terminalize it at turn completion.
+ */
+const normalizeEmptySuccessfulBashToolCall: NonNullable<AcpAdapterV2Flavor["normalizeToolCall"]> = (
+  toolCall,
+) => {
+  const rawOutput = toolCall.data.rawOutput;
+  if (typeof rawOutput !== "object" || rawOutput === null) return toolCall;
+  const outputType = Reflect.get(rawOutput, "type");
+  if (typeof outputType !== "string" || outputType.toLowerCase() !== "bash") return toolCall;
+  const exitCode = Reflect.get(rawOutput, "exit_code");
+  if (typeof exitCode !== "number" || !Number.isInteger(exitCode)) return toolCall;
+  return { ...toolCall, status: exitCode === 0 ? "inProgress" : "failed" };
+};
+
+const BackgroundTaskLifecycleNotification = Schema.Struct({
+  sessionId: Schema.String,
+  update: Schema.Struct({
+    sessionUpdate: Schema.String,
+    task_id: Schema.optional(Schema.String),
+    tool_call_id: Schema.optional(Schema.String),
+    task_snapshot: Schema.optional(Schema.Struct({ task_id: Schema.optional(Schema.String) })),
+  }),
+});
+
+/**
+ * Test flavour fixture: an ACP agent may report background-task lifecycle via
+ * extension notifications (canonical method plus the legacy underscore alias)
+ * instead of a tool-call update.
+ */
+const registerBackgroundTaskTracking: NonNullable<AcpAdapterV2Flavor["registerExtensions"]> = ({
+  runtime,
+  applyBackgroundTaskMutation,
+}) =>
+  Effect.forEach(
+    [
+      ["x.ai/task_backgrounded", "running"],
+      ["_x.ai/task_backgrounded", "running"],
+      ["x.ai/task_completed", "completed"],
+      ["_x.ai/task_completed", "completed"],
+    ] as const,
+    ([method, status]) =>
+      runtime.handleExtNotification(method, BackgroundTaskLifecycleNotification, (notification) => {
+        const taskId =
+          notification.update.task_snapshot?.task_id ??
+          notification.update.task_id ??
+          notification.update.tool_call_id;
+        return taskId === undefined
+          ? Effect.void
+          : applyBackgroundTaskMutation({
+              sessionId: notification.sessionId,
+              taskId,
+              status,
+            });
+      }),
+    { discard: true },
+  );
 
 describe("acpProjectedCommandExitCode", () => {
   const successOutput = { type: "Bash", exit_code: 0 };
@@ -2694,8 +2759,8 @@ describe("AcpAdapterV2", () => {
     }).pipe(Effect.provide(testLayer)),
   );
 
-  for (const model of ["grok-build", "composer-2"]) {
-    it.effect(`Grok configures the native session for ${model}`, () =>
+  for (const model of ["default", "composer-2"]) {
+    it.effect(`configures the native session model for ${model}`, () =>
       Effect.gen(function* () {
         const childProcessSpawner = yield* ChildProcessSpawner.ChildProcessSpawner;
         const fileSystem = yield* FileSystem.FileSystem;
@@ -2706,22 +2771,22 @@ describe("AcpAdapterV2", () => {
           new URL("../../../scripts/acp-mock-agent.ts", import.meta.url),
         );
         const protocolEvents = yield* Queue.unbounded<EffectAcpProtocol.AcpProtocolLogEvent>();
-        const instanceId = ProviderInstanceId.make("grok-test");
-        const adapter = makeGrokAdapterV2({
-          instanceId,
-          settings: DEFAULT_GROK_SETTINGS,
-          environment: {},
-          hostPlatform: yield* HostProcessPlatform,
-          childProcessSpawner,
+        const instanceId = ProviderInstanceId.make("acp-test-model-config");
+        const adapter = makeAcpAdapterV2({
           crypto: yield* Crypto.Crypto,
+          instanceId,
+          flavor: {
+            driver: ACP_TEST_DRIVER,
+            capabilities: AcpProviderCapabilitiesV2,
+            makeRuntime: makeMockRuntime({ childProcessSpawner, mockAgentPath, protocolEvents }),
+          },
           fileSystem,
           idAllocator,
           serverConfig,
-          makeRuntime: makeMockRuntime({ childProcessSpawner, mockAgentPath, protocolEvents }),
         });
         yield* adapter.openSession({
-          threadId: ThreadId.make(`grok-model-${model}`),
-          providerSessionId: ProviderSessionId.make(`grok-model-${model}`),
+          threadId: ThreadId.make(`acp-model-${model}`),
+          providerSessionId: ProviderSessionId.make(`acp-model-${model}`),
           modelSelection: { instanceId, model },
           runtimePolicy: ProviderAdapterV2RuntimePolicy.make({
             runtimeMode: "full-access",
@@ -2739,13 +2804,13 @@ describe("AcpAdapterV2", () => {
               "configId" in request.params &&
               request.params.configId === "model",
           ).length,
-          model === "grok-build" ? 0 : 1,
+          model === "default" ? 0 : 1,
         );
       }).pipe(Effect.provide(testLayer), Effect.scoped),
     );
   }
 
-  it.live("Grok reapplies an explicit return to the session's setup-time model", () =>
+  it.live("reapplies an explicit return to a non-default model", () =>
     Effect.gen(function* () {
       const childProcessSpawner = yield* ChildProcessSpawner.ChildProcessSpawner;
       const fileSystem = yield* FileSystem.FileSystem;
@@ -2756,20 +2821,20 @@ describe("AcpAdapterV2", () => {
         new URL("../../../scripts/acp-mock-agent.ts", import.meta.url),
       );
       const protocolEvents = yield* Queue.unbounded<EffectAcpProtocol.AcpProtocolLogEvent>();
-      const instanceId = ProviderInstanceId.make("grok-test-switch-back");
-      const adapter = makeGrokAdapterV2({
-        instanceId,
-        settings: DEFAULT_GROK_SETTINGS,
-        environment: {},
-        hostPlatform: yield* HostProcessPlatform,
-        childProcessSpawner,
+      const instanceId = ProviderInstanceId.make("acp-test-model-switch-back");
+      const adapter = makeAcpAdapterV2({
         crypto: yield* Crypto.Crypto,
+        instanceId,
+        flavor: {
+          driver: ACP_TEST_DRIVER,
+          capabilities: AcpProviderCapabilitiesV2,
+          makeRuntime: makeMockRuntime({ childProcessSpawner, mockAgentPath, protocolEvents }),
+        },
         fileSystem,
         idAllocator,
         serverConfig,
-        makeRuntime: makeMockRuntime({ childProcessSpawner, mockAgentPath, protocolEvents }),
       });
-      const threadId = ThreadId.make("grok-model-switch-back");
+      const threadId = ThreadId.make("acp-model-switch-back");
       const runtimePolicy = ProviderAdapterV2RuntimePolicy.make({
         runtimeMode: "full-access",
         interactionMode: "default",
@@ -2777,7 +2842,7 @@ describe("AcpAdapterV2", () => {
       });
       const runtime = yield* adapter.openSession({
         threadId,
-        providerSessionId: ProviderSessionId.make("grok-model-switch-back"),
+        providerSessionId: ProviderSessionId.make("acp-model-switch-back"),
         modelSelection: { instanceId, model: "composer-2" },
         runtimePolicy,
       });
@@ -2786,10 +2851,10 @@ describe("AcpAdapterV2", () => {
         modelSelection: { instanceId, model: "composer-2" },
         runtimePolicy,
       });
-      // The mock session starts on default. Switching away and explicitly
-      // back must send the model configuration change; stale metadata can make
-      // the return trip a silent no-op that left the session on the alt model.
-      for (const model of ["default", "composer-2"]) {
+      // Switching away and explicitly back must send the model configuration
+      // change; a return trip that silently no-ops would leave the session on
+      // the alt model.
+      for (const model of ["gpt-5.3-codex[reasoning=medium,fast=false]", "composer-2"]) {
         yield* runtime.startTurn(
           makeTurnInput({
             threadId,
@@ -2805,18 +2870,22 @@ describe("AcpAdapterV2", () => {
           Stream.runHead,
         );
       }
-      const requests = (yield* Queue.takeAll(protocolEvents)).map(rawProtocolRequest);
-      assert.equal(
-        requests.filter(
-          (request) =>
+      const modelConfigurationValues = (yield* Queue.takeAll(protocolEvents))
+        .map(rawProtocolRequest)
+        .filter(
+          (request): request is NonNullable<typeof request> =>
             request?.method === "session/set_config_option" &&
             typeof request.params === "object" &&
             request.params !== null &&
             "configId" in request.params &&
             request.params.configId === "model",
-        ).length,
-        3,
-      );
+        )
+        .map((request) => (request.params as { readonly value?: unknown }).value);
+      assert.deepEqual(modelConfigurationValues, [
+        "composer-2",
+        "gpt-5.3-codex[reasoning=medium,fast=false]",
+        "composer-2",
+      ]);
     }).pipe(Effect.provide(testLayer), Effect.scoped),
   );
 
@@ -3002,7 +3071,7 @@ describe("AcpAdapterV2", () => {
             ownDetachedProcessGroup: true,
             protocolEvents,
           }),
-          normalizeToolCall: normalizeXAiAcpToolCallState,
+          normalizeToolCall: normalizeEmptySuccessfulBashToolCall,
           restartRuntimeAfterInterrupt: true,
           terminateRuntimeProcessGroupOnInterrupt: true,
         },
@@ -5794,10 +5863,8 @@ describe("AcpAdapterV2", () => {
           driver: ACP_TEST_DRIVER,
           capabilities: AcpProviderCapabilitiesV2,
           enablePostSettleContinuation: true,
-          normalizeToolCall: normalizeXAiAcpToolCallState,
           extractSubagentUpdate: (toolCall) =>
-            extractXAiAcpSubagentUpdate(toolCall) ??
-            (toolCall.toolCallId !== "tool-call-generic-1"
+            toolCall.toolCallId !== "tool-call-generic-1"
               ? undefined
               : subagentPhase === "spawn"
                 ? {
@@ -5817,7 +5884,7 @@ describe("AcpAdapterV2", () => {
                     status: "completed",
                     childSessionId,
                     result: "SUB_DONE",
-                  }),
+                  },
           makeRuntime: makeMockRuntime({
             childProcessSpawner,
             mockAgentPath,
@@ -5906,7 +5973,7 @@ describe("AcpAdapterV2", () => {
       assert.isTrue(yield* hasPendingBackgroundWork);
       assert.isDefined(sessionUpdateHandler, "session update handler must be wired");
 
-      // A production Grok spawn ACK has raw tool status completed but extracts
+      // An ACP agent spawn ACK has raw tool status completed but extracts
       // as a running subagent with its original non-empty prompt. It buffers and
       // offers a continuation after root settlement.
       yield* sessionUpdateHandler!({
@@ -6585,10 +6652,6 @@ describe("AcpAdapterV2", () => {
           deferFinalizeForBackgroundWork: true,
           enablePostSettleContinuation: true,
           extractSubagentEndNotice: (text) => {
-            // Prefer the production parser; fall back only if the harness text
-            // is too short for its UUID + outcome rules.
-            const parsed = extractXAiAcpSubagentEndNotice(text);
-            if (parsed !== undefined) return parsed;
             if (!text.includes(childSessionId)) return undefined;
             if (/completed successfully/i.test(text)) {
               return { childSessionId, status: "completed" as const };
@@ -7351,10 +7414,10 @@ describe("AcpAdapterV2", () => {
             driver: ACP_TEST_DRIVER,
             capabilities: AcpProviderCapabilitiesV2,
             deferFinalizeForBackgroundWork: true,
-            // Hard interrupt flags (stricter than production Grok, which no
-            // longer sets restartRuntimeOnEveryInterrupt): every interrupt
-            // would hard-kill the process group without the settled-soft gate
-            // under test.
+            // Hard interrupt flags (stricter than the shipped ACP flavours,
+            // which no longer set restartRuntimeOnEveryInterrupt): every
+            // interrupt would hard-kill the process group without the
+            // settled-soft gate under test.
             restartRuntimeAfterInterrupt: true,
             restartRuntimeOnEveryInterrupt: true,
             terminateRuntimeProcessGroupOnInterrupt: true,
@@ -7455,7 +7518,7 @@ describe("AcpAdapterV2", () => {
         yield* Fiber.join(interruptFiber);
         assert.isFalse(
           cancelCalled,
-          "settled soft steer must not send session/cancel (the real Grok CLI kills background subagents on cancel)",
+          "settled soft steer must not send session/cancel (a real ACP agent CLI kills background subagents on cancel)",
         );
 
         let subagentTurnItemId: string | null = null;
@@ -7534,8 +7597,8 @@ describe("AcpAdapterV2", () => {
           driver: ACP_TEST_DRIVER,
           capabilities: AcpProviderCapabilitiesV2,
           restartRuntimeAfterInterrupt: true,
-          // Local hard-flavor gate: production Grok no longer sets
-          // restartRuntimeOnEveryInterrupt, but when a flavor does, the
+          // Local hard-flavor gate: the shipped ACP flavours no longer set
+          // restartRuntimeOnEveryInterrupt, but when a flavour does, the
           // settled-soft gate must not leak onto an unsettled prompt.
           restartRuntimeOnEveryInterrupt: true,
           terminateRuntimeProcessGroupOnInterrupt: true,
@@ -7625,15 +7688,15 @@ describe("AcpAdapterV2", () => {
             driver: ACP_TEST_DRIVER,
             capabilities: AcpProviderCapabilitiesV2,
             enablePostSettleContinuation: true,
-            // Production Grok interrupt flags: hard teardown only with
+            // Shipped ACP interrupt flags: hard teardown only with
             // requestRuntimeRestart (user Stop). Without
             // restartRuntimeOnEveryInterrupt a mid-prompt steering interrupt
             // stays soft: session/cancel, same process, session reuse.
             restartRuntimeAfterInterrupt: true,
             terminateRuntimeProcessGroupOnInterrupt: true,
             preserveRuntimeOnSettledInterrupt: true,
-            registerExtensions: ({ runtime: extensionRuntime, applyBackgroundTaskMutation }) =>
-              registerXAiBackgroundTaskTracking(extensionRuntime, applyBackgroundTaskMutation),
+            registerExtensions: (extensionContext) =>
+              registerBackgroundTaskTracking(extensionContext),
             // No ownDetachedProcessGroup: if the interrupt wrongly takes the
             // hard path, terminateProcessGroup is missing and the interrupt
             // fails loudly with a poisoned session.
@@ -7940,7 +8003,7 @@ describe("AcpAdapterV2", () => {
     }).pipe(Effect.provide(testLayer), Effect.scoped),
   );
 
-  it.live("production Grok interrupt flags still hard-kill and respawn on user Stop", () =>
+  it.live("shipped ACP interrupt flags still hard-kill and respawn on user Stop", () =>
     Effect.gen(function* () {
       const childProcessSpawner = yield* ChildProcessSpawner.ChildProcessSpawner;
       const fileSystem = yield* FileSystem.FileSystem;
@@ -7960,15 +8023,15 @@ describe("AcpAdapterV2", () => {
           driver: ACP_TEST_DRIVER,
           capabilities: AcpProviderCapabilitiesV2,
           enablePostSettleContinuation: true,
-          // The full production Grok interrupt flag set after the non-Stop
+          // The full shipped ACP interrupt flag set after the non-Stop
           // softening: no restartRuntimeOnEveryInterrupt. User Stop
           // (requestRuntimeRestart) must still take the hard teardown and
           // respawn path, not the soft cancel path.
           restartRuntimeAfterInterrupt: true,
           terminateRuntimeProcessGroupOnInterrupt: true,
           preserveRuntimeOnSettledInterrupt: true,
-          registerExtensions: ({ runtime: extensionRuntime, applyBackgroundTaskMutation }) =>
-            registerXAiBackgroundTaskTracking(extensionRuntime, applyBackgroundTaskMutation),
+          registerExtensions: (extensionContext) =>
+            registerBackgroundTaskTracking(extensionContext),
           makeRuntime: makeMockRuntime({
             childProcessSpawner,
             mockAgentPath,
@@ -8059,7 +8122,7 @@ describe("AcpAdapterV2", () => {
       assert.equal(
         runtimeOrdinalSeen,
         2,
-        "user Stop with production Grok flags must replace the ACP runtime process",
+        "user Stop with shipped ACP interrupt flags must replace the ACP runtime process",
       );
     }).pipe(Effect.provide(testLayer), Effect.scoped),
   );
@@ -8095,7 +8158,7 @@ describe("AcpAdapterV2", () => {
             driver: ACP_TEST_DRIVER,
             capabilities: AcpProviderCapabilitiesV2,
             deferFinalizeForBackgroundWork: true,
-            // Production Grok interrupt flags: soft settle keeps the process;
+            // Shipped ACP interrupt flags: soft settle keeps the process;
             // only requestRuntimeRestart (user Stop) hard-kills.
             restartRuntimeAfterInterrupt: true,
             terminateRuntimeProcessGroupOnInterrupt: true,
@@ -8600,7 +8663,7 @@ describe("AcpAdapterV2", () => {
             driver: ACP_TEST_DRIVER,
             capabilities: AcpProviderCapabilitiesV2,
             deferFinalizeForBackgroundWork: true,
-            // Production Grok flags: without settled-soft, a steer soft-cancels.
+            // Shipped ACP flags: without settled-soft, a steer soft-cancels.
             restartRuntimeAfterInterrupt: true,
             terminateRuntimeProcessGroupOnInterrupt: true,
             preserveRuntimeOnSettledInterrupt: true,
@@ -10446,7 +10509,7 @@ describe("AcpAdapterV2", () => {
         }
         assert.equal(firstTerminal, "completed");
 
-        // Post-finalize injected monitor-event + ack chatter (live Grok CLI path).
+        // Post-finalize injected monitor-event + ack chatter (live ACP agent CLI path).
         yield* sessionUpdateHandler!({
           sessionId: "mock-session-1",
           update: {
@@ -12445,7 +12508,7 @@ describe("AcpAdapterV2", () => {
           method: "session/elicitation",
         },
       ).pipe(Effect.exit, Effect.forkScoped);
-      const oldXAiUserInputFiber = yield* oldHandlers.requestUserInput!(
+      const oldUserInputFiber = yield* oldHandlers.requestUserInput!(
         {
           nativeItemId: "stale-generation-1-xai-item",
           nativeRequestId: "stale-generation-1-xai-request",
@@ -12468,7 +12531,7 @@ describe("AcpAdapterV2", () => {
       assert.isTrue(Option.isNone(yield* Queue.poll(adapterEvents)));
       assert.isUndefined(oldPermissionFiber.pollUnsafe());
       assert.isUndefined(oldElicitationFiber.pollUnsafe());
-      assert.isUndefined(oldXAiUserInputFiber.pollUnsafe());
+      assert.isUndefined(oldUserInputFiber.pollUnsafe());
       assert.lengthOf(continuationRequests, 0);
 
       yield* replacementHandlers.sessionUpdate!({
@@ -12529,7 +12592,7 @@ describe("AcpAdapterV2", () => {
         }
       }
       if (replacementRequest.type !== "runtime_request.updated") {
-        return yield* Effect.die("Expected generation 2 xAI user input request");
+        return yield* Effect.die("Expected generation 2 user input request");
       }
       const responseFiber = yield* runtime
         .respondToRuntimeRequest({
@@ -13663,11 +13726,11 @@ describe("acpPostSettleContinuationOfferEvidence", () => {
         },
       },
     } as const;
-    // Raw frame looks terminal; the Grok flavor knows it is a running monitor.
+    // Raw frame looks terminal; the flavour knows it is a running monitor.
     assert.isTrue(acpPostSettleContinuationOfferEvidence(monitorStartAck));
     assert.isFalse(
       acpPostSettleContinuationOfferEvidence(monitorStartAck, {
-        normalizeToolCall: normalizeXAiAcpToolCallState,
+        normalizeToolCall: normalizeMonitorStartAckToolCall,
       }),
     );
   });

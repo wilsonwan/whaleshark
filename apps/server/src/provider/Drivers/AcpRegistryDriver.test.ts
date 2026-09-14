@@ -271,7 +271,7 @@ describe("acpRegistrySnapshotReadiness", () => {
   it("reports failed authentication without hiding successful local inspection", () => {
     const snapshot = buildCheckedAcpRegistrySnapshot({
       ...identity,
-      settings: decodeSettings({ agentId: "test-agent", authMethodId: "grok-login" }),
+      settings: decodeSettings({ agentId: "test-agent", authMethodId: "oauth-login" }),
       checkedAt: "2026-08-13T10:00:00.000Z",
       inspection: {
         status: "ready",
@@ -290,8 +290,8 @@ describe("acpRegistrySnapshotReadiness", () => {
             type: "env_var",
           },
           {
-            id: "grok-login",
-            name: "Log in with Grok",
+            id: "oauth-login",
+            name: "Log in with the agent",
             description: null,
             type: "agent",
           },
@@ -306,10 +306,10 @@ describe("acpRegistrySnapshotReadiness", () => {
       auth: {
         status: "unauthenticated",
         type: "agent",
-        label: "Log in with Grok",
+        label: "Log in with the agent",
       },
       message:
-        'Complete the advertised "Log in with Grok" authentication method on the server. T3 Code will detect it automatically on the next provider refresh.',
+        'Complete the advertised "Log in with the agent" authentication method on the server. T3 Code will detect it automatically on the next provider refresh.',
     });
   });
 

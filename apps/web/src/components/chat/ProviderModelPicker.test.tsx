@@ -86,7 +86,7 @@ describe("ProviderModelPicker", () => {
     expect(markup).not.toContain("Fallback model");
   });
 
-  it.each(["codex", "claudeAgent", "cursor", "grok", "pi"])(
+  it.each(["codex", "claudeAgent", "cursor", "acpRegistry", "pi"])(
     "uses the first option label for a missing %s model",
     (driver) => {
       const markup = renderPicker({
