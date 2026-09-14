@@ -3,54 +3,72 @@
 T3 Code runs coding agents on your computer and lets you control them from its
 desktop, web, or mobile app. Set up the machine where the agents will work first.
 
+This fork is not published as a package. You install it by checking out this
+repository and building it, and you update it by pulling, rebuilding, and
+restarting. There is no release channel to install from.
+
 ## Requirements
 
 Command-line use, SSH hosts, and WSL backends need Node.js 22.16+ (22.x), 23.11+
-(23.x), or 24.10 and later. The native desktop app includes its server runtime.
+(23.x), or 24.10 and later. You also need the `vp` command-line tool; see
+[Install vp](../../README.md#install-vp).
 
 You need an installed, authenticated provider before starting a thread. You can
 launch T3 Code and configure providers afterwards.
 
-## Run without installing
+## Run from source
 
-```bash
-npx t3@latest
+From the repository root:
+
+```sh
+vp i
+vp run dev
 ```
 
-This starts the server and opens the local web app. Run
-`npx t3@latest --help` for command-line options.
+This starts the server and the local web app. Run `vp run dev --help` for
+options, or `node apps/server/src/bin.ts --help` for the command-line reference.
+
+For a server you keep running, build it and use the built CLI:
+
+```sh
+vp run build
+node apps/server/dist/bin.mjs
+```
 
 ## Desktop app
 
-Download a release from [GitHub Releases](https://github.com/pingdotgg/t3code/releases),
-or use a package manager:
+Build the desktop app from the same checkout:
 
-| Platform           | Install                         |
-| ------------------ | ------------------------------- |
-| Windows            | `winget install T3Tools.T3Code` |
-| macOS              | `brew install --cask t3-code`   |
-| Arch Linux         | `yay -S t3code-bin`             |
-| Arch Linux nightly | `yay -S t3code-nightly-bin`     |
+| Platform | Command                     |
+| -------- | --------------------------- |
+| macOS    | `vp run dist:desktop:dmg`   |
+| Linux    | `vp run dist:desktop:linux` |
+| Windows  | `vp run dist:desktop:win`   |
+
+Local builds are unsigned. See
+[Development](../operations/development.md#desktop-artifacts) for prerequisites,
+or `vp run dev:desktop` to run the Electron client against the dev server.
 
 ### Windows Subsystem for Linux
 
 Choose a WSL distro in **Settings → Connections** to run agents and projects
 there. Install Node.js and provider CLIs inside that distro. T3 Code installs its
-matching server runtime there automatically; the first launch after an app
-update can take longer.
+matching server runtime there automatically; the first launch after rebuilding
+the app can take longer.
 
 ### Open a project from a terminal
 
 With the desktop app already running on the same machine:
 
 ```bash
-npx t3 app
+node apps/server/dist/bin.mjs app
 ```
 
 This opens a new thread for the current directory, adding the project if needed.
-Pass a path, such as `npx t3 app ../my-project`, to open another directory. It requires
-the desktop app, so a standalone server or an SSH session is not enough. If the
-command cannot reach the app, start or update the desktop app and try again.
+Pass a path, such as `node apps/server/dist/bin.mjs app ../my-project`, to open
+another directory. It requires the desktop app, so a standalone server or an SSH
+session is not enough. If the command cannot reach the app, start the desktop app
+and try again.
 
 ## Mobile app
 
@@ -99,4 +117,4 @@ and [Pi](./providers-pi.md).
 - [Permission modes](./permission-modes.md): choose when agents ask before acting.
 - [Remote access](./remote-access.md): connect from another device.
 - [Running in the background](./background-service.md): keep a Linux or macOS host available.
-- [Updating T3 Code](./updating.md): update the app and connected servers.
+- [Updating T3 Code](./updating.md): rebuild the app and the connected servers.

@@ -13,9 +13,12 @@ export type ServicePreflightResult =
       readonly reason: string;
     };
 
+/**
+ * Checks that a build can run under the service launcher already installed on
+ * this machine. This fork installs from source, so a mismatch is repaired by
+ * running `t3 service install` from the checkout you want to run.
+ */
 export function runServicePreflight(input: {
-  /** Older servers always pass this flag when invoking a staged preflight. */
-  readonly databasePath: string;
   readonly launcherProtocol: number;
   readonly version?: string;
 }): ServicePreflightResult {
@@ -25,7 +28,7 @@ export function runServicePreflight(input: {
       status: "blocked",
       version,
       reason:
-        "This release requires a newer T3 Code service launcher. Update it on the server machine.",
+        "The installed T3 Code service launcher was installed by a different build. Run `t3 service install` from this checkout on the server machine.",
     };
   }
 

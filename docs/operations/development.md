@@ -15,6 +15,16 @@ a new browser.
 
 Prefer a container? See [Dev container](../internals/devcontainer.md) for VS Code and Codespaces setup.
 
+## Maintaining this fork
+
+There is no release channel: the checkout is the distribution. `main` is what
+runs, the background service runs the checkout it was installed from, and
+keeping a server current means pulling, rebuilding with `vp run build`, and
+running `t3 service install` again. Nothing in this repository publishes a
+package, a desktop update feed, or an AUR package. See
+[Desktop artifacts and signing](./release.md) for local builds and the
+unresolved remote CLI package source.
+
 ## Choosing a dev process
 
 Use `vp run dev` for server and web, or `vp run dev:desktop` for the Electron client.
@@ -163,10 +173,11 @@ rustup target add aarch64-pc-windows-msvc
 ```
 
 NSIS is downloaded by electron-builder. WSL support additionally needs a Linux node-pty prebuild;
-see the [release runbook](./release.md#windows-payload-topology-and-update-validation).
+see the [desktop artifact notes](./release.md#windows-payload-topology-and-update-validation).
 
 ### Signing
 
-Add `--signed` after configuring the platform credentials in the
-[release runbook](./release.md). A signed, provisioned app is required for macOS
-notarization.
+Add `--signed` after configuring the platform credentials in your own
+environment; see [Signing](./release.md#signing-optional). A signed, provisioned
+app is required for macOS notarization, and this fork does not publish artifacts,
+so signing is only worth setting up for a local build.

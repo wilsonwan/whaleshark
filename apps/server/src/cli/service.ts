@@ -3,11 +3,10 @@ import * as Console from "effect/Console";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Terminal from "effect/Terminal";
-import { Command, Flag, GlobalFlag, Prompt } from "effect/unstable/cli";
+import { Command, GlobalFlag, Prompt } from "effect/unstable/cli";
 
 import packageJson from "../../package.json" with { type: "json" };
 import * as BootService from "../service/bootService.ts";
-import { compareExactServiceVersions } from "../service/serviceProtocol.ts";
 import type * as ServerConfig from "../config.ts";
 import * as ProcessRunner from "../processRunner.ts";
 import { projectLocationFlags, resolveCliAuthConfig } from "./config.ts";
@@ -30,26 +29,18 @@ export type ServiceReconcileResult =
       readonly plan: BootService.BootServicePlan;
     };
 
-/** Install, update, or repair the service using the CLI version running this command. */
-export const reconcileService = Effect.fn("cli.service.reconcile")(function* (options?: {
-  readonly allowDowngrade?: boolean;
-}) {
+/**
+ * Install or repair the service from the checkout running this command. There is
+ * no release channel to pull from, so "repair" means rewriting the unit and
+ * launcher to point at this build.
+ */
+export const reconcileService = Effect.fn("cli.service.reconcile")(function* () {
   const service = yield* BootService.BootService;
   const status = yield* service.status;
   if (status.installed && status.current) {
     return { changed: false, status } satisfies ServiceReconcileResult;
   }
-  if (
-    status.installedVersion !== undefined &&
-    options?.allowDowngrade !== true &&
-    compareExactServiceVersions(packageJson.version, status.installedVersion) < 0
-  ) {
-    return yield* new BootService.BootServiceDowngradeRefusedError({
-      installedVersion: status.installedVersion,
-      targetVersion: packageJson.version,
-    });
-  }
-  const plan = yield* service.install(options);
+  const plan = yield* service.install;
   return {
     changed: true,
     previouslyInstalled: status.installed,
@@ -65,33 +56,21 @@ export function formatServiceStatus(
     return "T3 Code service\n  Status: unavailable on this machine\n  Supported on: Linux with systemd, macOS with launchd";
   }
   if (!status.installed) {
-    return "T3 Code service\n  Status: not installed\n  Next: Run `t3 service install`.";
+    return "T3 Code service\n  Status: not installed\n  Next: Run `t3 service install` from the checkout you want to run.";
   }
   const installedVersion = status.installedVersion ?? cliVersion;
   const problems = (status.problems ?? []).map(
     (problem) => `  [${problem}] ${BootService.formatBootServiceProblem(problem)}`,
   );
-  if (
-    !status.current &&
-    status.installedVersion !== undefined &&
-    compareExactServiceVersions(status.installedVersion, cliVersion) > 0
-  ) {
-    return [
-      "T3 Code service",
-      `  Status: installed · t3@${installedVersion} (newer than this t3@${cliVersion} CLI)`,
-      `  Unit: ${status.unitPath}`,
-      `  Logs: ${status.logPath}`,
-      ...problems,
-      `  Next: Use \`npx t3@${installedVersion} service update\` to repair it, or pass \`--allow-downgrade\` explicitly.`,
-    ].join("\n");
-  }
   return [
     "T3 Code service",
-    `  Status: ${status.current ? `installed · t3@${installedVersion}` : "needs an update or repair"}`,
+    `  Status: ${status.current ? `installed · t3@${installedVersion}` : "needs a reinstall from this checkout"}`,
     `  Unit: ${status.unitPath}`,
     `  Logs: ${status.logPath}`,
     ...problems,
-    ...(status.current ? [] : [`  Next: Run \`npx t3@${cliVersion} service update\`.`]),
+    ...(status.current
+      ? []
+      : [`  Next: Run \`t3 service install\` from the checkout you want to run.`]),
   ].join("\n");
 }
 
@@ -104,46 +83,19 @@ const runServiceCommand = Effect.fn("cli.service.run")(function* <A, E>(
   return yield* run.pipe(Effect.provide(bootServiceLayer(config)));
 });
 
-const serviceReconcileFlags = {
-  ...projectLocationFlags,
-  allowDowngrade: Flag.boolean("allow-downgrade").pipe(
-    Flag.withDescription("Allow replacing a newer installed service with this older CLI version."),
-    Flag.withDefault(false),
+const serviceInstallCommand = Command.make("install", projectLocationFlags).pipe(
+  Command.withDescription(
+    "Install or repair the T3 Code background service from this checkout for this user.",
   ),
-};
-
-const serviceInstallCommand = Command.make("install", serviceReconcileFlags).pipe(
-  Command.withDescription("Install T3 Code as a background service for this user."),
   Command.withHandler((flags) =>
     runServiceCommand(
       flags,
       Effect.gen(function* () {
-        const result = yield* reconcileService({ allowDowngrade: flags.allowDowngrade });
+        const result = yield* reconcileService();
         if (!result.changed) {
           yield* Console.log(
             `T3 Code service is already installed with t3@${packageJson.version}.`,
           );
-          return;
-        }
-        yield* Console.log(
-          `${result.previouslyInstalled ? "Updated" : "Installed"} T3 Code service with t3@${packageJson.version}.\nLogs: ${result.plan.logPath}`,
-        );
-      }),
-    ),
-  ),
-);
-
-const serviceUpdateCommand = Command.make("update", serviceReconcileFlags).pipe(
-  Command.withDescription(
-    "Update or repair the background service using this CLI version. Use `npx t3@latest service update` for the latest release.",
-  ),
-  Command.withHandler((flags) =>
-    runServiceCommand(
-      flags,
-      Effect.gen(function* () {
-        const result = yield* reconcileService({ allowDowngrade: flags.allowDowngrade });
-        if (!result.changed) {
-          yield* Console.log(`T3 Code service is already using t3@${packageJson.version}.`);
           return;
         }
         yield* Console.log(
@@ -197,24 +149,13 @@ export const offerServiceDuringOnboarding = Effect.gen(function* () {
   for (const problem of status.problems ?? []) {
     yield* Console.warn(`[${problem}] ${BootService.formatBootServiceProblem(problem)}`);
   }
-  if (
-    installed &&
-    status.installedVersion !== undefined &&
-    compareExactServiceVersions(status.installedVersion, packageJson.version) > 0
-  ) {
-    yield* Console.log(
-      `A newer t3@${status.installedVersion} background service is installed. Leaving it unchanged.`,
-    );
-    // This CLI cannot verify the newer service. Keep the manual fallback available.
-    return false;
-  }
   // A LaunchAgent starts at login and dies at logout; there is no
   // enable-linger equivalent on macOS. Do not promise more than that.
   const platform = yield* HostProcessPlatform;
   const wanted = yield* Prompt.run(
     Prompt.confirm({
       message: installed
-        ? "The installed T3 Code service needs an update or repair. Update it now?"
+        ? "The installed T3 Code service does not match this checkout. Reinstall it now?"
         : platform === "darwin"
           ? "Run T3 Code in the background whenever you log in to this Mac? " +
             "It stays reachable over Tailscale while you are logged in."
@@ -249,19 +190,10 @@ export const recoverServiceOnboardingOffer = <R>(
         Console.warn(`Background setup did not finish: ${error.message}`).pipe(Effect.as(false)),
       BootServicePrerequisiteError: (error) =>
         Console.warn(`Background setup did not finish: ${error.message}`).pipe(Effect.as(false)),
-      BootServiceUpdatePendingError: (error) =>
-        Console.warn(`Background setup did not finish: ${error.message}`).pipe(Effect.as(false)),
-      BootServiceDowngradeRefusedError: (error) =>
-        Console.warn(`Background setup did not finish: ${error.message}`).pipe(Effect.as(false)),
     }),
   );
 
 export const serviceCommand = Command.make("service").pipe(
   Command.withDescription("Manage the T3 Code background service."),
-  Command.withSubcommands([
-    serviceInstallCommand,
-    serviceUninstallCommand,
-    serviceUpdateCommand,
-    serviceStatusCommand,
-  ]),
+  Command.withSubcommands([serviceInstallCommand, serviceUninstallCommand, serviceStatusCommand]),
 );

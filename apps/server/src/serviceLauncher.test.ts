@@ -4,12 +4,12 @@ import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Path from "effect/Path";
 
-import { Launcher, readServiceState, writeServiceState } from "./serviceLauncher.ts";
+import { Launcher, readServiceState } from "./serviceLauncher.ts";
 import {
-  compareExactServiceVersions,
   decodeServiceState,
   isExactServiceVersion,
   SERVICE_LAUNCHER_PROTOCOL,
+  SERVICE_STATE_FILE,
   SERVICE_STOP_MARKER_FILE,
 } from "./service/serviceProtocol.ts";
 
@@ -22,271 +22,156 @@ it("accepts only exact semantic versions", () => {
   }
 });
 
-it("orders exact semantic versions without treating build metadata as precedence", () => {
-  assert.equal(compareExactServiceVersions("1.2.3", "1.2.3"), 0);
-  assert.equal(compareExactServiceVersions("1.2.4", "1.2.3"), 1);
-  assert.equal(compareExactServiceVersions("2.0.0-alpha.1", "2.0.0-alpha.2"), -1);
-  assert.equal(compareExactServiceVersions("2.0.0-alpha.2", "2.0.0-alpha.beta"), -1);
-  assert.equal(compareExactServiceVersions("2.0.0-alpha-beta", "2.0.0-alpha-alpha"), 1);
-  assert.equal(compareExactServiceVersions("2.0.0", "2.0.0-rc.1"), 1);
-  assert.equal(compareExactServiceVersions("2.0.0+one", "2.0.0+two"), 0);
-});
-
-it("rejects contradictory service state", () => {
-  assert.isUndefined(
+it("accepts one source entry and rejects incomplete service state", () => {
+  assert.deepEqual(
     decodeServiceState({
       protocol: SERVICE_LAUNCHER_PROTOCOL,
       activeVersion: "0.0.31",
-      update: {
-        id: "update-1",
-        fromVersion: "0.0.30",
-        targetVersion: "0.0.32",
-        dbPath: "/tmp/state.sqlite",
-        status: "pending",
-      },
+      entryPath: "/opt/t3/dist/bin.mjs",
     }),
+    {
+      protocol: SERVICE_LAUNCHER_PROTOCOL,
+      activeVersion: "0.0.31",
+      entryPath: "/opt/t3/dist/bin.mjs",
+    },
   );
 
-  assert.isUndefined(
-    decodeServiceState({
-      protocol: SERVICE_LAUNCHER_PROTOCOL,
-      activeVersion: "1.0.0",
-      update: {
-        id: "update-3",
-        fromVersion: "1.0.0",
-        targetVersion: "1.1.0",
-        status: "pending",
-      },
-    }),
-  );
-
-  assert.isUndefined(
-    decodeServiceState({
-      protocol: SERVICE_LAUNCHER_PROTOCOL,
-      activeVersion: "1.0.0",
-      update: {
-        id: "update-2",
-        fromVersion: "1.0.0",
-        targetVersion: "0.9.0",
-        dbPath: "/tmp/state.sqlite",
-        status: "pending",
-      },
-    }),
-  );
+  for (const value of [
+    { protocol: SERVICE_LAUNCHER_PROTOCOL, activeVersion: "0.0.31" },
+    { protocol: SERVICE_LAUNCHER_PROTOCOL, activeVersion: "0.0.31", entryPath: "" },
+    { protocol: SERVICE_LAUNCHER_PROTOCOL - 1, activeVersion: "0.0.31", entryPath: "/t3" },
+    { protocol: SERVICE_LAUNCHER_PROTOCOL, activeVersion: "latest", entryPath: "/t3" },
+    { protocol: SERVICE_LAUNCHER_PROTOCOL, activeVersion: 31, entryPath: "/t3" },
+  ]) {
+    assert.isUndefined(decodeServiceState(value));
+  }
 });
 
-it.layer(NodeServices.layer)("service state persistence", (it) => {
-  it.effect("durably replaces and strictly reads one state document", () =>
+const waitForFile = (filePath: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    for (let attempt = 0; attempt < 250; attempt += 1) {
+      if (yield* fs.exists(filePath)) return yield* fs.readFileString(filePath);
+      yield* Effect.sleep("20 millis");
+    }
+    return undefined;
+  });
+
+it.layer(NodeServices.layer)("service launcher", (it) => {
+  it.effect("strictly reads the state document it was installed with", () =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-launcher-test-" });
-      const statePath = path.join(root, "runtime", "service-state.json");
+      const statePath = path.join(root, "runtime", SERVICE_STATE_FILE);
+      yield* fs.makeDirectory(path.dirname(statePath), { recursive: true });
       const state = {
         protocol: SERVICE_LAUNCHER_PROTOCOL,
         activeVersion: "0.0.31",
+        entryPath: path.join(root, "bin.mjs"),
       } as const;
 
-      yield* Effect.promise(() => writeServiceState(statePath, state));
+      // @effect-diagnostics-next-line preferSchemaOverJson:off - fixed launcher-owned test document.
+      yield* fs.writeFileString(statePath, `${JSON.stringify(state, null, 2)}\n`);
       assert.deepEqual(yield* Effect.promise(() => readServiceState(statePath)), state);
-    }),
-  );
 
-  it.effect("serializes shutdown with launcher recovery", () =>
-    Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-launcher-stop-" });
-      const statePath = path.join(root, "runtime", "service-state.json");
-      const versionDir = path.join(root, "runtime", "versions", "1.0.0");
-      const entryPath = path.join(versionDir, "node_modules", "t3", "dist", "bin.mjs");
-      yield* fs.makeDirectory(path.dirname(entryPath), { recursive: true });
-      yield* fs.writeFileString(entryPath, "setInterval(() => {}, 1_000);\n");
-      yield* fs.writeFileString(path.join(versionDir, ".install-complete"), "1.0.0\n");
-      yield* Effect.promise(() =>
-        writeServiceState(statePath, {
-          protocol: SERVICE_LAUNCHER_PROTOCOL,
-          activeVersion: "1.0.0",
-        }),
-      );
-
-      const launcher = new Launcher(root, yield* Effect.promise(() => readServiceState(statePath)));
-      const running = launcher.run();
-      const stopping = launcher.stop("SIGTERM");
-      // An explicit stop leaves the marker that tells a child shutting down
-      // mid-update that no replacement server is coming. It is present as
-      // soon as stop() returns its promise, before queued transitions run.
-      assert.isTrue(yield* fs.exists(path.join(root, "runtime", SERVICE_STOP_MARKER_FILE)));
-      yield* Effect.promise(() => stopping);
-      yield* Effect.promise(() => running);
-    }),
-  );
-
-  it.effect("commits only after the trial reports prepared", () =>
-    Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-launcher-flow-" });
-      const statePath = path.join(root, "runtime", "service-state.json");
-      const databasePath = path.join(root, "userdata", "state.sqlite");
-      yield* fs.makeDirectory(path.dirname(databasePath), { recursive: true });
-      yield* fs.writeFileString(databasePath, "before trial");
-      // @effect-diagnostics-next-line preferSchemaOverJson:off - embeds a path in fake child source.
-      const encodedDatabasePath = JSON.stringify(databasePath);
-      const childSource = `
-const context = JSON.parse(process.env.T3_SERVICE_LAUNCHER_CONTEXT);
-if (context.update?.status === "pending") {
-  process.send({ type: "prepared", updateId: context.update.id });
-  process.on("message", (message) => {
-    if (message.type === "committed") process.exit(0);
-  });
-} else if (context.update === undefined) {
-  process.send({ type: "request-update", targetVersion: "1.1.0", dbPath: ${encodedDatabasePath} });
-  setInterval(() => {}, 1_000);
-} else {
-  process.exit(0);
-}
-`;
-      for (const version of ["1.0.0", "1.1.0"]) {
-        const versionDir = path.join(root, "runtime", "versions", version);
-        const entryPath = path.join(versionDir, "node_modules", "t3", "dist", "bin.mjs");
-        yield* fs.makeDirectory(path.dirname(entryPath), { recursive: true });
-        yield* fs.writeFileString(entryPath, childSource);
-        yield* fs.writeFileString(path.join(versionDir, ".install-complete"), `${version}\n`);
-      }
-      yield* Effect.promise(() =>
-        writeServiceState(statePath, {
-          protocol: SERVICE_LAUNCHER_PROTOCOL,
-          activeVersion: "1.0.0",
-        }),
-      );
-
-      const launcher = new Launcher(root, yield* Effect.promise(() => readServiceState(statePath)));
-      yield* Effect.promise(() =>
-        launcher.run().then(
-          () => Promise.reject(new Error("launcher unexpectedly completed")),
-          () => Promise.resolve(),
+      yield* fs.writeFileString(statePath, '{"protocol":2,"activeVersion":"0.0.31"}\n');
+      const error = yield* Effect.promise(() =>
+        readServiceState(statePath).then(
+          () => undefined,
+          (cause: unknown) => cause,
         ),
       );
-
-      const state = yield* Effect.promise(() => readServiceState(statePath));
-      assert.equal(state.activeVersion, "1.1.0");
-      assert.equal(state.update?.status, "committed");
+      assert.instanceOf(error, Error);
     }),
   );
 
-  it.effect("rolls back a trial that reports the wrong update ID", () =>
+  it.effect("fails loudly when the recorded source entry is gone", () =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
-      const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-launcher-rollback-" });
-      const statePath = path.join(root, "runtime", "service-state.json");
-      const databasePath = path.join(root, "userdata", "state.sqlite");
-      yield* fs.makeDirectory(path.dirname(databasePath), { recursive: true });
-      yield* fs.writeFileString(databasePath, "before trial");
-      // @effect-diagnostics-next-line preferSchemaOverJson:off - embeds a path in fake child source.
-      const encodedDatabasePath = JSON.stringify(databasePath);
-      const childSource = `
-const context = JSON.parse(process.env.T3_SERVICE_LAUNCHER_CONTEXT);
-if (context.update?.status === "pending") {
-  process.send({ type: "prepared", updateId: "wrong-update" });
-} else if (context.update === undefined) {
-  process.send({ type: "request-update", targetVersion: "1.1.0", dbPath: ${encodedDatabasePath} });
-  setInterval(() => {}, 1_000);
-} else {
-  process.exit(0);
-}
-`;
-      for (const version of ["1.0.0", "1.1.0"]) {
-        const versionDir = path.join(root, "runtime", "versions", version);
-        const entryPath = path.join(versionDir, "node_modules", "t3", "dist", "bin.mjs");
-        yield* fs.makeDirectory(path.dirname(entryPath), { recursive: true });
-        yield* fs.writeFileString(entryPath, childSource);
-        yield* fs.writeFileString(path.join(versionDir, ".install-complete"), `${version}\n`);
-      }
-      yield* Effect.promise(() =>
-        writeServiceState(statePath, {
-          protocol: SERVICE_LAUNCHER_PROTOCOL,
-          activeVersion: "1.0.0",
-        }),
-      );
+      const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-launcher-missing-" });
+      const launcher = new Launcher(root, {
+        protocol: SERVICE_LAUNCHER_PROTOCOL,
+        activeVersion: "1.0.0",
+        entryPath: path.join(root, "missing", "bin.mjs"),
+      });
 
-      const launcher = new Launcher(root, yield* Effect.promise(() => readServiceState(statePath)));
-      yield* Effect.promise(() =>
+      const error = yield* Effect.promise(() =>
         launcher.run().then(
-          () => Promise.reject(new Error("launcher unexpectedly completed")),
-          () => Promise.resolve(),
+          () => undefined,
+          (cause: unknown) => cause,
         ),
       );
-
-      const state = yield* Effect.promise(() => readServiceState(statePath));
-      assert.equal(state.activeVersion, "1.0.0");
-      assert.equal(state.update?.status, "rolled-back");
-      assert.equal(
-        state.update?.status === "rolled-back" ? state.update.reason : undefined,
-        "invalid-prepared",
-      );
-    }),
-  );
-
-  it.effect("restores the database when a migrating trial exits", () =>
-    Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-launcher-db-" });
-      const statePath = path.join(root, "runtime", "service-state.json");
-      const databasePath = path.join(root, "userdata", "state.sqlite");
-      const original = "database before migration";
-      yield* fs.makeDirectory(path.dirname(databasePath), { recursive: true });
-      yield* fs.writeFileString(databasePath, original);
-      // @effect-diagnostics-next-line preferSchemaOverJson:off - embeds a path in fake child source.
-      const encodedDatabasePath = JSON.stringify(databasePath);
-      const childSource = `
-import { writeFileSync } from "node:fs";
-const context = JSON.parse(process.env.T3_SERVICE_LAUNCHER_CONTEXT);
-if (context.update?.status === "pending") {
-  writeFileSync(context.update.dbPath, "database after migration");
-  writeFileSync(context.update.dbPath + "-wal", "trial wal");
-  writeFileSync(context.update.dbPath + "-shm", "trial shm");
-  process.exit(1);
-} else if (context.update === undefined) {
-  process.send({ type: "request-update", targetVersion: "1.1.0", dbPath: ${encodedDatabasePath} });
-  setInterval(() => {}, 1_000);
-} else {
-  process.exit(0);
-}
-`;
-      for (const version of ["1.0.0", "1.1.0"]) {
-        const versionDir = path.join(root, "runtime", "versions", version);
-        const entryPath = path.join(versionDir, "node_modules", "t3", "dist", "bin.mjs");
-        yield* fs.makeDirectory(path.dirname(entryPath), { recursive: true });
-        yield* fs.writeFileString(entryPath, childSource);
-        yield* fs.writeFileString(path.join(versionDir, ".install-complete"), `${version}\n`);
-      }
-      yield* Effect.promise(() =>
-        writeServiceState(statePath, {
-          protocol: SERVICE_LAUNCHER_PROTOCOL,
-          activeVersion: "1.0.0",
-        }),
-      );
-
-      const launcher = new Launcher(root, yield* Effect.promise(() => readServiceState(statePath)));
-      yield* Effect.promise(() =>
-        launcher.run().then(
-          () => Promise.reject(new Error("launcher unexpectedly completed")),
-          () => Promise.resolve(),
-        ),
-      );
-
-      const state = yield* Effect.promise(() => readServiceState(statePath));
-      assert.equal(state.activeVersion, "1.0.0");
-      assert.equal(state.update?.status, "rolled-back");
-      assert.equal(yield* fs.readFileString(databasePath), original);
-      assert.isFalse(yield* fs.exists(`${databasePath}-wal`));
-      assert.isFalse(yield* fs.exists(`${databasePath}-shm`));
-      const updateId = state.update?.id;
-      assert.isDefined(updateId);
-      assert.isFalse(yield* fs.exists(path.join(root, "runtime", "db-backup", updateId)));
+      assert.instanceOf(error, Error);
+      assert.include((error as Error).message, "t3 service install");
     }),
   );
 });
+
+// The launcher drives a real subprocess, so this test runs on the live clock.
+it.live("starts the recorded source entry and terminates it on an explicit stop", () =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-launcher-start-" });
+    const entryPath = path.join(root, "bin.mjs");
+    const startedPath = path.join(root, "started.json");
+    yield* fs.writeFileString(
+      entryPath,
+      [
+        'import { writeFileSync } from "node:fs";',
+        // @effect-diagnostics-next-line preferSchemaOverJson:off - embeds a path in fake child source.
+        `writeFileSync(${JSON.stringify(startedPath)}, JSON.stringify({`,
+        '  context: JSON.parse(process.env.T3_SERVICE_LAUNCHER_CONTEXT ?? "null"),',
+        "  pid: process.pid,",
+        "  argv: process.argv.slice(1),",
+        "}));",
+        "setInterval(() => {}, 1_000);",
+        "",
+      ].join("\n"),
+    );
+    const statePath = path.join(root, "runtime", SERVICE_STATE_FILE);
+    const state = {
+      protocol: SERVICE_LAUNCHER_PROTOCOL,
+      activeVersion: "1.0.0",
+      entryPath,
+    } as const;
+    yield* fs.makeDirectory(path.dirname(statePath), { recursive: true });
+    // @effect-diagnostics-next-line preferSchemaOverJson:off - fixed launcher-owned test document.
+    yield* fs.writeFileString(statePath, `${JSON.stringify(state, null, 2)}\n`);
+
+    const launcher = new Launcher(root, state);
+    const running = launcher.run();
+    const started = yield* waitForFile(startedPath);
+    assert.isDefined(started);
+    // @effect-diagnostics-next-line preferSchemaOverJson:off - decodes the fake child's own report.
+    const child = JSON.parse(started ?? "{}") as {
+      context?: { protocol?: number; childVersion?: string };
+      pid?: number;
+      argv?: ReadonlyArray<string>;
+    };
+    assert.deepEqual(child.context, {
+      protocol: SERVICE_LAUNCHER_PROTOCOL,
+      childVersion: "1.0.0",
+    });
+    assert.deepEqual(child.argv, [entryPath, "serve"]);
+
+    yield* Effect.promise(() => launcher.stop("SIGTERM"));
+    // An explicit stop leaves the marker that tells a child shutting down
+    // that no replacement server is coming.
+    assert.isTrue(yield* fs.exists(path.join(root, "runtime", SERVICE_STOP_MARKER_FILE)));
+    yield* Effect.promise(() => running);
+    assert.isFalse(pidAlive(child.pid));
+  }).pipe(Effect.provide(NodeServices.layer)),
+);
+
+function pidAlive(pid: number | undefined): boolean {
+  if (pid === undefined) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}

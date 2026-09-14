@@ -189,9 +189,6 @@ describe("t3 pair", () => {
       }),
       Effect.provideService(ServiceLauncherClient.ServiceLauncherHostProcess, {
         connected: false,
-        send: () => false,
-        on: () => undefined,
-        off: () => undefined,
       }),
     ),
   );

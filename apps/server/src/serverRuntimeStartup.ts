@@ -26,8 +26,8 @@ import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
 
 import * as ServerConfig from "./config.ts";
-import * as ServiceLauncherClient from "./service/serviceLauncherClient.ts";
 import * as Keybindings from "./keybindings.ts";
+import * as ServiceLauncherClient from "./service/serviceLauncherClient.ts";
 import * as ExternalLauncher from "./process/externalLauncher.ts";
 import * as EffectWorker from "./orchestration-v2/EffectWorker.ts";
 import * as LegacyV1ThreadImporter from "./orchestration-v2/LegacyV1ThreadImporter.ts";
@@ -361,6 +361,9 @@ const make = (options?: StartupOptions) =>
     const serverSettings = yield* ServerSettings.ServerSettingsService;
     const serverEnvironment = yield* ServerEnvironment.ServerEnvironment;
     const crypto = yield* Crypto.Crypto;
+    // Reading the launch client validates the launcher's startup context before
+    // this process claims readiness: a bad context, a version the launcher did
+    // not record, or a missing IPC channel aborts startup here.
     const launcher = yield* ServiceLauncherClient.ServiceLauncherClient;
 
     const commandGate = yield* makeCommandGate;
@@ -396,6 +399,9 @@ const make = (options?: StartupOptions) =>
     );
 
     const startup = Effect.gen(function* () {
+      yield* Effect.logDebug("startup phase: service launch context", {
+        launcherManaged: launcher.managed,
+      });
       yield* Effect.logDebug("startup phase: starting keybindings runtime");
       yield* runStartupPhase(
         "keybindings.start",
@@ -530,8 +536,6 @@ const make = (options?: StartupOptions) =>
         options?.awaitAuxiliaryParked ?? Effect.void,
       );
 
-      const updateOutcome = yield* launcher.prepareTrial;
-
       yield* Effect.logDebug("startup phase: publishing welcome event", {
         environmentId: environment.environmentId,
         cwd: welcomeBase.cwd,
@@ -564,7 +568,6 @@ const make = (options?: StartupOptions) =>
           payload: {
             at: DateTime.formatIso(yield* DateTime.now),
             environment,
-            ...(updateOutcome === undefined ? {} : { updateOutcome }),
           },
         }),
       );
