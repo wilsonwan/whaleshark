@@ -443,7 +443,7 @@ describe("pools", () => {
     expect(account?.environments).toEqual([{ environmentId: "env-a", label: "Laptop" }]);
   });
 
-  it("redeems through the hub when it holds a credit, even with a fresher native read", () => {
+  it("redeems against the instance even when a hub also reports the account", () => {
     const native = provider({
       driver: claude,
       instanceId: ProviderInstanceId.make("claude"),
@@ -483,10 +483,11 @@ describe("pools", () => {
       ],
     ]);
     const [account] = collectLimitAccounts(input);
-    // Only the hub path clears the routing cooldown it holds for this account.
+    // Reset credits are redeemed on the instance that owns the account; a hub
+    // only reports the balance it sees for it.
     expect(account?.redeem).toEqual({
       environmentId: "env-a",
-      input: { sourceId: "hub", accountId: "claude-same@example.com.json", creditId: "hub-credit" },
+      input: { instanceId: "claude" },
     });
     // The fresher native balance is still the one shown.
     expect(account?.limits.resetCredits?.availableCount).toBe(3);
@@ -521,7 +522,7 @@ describe("pools", () => {
     expect(account?.redeem).toEqual({ environmentId: "env-b", input: { instanceId: "opencode" } });
   });
 
-  it("uses the freshest hub credit and its environment even when the account is also native", () => {
+  it("shows the freshest hub credit read and still redeems on the account's own instance", () => {
     const native = provider({
       auth: { status: "authenticated", email: "same@example.com" },
       usageLimits: { checkedAt, windows: [window], resetCredits: { availableCount: 1 } },
@@ -552,14 +553,14 @@ describe("pools", () => {
     const [account] = collectLimitAccounts(input);
     expect(account?.limits.resetCredits?.availableCount).toBe(2);
     expect(account?.redeem).toEqual({
-      environmentId: "env-b",
-      input: { sourceId: "hub", accountId: "opencode-same.json", creditId: "credit-2" },
+      environmentId: "env-a",
+      input: { instanceId: "opencode" },
     });
     hubAccount.usageLimits.resetCredits.availableCount = 0;
     expect(collectLimitAccounts(input)[0]?.limits.resetCredits?.availableCount).toBe(0);
   });
 
-  it("keeps distinct hub accounts redeemable through their own source", () => {
+  it("lists hub-only accounts with no redemption target", () => {
     const hubAccounts = ["first", "second"].map((id) => ({
       id,
       driver: ProviderDriverKind.make("opencode"),
@@ -582,12 +583,14 @@ describe("pools", () => {
         },
       ],
     ]);
-    expect(collectLimitAccounts(input).map((account) => account.redeem)).toEqual(
-      hubAccounts.map((account) => ({
-        environmentId: "env-a",
-        input: { sourceId: "hub", accountId: account.id, creditId: `${account.id}-credit` },
-      })),
-    );
+    const accounts = collectLimitAccounts(input);
+    expect(accounts.map((account) => account.email)).toEqual([
+      "first@example.com",
+      "second@example.com",
+    ]);
+    // Reset credits are redeemed against an instance, so a hub-only account
+    // has nothing to redeem through.
+    expect(accounts.map((account) => account.redeem)).toEqual([null, null]);
   });
 
   it("does not give old credits the timestamp of a newer window-only read", () => {
@@ -964,7 +967,7 @@ describe("/usage-limits", () => {
     },
   ];
 
-  it("uses hub credit balances and redemption targets in the composer, including native duplicates", () => {
+  it("redeems a native duplicate on its own instance and leaves hub-only accounts without a target", () => {
     const hubs = sources.map((source) => ({
       ...source,
       accounts: source.accounts.map((account) => ({
@@ -976,20 +979,14 @@ describe("/usage-limits", () => {
       })),
     }));
     const report = collectProviderUsageLimits(selected.instanceId, [selected], hubs, now);
-    expect(report?.accounts[0]?.limits.resetCredits?.availableCount).toBe(2);
-    expect(report?.accounts[0]?.resetCreditInput).toEqual({
-      sourceId: "hub",
-      accountId: "duplicate",
-      creditId: "duplicate-credit",
-    });
-    expect(report?.accounts.find((account) => account.id === "hub:oss")?.resetCreditInput).toEqual({
-      sourceId: "hub",
-      accountId: "oss",
-      creditId: "oss-credit",
-    });
+    expect(report?.accounts[0]?.limits).toEqual(limits);
+    expect(report?.accounts[0]?.resetCreditInput).toEqual({ instanceId: selected.instanceId });
+    const hubOnly = report?.accounts.find((account) => account.id === "hub:oss");
+    expect(hubOnly?.sourceLabel).toBe("CLI Proxy");
+    expect(hubOnly?.resetCreditInput).toBeUndefined();
   });
 
-  it("redeems a native duplicate through the hub even when the native snapshot is fresher", () => {
+  it("redeems a native duplicate on its instance even when a hub reports fresher credits", () => {
     const fresher = provider({
       usageLimits: {
         checkedAt: "2026-09-03T11:30:00.000Z",
@@ -1018,12 +1015,10 @@ describe("/usage-limits", () => {
       },
     ];
     const report = collectProviderUsageLimits(fresher.instanceId, [fresher], stale, now);
-    // Only redeeming through the hub clears the routing cooldown it holds for
-    // this account, so the hub wins the path even with a staler balance.
+    // A hub's balance is still shown when it is the fresher read, but the
+    // redemption always targets the instance that owns the account.
     expect(report?.accounts[0]?.resetCreditInput).toEqual({
-      sourceId: "hub",
-      accountId: "duplicate",
-      creditId: "hub-credit",
+      instanceId: fresher.instanceId,
     });
     // The fresher native balance is still the one shown.
     expect(report?.accounts[0]?.limits.resetCredits?.availableCount).toBe(3);

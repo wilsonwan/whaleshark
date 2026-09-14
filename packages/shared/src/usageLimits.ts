@@ -224,9 +224,7 @@ export function collectLimitAccounts(
       environments,
       // A hub only names the account when no environment has it natively.
       sourceLabel: environments.length > 0 ? null : (previous.sourceLabel ?? next.sourceLabel),
-      redeem: creditSource
-        ? creditSource.redeem
-        : (winner.redeem ?? previous.redeem ?? next.redeem),
+      redeem: creditSource?.redeem ?? winner.redeem ?? previous.redeem ?? next.redeem,
       limits: {
         ...winner.limits,
         ...(creditSource?.limits.resetCredits
