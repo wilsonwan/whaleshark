@@ -2854,7 +2854,7 @@ describe("AcpAdapterV2", () => {
       // Switching away and explicitly back must send the model configuration
       // change; a return trip that silently no-ops would leave the session on
       // the alt model.
-      for (const model of ["gpt-5.3-codex[reasoning=medium,fast=false]", "composer-2"]) {
+      for (const model of ["claude-sonnet-4-6[reasoning=medium,fast=false]", "composer-2"]) {
         yield* runtime.startTurn(
           makeTurnInput({
             threadId,
@@ -2883,7 +2883,7 @@ describe("AcpAdapterV2", () => {
         .map((request) => (request.params as { readonly value?: unknown }).value);
       assert.deepEqual(modelConfigurationValues, [
         "composer-2",
-        "gpt-5.3-codex[reasoning=medium,fast=false]",
+        "claude-sonnet-4-6[reasoning=medium,fast=false]",
         "composer-2",
       ]);
     }).pipe(Effect.provide(testLayer), Effect.scoped),
@@ -2974,7 +2974,7 @@ describe("AcpAdapterV2", () => {
       } satisfies ModelSelection;
       const originalSelection = {
         instanceId,
-        model: "gpt-5.3-codex[reasoning=medium,fast=false]",
+        model: "claude-sonnet-4-6[reasoning=medium,fast=false]",
       } satisfies ModelSelection;
       const runtime = yield* adapter.openSession({
         threadId: firstThreadId,

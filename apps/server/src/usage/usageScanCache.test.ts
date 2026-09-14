@@ -34,7 +34,6 @@ function position(overrides: Partial<CachedFile["position"]> = {}): CachedFile["
     resumeOffset: 120,
     guardLength: 64,
     guardHash: 0xdeadbeef,
-    codexState: null,
     ...overrides,
   };
 }
@@ -68,22 +67,13 @@ describe("scan cache round trip", () => {
       tailRecords: [record({ model: "claude-opus-5", dedupeKey: null })],
       position: position({ resumeOffset: 30, guardLength: 30, guardHash: 123 }),
     });
-    original.set("/codex.jsonl", {
+    original.set("/c.jsonl", {
       size: 80,
       mtimeMs: 400,
-      provider: "codex",
-      records: [record({ provider: "codex", model: "gpt-5.2-codex", dedupeKey: null })],
+      provider: "claude",
+      records: [record({ sessionId: "session-c", dedupeKey: "msg_3:" })],
       tailRecords: [],
-      position: position({
-        codexState: {
-          model: "gpt-5.2-codex",
-          sessionId: "session-c",
-          lastUsageSignature: '{"input_tokens":1}',
-          sawSessionMeta: true,
-          suppressingForkCopies: false,
-          forkCopyAnchorMs: 0,
-        },
-      }),
+      position: position({ resumeOffset: 80, guardLength: 64, guardHash: 7 }),
     });
 
     const restored = decodeScanCache(JSON.parse(JSON.stringify(encodeScanCache(original))));
@@ -92,7 +82,7 @@ describe("scan cache round trip", () => {
     expect(restored.get("/a.jsonl")).toEqual(original.get("/a.jsonl"));
     expect(restored.get("/b.jsonl")).toEqual(original.get("/b.jsonl"));
     expect(restored.get("/with-tail.jsonl")).toEqual(original.get("/with-tail.jsonl"));
-    expect(restored.get("/codex.jsonl")).toEqual(original.get("/codex.jsonl"));
+    expect(restored.get("/c.jsonl")).toEqual(original.get("/c.jsonl"));
   });
 
   it("ignores a persisted entry from a provider this build no longer supports", () => {
@@ -112,20 +102,6 @@ describe("scan cache round trip", () => {
     expect([...restored.keys()]).toEqual(["/a.jsonl"]);
   });
 
-  it("drops an entry whose persisted parse state is corrupt", () => {
-    // Resuming with a bad reducer state would attach appended usage to the
-    // wrong model or replay fork-copied history; that entry must cold parse.
-    const encoded = encodeScanCache(cacheWith([["/a.jsonl", 100, [record()]]]));
-    const poisoned = {
-      ...encoded,
-      files: {
-        "/a.jsonl": { ...encoded.files["/a.jsonl"]!, cs: { model: 42 } },
-      },
-    };
-
-    expect(decodeScanCache(JSON.parse(JSON.stringify(poisoned))).has("/a.jsonl")).toBe(false);
-  });
-
   it("drops an entry whose guard length is outside the supported range", () => {
     // The guard length sizes a Buffer in the reader; a bogus value would make
     // every parse of that file fail and silently drop its usage.
@@ -138,11 +114,13 @@ describe("scan cache round trip", () => {
     expect(decodeScanCache(JSON.parse(JSON.stringify(poisoned))).has("/a.jsonl")).toBe(false);
   });
 
-  it("rejects a document from the previous cache version", () => {
+  it("rejects documents from earlier cache versions", () => {
     const encoded = encodeScanCache(cacheWith([["/a.jsonl", 100, [record()]]]));
-    const previous = { ...encoded, version: 2 };
 
-    expect(decodeScanCache(JSON.parse(JSON.stringify(previous))).size).toBe(0);
+    for (const version of [2, 3]) {
+      const previous = { ...encoded, version };
+      expect(decodeScanCache(JSON.parse(JSON.stringify(previous))).size).toBe(0);
+    }
   });
 
   it("interns repeated model and session strings", () => {
@@ -267,7 +245,7 @@ describe("pruneScanCache with an unwalked root", () => {
   it("keeps in-window entries for a provider whose directory was not walked", () => {
     // A missing provider root or failed settings read leaves livePaths without
     // that provider's files. Its warm entries must survive the pass.
-    const cache = cacheWith([["/codex/sessions/a.jsonl", 5000, [record()]]]);
+    const cache = cacheWith([["/elsewhere/projects/a.jsonl", 5000, [record()]]]);
 
     const removed = pruneScanCache(cache, {
       livePaths: new Set(),

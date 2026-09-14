@@ -67,7 +67,7 @@ export function applyUsageLimitsUpdate(input: {
     return previous;
   }
   const merged = new Map(previous?.windows.map((window) => [window.id, window] as const));
-  // Codex sends this notification beside every token-usage tick, almost
+  // Providers send this notification beside every token-usage tick, almost
   // always with unchanged numbers. Decide "nothing changed" per window on
   // the way through so the no-op case never allocates a new snapshot.
   let changed = false;
@@ -116,7 +116,7 @@ function usageWindowEquals(a: ServerProviderUsageWindow, b: ServerProviderUsageW
  *
  * A successful probe replaces the published windows outright, including any
  * runtime update that landed while it was running. That is a deliberate
- * trade-off: the Codex and Claude reads take a few seconds at most, the
+ * trade-off: the usage reads take a few seconds at most, the
  * probe is the fresher full read in every case except that window, and the
  * per-window epoch bookkeeping needed to reconcile the two was more code
  * than the sub-second regression it prevented. The next runtime event

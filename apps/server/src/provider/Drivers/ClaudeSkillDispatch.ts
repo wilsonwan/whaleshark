@@ -2,8 +2,8 @@
  * ClaudeSkillDispatch — turns `$skill` mentions in a composer prompt into the
  * slash invocation Claude Code actually runs.
  *
- * The composer inserts `$name` for every provider. Codex parses that natively;
- * Claude Code does not, and treats it as prose. Claude Code's only user-side
+ * The composer inserts `$name` for every provider. Claude Code does not parse
+ * that natively, and treats it as prose. Claude Code's only user-side
  * invocation is a text block whose first character is `/`: the harness
  * expands `/name args` into the SKILL.md body, and every character after the
  * name (newlines included) arrives as `ARGUMENTS`. Verified against the CLI in

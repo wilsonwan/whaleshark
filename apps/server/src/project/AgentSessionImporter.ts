@@ -341,10 +341,7 @@ const make = Effect.gen(function* () {
               runtimeMode: DEFAULT_RUNTIME_MODE,
               status: "stopped",
               lastSeenAt: thread.updatedAt,
-              resumeCursor:
-                thread.source === "codex"
-                  ? { threadId: thread.providerSessionId }
-                  : { threadId, resume: thread.providerSessionId },
+              resumeCursor: { threadId, resume: thread.providerSessionId },
               runtimePayload: { cwd: project.workspaceRoot },
             },
             { onConflict: "ignore" },

@@ -948,7 +948,7 @@ export type OrchestrationV2ProviderFailure = typeof OrchestrationV2ProviderFailu
 /**
  * Provider-reported retry progress. Some providers expose all fields (Claude),
  * while others only expose `willRetry` and encode counters in display text
- * (Codex), so the protocol-specific values remain nullable.
+ * (e.g. a provider-synthesized child agent), so the protocol-specific values remain nullable.
  */
 export const OrchestrationV2ProviderRetry = Schema.Struct({
   attempt: PositiveInt,

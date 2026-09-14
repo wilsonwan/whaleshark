@@ -126,11 +126,13 @@ describe("custom model settings", () => {
   it("accepts entries at the settings patch boundary", () => {
     expect(
       decodeServerSettingsPatch({
-        providers: { codex: { customModels: [{ slug: "x", capabilities }] } },
-      }).providers?.codex?.customModels,
+        providers: { claudeAgent: { customModels: [{ slug: "x", capabilities }] } },
+      }).providers?.claudeAgent?.customModels,
     ).toEqual([{ slug: "x", capabilities }]);
     expect(() =>
-      decodeServerSettingsPatch({ providers: { codex: { customModels: [{ name: "no slug" }] } } }),
+      decodeServerSettingsPatch({
+        providers: { claudeAgent: { customModels: [{ name: "no slug" }] } },
+      }),
     ).toThrow();
   });
 });
@@ -532,7 +534,7 @@ describe("ClientSettings pull request merge methods", () => {
 describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
   it("defaults text generation to Luna at low reasoning effort", () => {
     expect(DEFAULT_SERVER_SETTINGS.textGenerationModelSelection).toEqual({
-      instanceId: ProviderInstanceId.make("codex"),
+      instanceId: ProviderInstanceId.make("claudeAgent"),
       model: "gpt-5.6-luna",
       options: [{ id: "reasoningEffort", value: "low" }],
     });
@@ -547,20 +549,20 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
     expect(decoded.providerInstances).toEqual({});
     // Legacy `providers` struct is still hydrated with its per-driver defaults
     // so existing call sites keep working through the migration.
-    expect(decoded.providers.codex.enabled).toBe(true);
+    expect(decoded.providers.claudeAgent.enabled).toBe(true);
   });
 
   it("decodes a multi-instance map mixing first-party and fork drivers", () => {
     const decoded = decodeServerSettings({
       providerInstances: {
-        codex_personal: {
-          driver: "codex",
-          displayName: "Codex (personal)",
-          config: { homePath: "~/.codex_personal" },
+        claude_personal: {
+          driver: "claudeAgent",
+          displayName: "Claude (personal)",
+          config: { homePath: "~/.claude_personal" },
         },
-        codex_work: {
-          driver: "codex",
-          config: { homePath: "~/.codex_work" },
+        claude_work: {
+          driver: "claudeAgent",
+          config: { homePath: "~/.claude_work" },
         },
         ollama_local: {
           driver: "ollama",
@@ -569,12 +571,12 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
         },
       },
     });
-    const personalId = ProviderInstanceId.make("codex_personal");
-    const workId = ProviderInstanceId.make("codex_work");
+    const personalId = ProviderInstanceId.make("claude_personal");
+    const workId = ProviderInstanceId.make("claude_work");
     const ollamaId = ProviderInstanceId.make("ollama_local");
 
-    expect(decoded.providerInstances[personalId]?.driver).toBe("codex");
-    expect(decoded.providerInstances[workId]?.config).toEqual({ homePath: "~/.codex_work" });
+    expect(decoded.providerInstances[personalId]?.driver).toBe("claudeAgent");
+    expect(decoded.providerInstances[workId]?.config).toEqual({ homePath: "~/.claude_work" });
     // Critical: a config naming a driver this build does not know about
     // (`ollama` is not in `ProviderDriverKind`) must round-trip without loss.
     // The runtime handles "driver not installed" — the schema must not.
@@ -587,7 +589,7 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
   it("rejects instance keys that violate the slug pattern", () => {
     expect(() =>
       decodeServerSettings({
-        providerInstances: { "1bad": { driver: "codex" } },
+        providerInstances: { "1bad": { driver: "claudeAgent" } },
       }),
     ).toThrow();
   });
@@ -596,7 +598,6 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
 describe("provider enabled defaults", () => {
   it("enables only the stable bindings by default", () => {
     const decoded = decodeServerSettings({});
-    expect(decoded.providers.codex.enabled).toBe(true);
     expect(decoded.providers.claudeAgent.enabled).toBe(true);
     expect(decoded.providers.pi.enabled).toBe(false);
     expect(decoded.providers.opencode.enabled).toBe(false);
@@ -631,19 +632,19 @@ describe("provider enabled defaults", () => {
 
   it("resolves instance enabled state with explicit false winning", () => {
     const pi = ProviderDriverKind.make("pi");
-    const codex = ProviderDriverKind.make("codex");
+    const claudeAgent = ProviderDriverKind.make("claudeAgent");
     // No flags anywhere: driver default applies.
     expect(resolveProviderInstanceEnabled({ driver: pi, config: {} })).toBe(false);
-    expect(resolveProviderInstanceEnabled({ driver: codex, config: {} })).toBe(true);
+    expect(resolveProviderInstanceEnabled({ driver: claudeAgent, config: {} })).toBe(true);
     // Unknown fork drivers stay enabled.
     expect(
       resolveProviderInstanceEnabled({ driver: ProviderDriverKind.make("ollama"), config: {} }),
     ).toBe(true);
     // Envelope flag wins over the driver default.
     expect(resolveProviderInstanceEnabled({ driver: pi, enabled: true, config: {} })).toBe(true);
-    expect(resolveProviderInstanceEnabled({ driver: codex, enabled: false, config: {} })).toBe(
-      false,
-    );
+    expect(
+      resolveProviderInstanceEnabled({ driver: claudeAgent, enabled: false, config: {} }),
+    ).toBe(false);
     // Legacy in-config flag fills in when the envelope is silent.
     expect(resolveProviderInstanceEnabled({ driver: pi, config: { enabled: true } })).toBe(true);
     // Conflicting flags: the explicit false wins, whichever side it is on.
@@ -651,7 +652,11 @@ describe("provider enabled defaults", () => {
       resolveProviderInstanceEnabled({ driver: pi, enabled: true, config: { enabled: false } }),
     ).toBe(false);
     expect(
-      resolveProviderInstanceEnabled({ driver: codex, enabled: false, config: { enabled: true } }),
+      resolveProviderInstanceEnabled({
+        driver: claudeAgent,
+        enabled: false,
+        config: { enabled: true },
+      }),
     ).toBe(false);
   });
 });
@@ -702,13 +707,13 @@ describe("ServerSettingsPatch.providerInstances", () => {
 
     const replacement = decodeServerSettingsPatch({
       providerInstances: {
-        codex_personal: { driver: "codex", config: { homePath: "~/.codex" } },
+        claude_personal: { driver: "claudeAgent", config: { homePath: "~/.claude" } },
       },
     });
     expect(replacement.providerInstances).toBeDefined();
-    expect(replacement.providerInstances?.[ProviderInstanceId.make("codex_personal")]?.driver).toBe(
-      "codex",
-    );
+    expect(
+      replacement.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.driver,
+    ).toBe("claudeAgent");
   });
 
   it("preserves a fork-defined driver entry through patch decoding", () => {
@@ -734,17 +739,17 @@ describe("ServerSettingsPatch string normalization", () => {
         otlpTracesUrl: "  http://localhost:4318/v1/traces  ",
       },
       providers: {
-        codex: {
-          binaryPath: "  /opt/homebrew/bin/codex  ",
-          homePath: "  ~/.codex  ",
+        claudeAgent: {
+          binaryPath: "  /opt/homebrew/bin/claude  ",
+          homePath: "  ~/.claude  ",
           launchArgs: "  --strict-config --enable foo  ",
         },
       },
       providerInstances: {
-        codex_personal: {
-          driver: "  codex  ",
-          displayName: "  Codex Personal  ",
-          config: { homePath: "  ~/.codex-personal  " },
+        claude_personal: {
+          driver: "  claudeAgent  ",
+          displayName: "  Claude Personal  ",
+          config: { homePath: "  ~/.claude-personal  " },
         },
       },
     });
@@ -752,17 +757,17 @@ describe("ServerSettingsPatch string normalization", () => {
     expect(patch.addProjectBaseDirectory).toBe("~/Development");
     expect(patch.textGenerationModelSelection?.model).toBe("gpt-5.4-mini");
     expect(patch.observability?.otlpTracesUrl).toBe("http://localhost:4318/v1/traces");
-    expect(patch.providers?.codex?.binaryPath).toBe("/opt/homebrew/bin/codex");
-    expect(patch.providers?.codex?.homePath).toBe("~/.codex");
-    expect(patch.providers?.codex?.launchArgs).toBe("--strict-config --enable foo");
-    expect(patch.providerInstances?.[ProviderInstanceId.make("codex_personal")]?.driver).toBe(
-      "codex",
+    expect(patch.providers?.claudeAgent?.binaryPath).toBe("/opt/homebrew/bin/claude");
+    expect(patch.providers?.claudeAgent?.homePath).toBe("~/.claude");
+    expect(patch.providers?.claudeAgent?.launchArgs).toBe("--strict-config --enable foo");
+    expect(patch.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.driver).toBe(
+      "claudeAgent",
     );
-    expect(patch.providerInstances?.[ProviderInstanceId.make("codex_personal")]?.displayName).toBe(
-      "Codex Personal",
+    expect(patch.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.displayName).toBe(
+      "Claude Personal",
     );
-    expect(patch.providerInstances?.[ProviderInstanceId.make("codex_personal")]?.config).toEqual({
-      homePath: "  ~/.codex-personal  ",
+    expect(patch.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.config).toEqual({
+      homePath: "  ~/.claude-personal  ",
     });
   });
 
@@ -773,17 +778,17 @@ describe("ServerSettingsPatch string normalization", () => {
       addProjectBaseDirectory: "  ~/Development  ",
       providers: {
         ...defaultSettings.providers,
-        codex: {
-          ...defaultSettings.providers.codex,
-          binaryPath: "  /opt/homebrew/bin/codex  ",
+        pi: {
+          ...defaultSettings.providers.pi,
+          binaryPath: "  /opt/homebrew/bin/pi  ",
           launchArgs: "  --strict-config  ",
         },
       },
     });
 
     expect(encoded.addProjectBaseDirectory).toBe("~/Development");
-    expect(encoded.providers?.codex?.binaryPath).toBe("/opt/homebrew/bin/codex");
-    expect(encoded.providers?.codex?.launchArgs).toBe("--strict-config");
+    expect(encoded.providers?.pi?.binaryPath).toBe("/opt/homebrew/bin/pi");
+    expect(encoded.providers?.pi?.launchArgs).toBe("--strict-config");
   });
 });
 

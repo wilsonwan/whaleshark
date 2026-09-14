@@ -21,7 +21,7 @@ const readModel: OrchestrationReadModel = {
       id: ThreadId.make("thread-1"),
       projectId: ProjectId.make("project-1"),
       title: "Manual title",
-      modelSelection: { instanceId: ProviderInstanceId.make("codex"), model: "gpt-5.4" },
+      modelSelection: { instanceId: ProviderInstanceId.make("claudeAgent"), model: "gpt-5.4" },
       runtimeMode: "full-access",
       interactionMode: "default",
       branch: null,

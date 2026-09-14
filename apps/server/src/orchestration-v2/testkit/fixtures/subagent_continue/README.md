@@ -1,15 +1,15 @@
 # Continued Native Subagent
 
-This fixture records Codex continuing a native subagent from a later parent turn.
+This fixture records a provider continuing a native subagent from a later parent turn.
 
 ```text
-Parent app thread / Codex thread A
+Parent app thread / provider thread A
   Turn 1: spawn one subagent
     |
     +-- spawnAgent
           |
           v
-        Child app thread / Codex thread B
+        Child app thread / provider thread B
           Turn 1: initial prompt
           Assistant: initial subagent response
 
@@ -18,7 +18,7 @@ Parent app thread / Codex thread A
     +-- resumeAgent + sendInput
           |
           v
-        Child app thread / Codex thread B
+        Child app thread / provider thread B
           Turn 2: continuation prompt
           Assistant: continued subagent response
 ```

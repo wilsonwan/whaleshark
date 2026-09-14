@@ -27,11 +27,11 @@ import {
 // The composer draft's `modelSelectionByProvider` and
 // `stickyModelSelectionByProvider` maps are keyed by `ProviderInstanceId`
 // in production; these aliases keep the legacy-key migration tests concise.
-const CODEX_INSTANCE = ProviderInstanceId.make("codex");
-const CODEX_SECONDARY_INSTANCE = ProviderInstanceId.make("codex_secondary");
+const PI_INSTANCE = ProviderInstanceId.make("pi");
+const PI_SECONDARY_INSTANCE = ProviderInstanceId.make("pi_secondary");
 const CLAUDE_AGENT_INSTANCE = ProviderInstanceId.make("claudeAgent");
 const OPENCODE_INSTANCE = ProviderInstanceId.make("opencode");
-const CODEX_DRIVER = ProviderDriverKind.make("codex");
+const PI_DRIVER = ProviderDriverKind.make("pi");
 const CLAUDE_AGENT_DRIVER = ProviderDriverKind.make("claudeAgent");
 const OPENCODE_DRIVER = ProviderDriverKind.make("opencode");
 
@@ -1831,16 +1831,14 @@ describe("composerDraftStore modelSelection", () => {
     const store = useComposerDraftStore.getState();
     store.setModelSelection(
       threadRef,
-      modelSelection(CODEX_DRIVER, "gpt-5.3-codex", {
+      modelSelection(PI_DRIVER, "anthropic/claude-opus-4-6", {
         reasoningEffort: "xhigh",
         fastMode: true,
       }),
     );
 
-    expect(
-      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CODEX_INSTANCE],
-    ).toEqual(
-      modelSelection(CODEX_DRIVER, "gpt-5.3-codex", {
+    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "anthropic/claude-opus-4-6", {
         reasoningEffort: "xhigh",
         fastMode: true,
       }),
@@ -1849,25 +1847,25 @@ describe("composerDraftStore modelSelection", () => {
 
   it("keeps default-only model selections on the draft", () => {
     const store = useComposerDraftStore.getState();
-    store.setModelSelection(threadRef, modelSelection(CODEX_DRIVER, "gpt-5.4"));
+    store.setModelSelection(threadRef, modelSelection(PI_DRIVER, "gpt-5.4"));
 
-    expect(
-      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CODEX_INSTANCE],
-    ).toEqual(modelSelection(CODEX_DRIVER, "gpt-5.4"));
+    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "gpt-5.4"),
+    );
   });
 
   it("marks picker writes explicit and seeding writes non-explicit", () => {
     const store = useComposerDraftStore.getState();
-    store.setModelSelection(threadRef, modelSelection(CODEX_DRIVER, "gpt-5.4"));
+    store.setModelSelection(threadRef, modelSelection(PI_DRIVER, "gpt-5.4"));
     expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionExplicit).toBeUndefined();
 
-    store.setModelSelection(threadRef, modelSelection(CODEX_DRIVER, "gpt-5.4"), {
+    store.setModelSelection(threadRef, modelSelection(PI_DRIVER, "gpt-5.4"), {
       explicit: true,
     });
     expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionExplicit).toBe(true);
 
     // Last writer defines intent: a later seed clears the marker.
-    store.setModelSelection(threadRef, modelSelection(CODEX_DRIVER, "gpt-5.4"), {
+    store.setModelSelection(threadRef, modelSelection(PI_DRIVER, "gpt-5.4"), {
       replaceOptions: true,
     });
     expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionExplicit).toBeUndefined();
@@ -1878,7 +1876,7 @@ describe("composerDraftStore modelSelection", () => {
     try {
       useComposerDraftStore
         .getState()
-        .setModelSelection(threadRef, modelSelection(CODEX_DRIVER, "gpt-5.4"), {
+        .setModelSelection(threadRef, modelSelection(PI_DRIVER, "gpt-5.4"), {
           explicit: true,
         });
       // Land the debounced persist write.
@@ -1890,8 +1888,8 @@ describe("composerDraftStore modelSelection", () => {
       await useComposerDraftStore.persist.rehydrate();
       expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionExplicit).toBe(true);
       expect(
-        draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CODEX_INSTANCE],
-      ).toEqual(modelSelection(CODEX_DRIVER, "gpt-5.4"));
+        draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_INSTANCE],
+      ).toEqual(modelSelection(PI_DRIVER, "gpt-5.4"));
     } finally {
       vi.useRealTimers();
     }
@@ -1941,19 +1939,15 @@ describe("composerDraftStore modelSelection", () => {
 
   it("marks trait edits as explicit model intent", () => {
     const store = useComposerDraftStore.getState();
-    store.setModelSelection(threadRef, modelSelection(CODEX_DRIVER, "gpt-5.4"));
+    store.setModelSelection(threadRef, modelSelection(PI_DRIVER, "gpt-5.4"));
     expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionExplicit).toBeUndefined();
 
-    store.setProviderModelOptions(
-      threadRef,
-      CODEX_DRIVER,
-      toSelections({ reasoningEffort: "xhigh" }),
-    );
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ reasoningEffort: "xhigh" }));
 
     expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionExplicit).toBe(true);
-    expect(
-      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CODEX_INSTANCE],
-    ).toEqual(modelSelection(CODEX_DRIVER, "gpt-5.4", { reasoningEffort: "xhigh" }));
+    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "gpt-5.4", { reasoningEffort: "xhigh" }),
+    );
   });
 
   it("keeps explicit default-state overrides on the selection", () => {
@@ -1978,21 +1972,19 @@ describe("composerDraftStore modelSelection", () => {
     expect(useComposerDraftStore.getState().stickyModelSelectionByProvider).toEqual({});
   });
 
-  it("keeps explicit off/default codex overrides on the selection", () => {
+  it("keeps explicit off/default pi overrides on the selection", () => {
     const store = useComposerDraftStore.getState();
 
-    store.setModelSelection(threadRef, modelSelection(CODEX_DRIVER, "gpt-5.4", { fastMode: true }));
+    store.setModelSelection(threadRef, modelSelection(PI_DRIVER, "gpt-5.4", { fastMode: true }));
 
     store.setProviderModelOptions(
       threadRef,
-      CODEX_DRIVER,
+      PI_DRIVER,
       toSelections({ reasoningEffort: "high", fastMode: false }),
     );
 
-    expect(
-      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CODEX_INSTANCE],
-    ).toEqual(
-      modelSelection(CODEX_DRIVER, "gpt-5.4", {
+    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "gpt-5.4", {
         reasoningEffort: "high",
         fastMode: false,
       }),
@@ -2088,17 +2080,17 @@ describe("composerDraftStore modelSelection", () => {
     store.setModelOptions(
       threadRef,
       providerModelOptions({
-        codex: { fastMode: true },
+        pi: { fastMode: true },
         claudeAgent: { effort: "max" },
       }),
     );
 
-    // Now set options for only codex — claudeAgent should be untouched
-    store.setModelOptions(threadRef, providerModelOptions({ codex: { reasoningEffort: "xhigh" } }));
+    // Now set options for only pi — claudeAgent should be untouched
+    store.setModelOptions(threadRef, providerModelOptions({ pi: { reasoningEffort: "xhigh" } }));
 
     const draft = draftFor(threadId, TEST_ENVIRONMENT_ID);
-    expect(draft?.modelSelectionByProvider[CODEX_INSTANCE]?.options).toEqual(
-      createModelSelection(CODEX_INSTANCE, "gpt-5.4", toSelections({ reasoningEffort: "xhigh" }))
+    expect(draft?.modelSelectionByProvider[PI_INSTANCE]?.options).toEqual(
+      createModelSelection(PI_INSTANCE, "gpt-5.4", toSelections({ reasoningEffort: "xhigh" }))
         .options,
     );
     expect(draft?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE]?.options).toEqual(
@@ -2116,7 +2108,7 @@ describe("composerDraftStore modelSelection", () => {
     store.setModelOptions(
       threadRef,
       providerModelOptions({
-        codex: { fastMode: true },
+        pi: { fastMode: true },
         claudeAgent: { effort: "max" },
       }),
     );
@@ -2127,8 +2119,8 @@ describe("composerDraftStore modelSelection", () => {
     expect(draft?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE]).toEqual(
       modelSelection(CLAUDE_AGENT_DRIVER, "claude-opus-4-6", { effort: "max" }),
     );
-    expect(draft?.modelSelectionByProvider[CODEX_INSTANCE]?.options).toEqual(
-      createModelSelection(CODEX_INSTANCE, "gpt-5.4", toSelections({ fastMode: true })).options,
+    expect(draft?.modelSelectionByProvider[PI_INSTANCE]?.options).toEqual(
+      createModelSelection(PI_INSTANCE, "gpt-5.4", toSelections({ fastMode: true })).options,
     );
     expect(draft?.activeProvider).toBe("claudeAgent");
   });
@@ -2136,14 +2128,14 @@ describe("composerDraftStore modelSelection", () => {
   it("creates the first sticky snapshot from provider option changes", () => {
     const store = useComposerDraftStore.getState();
 
-    store.setModelSelection(threadRef, modelSelection(CODEX_DRIVER, "gpt-5.4"));
+    store.setModelSelection(threadRef, modelSelection(PI_DRIVER, "gpt-5.4"));
 
-    store.setProviderModelOptions(threadRef, CODEX_DRIVER, toSelections({ fastMode: true }), {
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ fastMode: true }), {
       persistSticky: true,
     });
 
-    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[CODEX_INSTANCE]).toEqual(
-      modelSelection(CODEX_DRIVER, "gpt-5.4", {
+    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "gpt-5.4", {
         fastMode: true,
       }),
     );
@@ -2152,35 +2144,30 @@ describe("composerDraftStore modelSelection", () => {
   it("stores provider option changes on a selected custom instance", () => {
     const store = useComposerDraftStore.getState();
 
-    store.setProviderModelOptions(
-      threadRef,
-      CODEX_DRIVER,
-      toSelections({ reasoningEffort: "low" }),
-      {
-        instanceId: CODEX_SECONDARY_INSTANCE,
-        model: "gpt-5-codex",
-        persistSticky: true,
-      },
-    );
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ reasoningEffort: "low" }), {
+      instanceId: PI_SECONDARY_INSTANCE,
+      model: "anthropic/claude-opus-4-6",
+      persistSticky: true,
+    });
 
     expect(
-      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CODEX_SECONDARY_INSTANCE],
+      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_SECONDARY_INSTANCE],
     ).toEqual(
       expect.objectContaining({
-        instanceId: CODEX_SECONDARY_INSTANCE,
+        instanceId: PI_SECONDARY_INSTANCE,
         options: [{ id: "reasoningEffort", value: "low" }],
       }),
     );
-    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.activeProvider).toBe(CODEX_SECONDARY_INSTANCE);
-    expect(useComposerDraftStore.getState().stickyActiveProvider).toBe(CODEX_SECONDARY_INSTANCE);
-    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[CODEX_INSTANCE]).toBe(
+    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.activeProvider).toBe(PI_SECONDARY_INSTANCE);
+    expect(useComposerDraftStore.getState().stickyActiveProvider).toBe(PI_SECONDARY_INSTANCE);
+    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[PI_INSTANCE]).toBe(
       undefined,
     );
     expect(
-      useComposerDraftStore.getState().stickyModelSelectionByProvider[CODEX_SECONDARY_INSTANCE],
+      useComposerDraftStore.getState().stickyModelSelectionByProvider[PI_SECONDARY_INSTANCE],
     ).toEqual(
       expect.objectContaining({
-        instanceId: CODEX_SECONDARY_INSTANCE,
+        instanceId: PI_SECONDARY_INSTANCE,
         options: [{ id: "reasoningEffort", value: "low" }],
       }),
     );
@@ -2232,23 +2219,20 @@ describe("composerDraftStore per-model sticky options", () => {
 
     store.setProviderModelOptions(
       threadRef,
-      CODEX_DRIVER,
+      PI_DRIVER,
       toSelections({ reasoningEffort: "xhigh" }),
-      { instanceId: CODEX_INSTANCE, model: "gpt-5.3-codex", persistSticky: true },
+      { instanceId: PI_INSTANCE, model: "anthropic/claude-opus-4-6", persistSticky: true },
     );
-    store.setProviderModelOptions(
-      threadRef,
-      CODEX_DRIVER,
-      toSelections({ reasoningEffort: "high" }),
-      { instanceId: CODEX_INSTANCE, model: "gpt-5.4", persistSticky: true },
-    );
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ reasoningEffort: "high" }), {
+      instanceId: PI_INSTANCE,
+      model: "gpt-5.4",
+      persistSticky: true,
+    });
 
-    expect(useComposerDraftStore.getState().stickyOptionsByModelByProvider[CODEX_INSTANCE]).toEqual(
-      {
-        "gpt-5.3-codex": toSelections({ reasoningEffort: "xhigh" }),
-        "gpt-5.4": toSelections({ reasoningEffort: "high" }),
-      },
-    );
+    expect(useComposerDraftStore.getState().stickyOptionsByModelByProvider[PI_INSTANCE]).toEqual({
+      "anthropic/claude-opus-4-6": toSelections({ reasoningEffort: "xhigh" }),
+      "gpt-5.4": toSelections({ reasoningEffort: "high" }),
+    });
   });
 
   it("drops the remembered options for a model when its sticky options are cleared", () => {
@@ -2256,17 +2240,17 @@ describe("composerDraftStore per-model sticky options", () => {
 
     store.setProviderModelOptions(
       threadRef,
-      CODEX_DRIVER,
+      PI_DRIVER,
       toSelections({ reasoningEffort: "xhigh" }),
-      { instanceId: CODEX_INSTANCE, model: "gpt-5.3-codex", persistSticky: true },
+      { instanceId: PI_INSTANCE, model: "anthropic/claude-opus-4-6", persistSticky: true },
     );
-    store.setProviderModelOptions(threadRef, CODEX_DRIVER, null, {
-      instanceId: CODEX_INSTANCE,
+    store.setProviderModelOptions(threadRef, PI_DRIVER, null, {
+      instanceId: PI_INSTANCE,
       persistSticky: true,
     });
 
     const remembered = useComposerDraftStore.getState().stickyOptionsByModelByProvider;
-    expect(remembered[CODEX_INSTANCE]?.["gpt-5.3-codex"]).toBeUndefined();
+    expect(remembered[PI_INSTANCE]?.["anthropic/claude-opus-4-6"]).toBeUndefined();
   });
 
   it("keeps other models' remembered options when one model is cleared", () => {
@@ -2274,36 +2258,29 @@ describe("composerDraftStore per-model sticky options", () => {
 
     store.setProviderModelOptions(
       threadRef,
-      CODEX_DRIVER,
+      PI_DRIVER,
       toSelections({ reasoningEffort: "xhigh" }),
-      { instanceId: CODEX_INSTANCE, model: "gpt-5.3-codex", persistSticky: true },
+      { instanceId: PI_INSTANCE, model: "anthropic/claude-opus-4-6", persistSticky: true },
     );
-    store.setProviderModelOptions(
-      threadRef,
-      CODEX_DRIVER,
-      toSelections({ reasoningEffort: "high" }),
-      { instanceId: CODEX_INSTANCE, model: "gpt-5.4", persistSticky: true },
-    );
-    store.setProviderModelOptions(threadRef, CODEX_DRIVER, null, {
-      instanceId: CODEX_INSTANCE,
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ reasoningEffort: "high" }), {
+      instanceId: PI_INSTANCE,
+      model: "gpt-5.4",
+      persistSticky: true,
+    });
+    store.setProviderModelOptions(threadRef, PI_DRIVER, null, {
+      instanceId: PI_INSTANCE,
       persistSticky: true,
     });
 
-    expect(useComposerDraftStore.getState().stickyOptionsByModelByProvider[CODEX_INSTANCE]).toEqual(
-      {
-        "gpt-5.4": toSelections({ reasoningEffort: "high" }),
-      },
-    );
+    expect(useComposerDraftStore.getState().stickyOptionsByModelByProvider[PI_INSTANCE]).toEqual({
+      "gpt-5.4": toSelections({ reasoningEffort: "high" }),
+    });
   });
 
   it("does not record options when sticky persistence is omitted", () => {
     const store = useComposerDraftStore.getState();
 
-    store.setProviderModelOptions(
-      threadRef,
-      CODEX_DRIVER,
-      toSelections({ reasoningEffort: "low" }),
-    );
+    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ reasoningEffort: "low" }));
 
     expect(useComposerDraftStore.getState().stickyOptionsByModelByProvider).toEqual({});
   });
@@ -2323,9 +2300,9 @@ describe("composerDraftStore per-model sticky options", () => {
     const mergedState = persistApi.getOptions().merge(
       {
         stickyModelSelectionByProvider: {
-          [CODEX_INSTANCE]: {
-            instanceId: CODEX_INSTANCE,
-            model: "gpt-5.3-codex",
+          [PI_INSTANCE]: {
+            instanceId: PI_INSTANCE,
+            model: "anthropic/claude-opus-4-6",
             options: [{ id: "reasoningEffort", value: "low" }],
           },
         },
@@ -2334,7 +2311,7 @@ describe("composerDraftStore per-model sticky options", () => {
     );
 
     expect(mergedState.stickyOptionsByModelByProvider).toEqual({
-      [CODEX_INSTANCE]: { "gpt-5.3-codex": [{ id: "reasoningEffort", value: "low" }] },
+      [PI_INSTANCE]: { "anthropic/claude-opus-4-6": [{ id: "reasoningEffort", value: "low" }] },
     });
   });
 });
@@ -2350,11 +2327,11 @@ describe("composerDraftStore setModelSelection", () => {
   it("keeps explicit model overrides instead of coercing to null", () => {
     const store = useComposerDraftStore.getState();
 
-    store.setModelSelection(threadRef, modelSelection(CODEX_DRIVER, "gpt-5.3-codex"));
+    store.setModelSelection(threadRef, modelSelection(PI_DRIVER, "anthropic/claude-opus-4-6"));
 
-    expect(
-      draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[CODEX_INSTANCE],
-    ).toEqual(modelSelection(CODEX_DRIVER, "gpt-5.3-codex"));
+    expect(draftFor(threadId, TEST_ENVIRONMENT_ID)?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "anthropic/claude-opus-4-6"),
+    );
   });
 });
 
@@ -2367,30 +2344,30 @@ describe("composerDraftStore sticky composer settings", () => {
     const store = useComposerDraftStore.getState();
 
     store.setStickyModelSelection(
-      modelSelection(CODEX_DRIVER, "gpt-5.3-codex", {
+      modelSelection(PI_DRIVER, "anthropic/claude-opus-4-6", {
         reasoningEffort: "medium",
         fastMode: true,
       }),
     );
 
-    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[CODEX_INSTANCE]).toEqual(
-      modelSelection(CODEX_DRIVER, "gpt-5.3-codex", {
+    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "anthropic/claude-opus-4-6", {
         reasoningEffort: "medium",
         fastMode: true,
       }),
     );
-    expect(useComposerDraftStore.getState().stickyActiveProvider).toBe("codex");
+    expect(useComposerDraftStore.getState().stickyActiveProvider).toBe("pi");
   });
 
   it("normalizes empty sticky model options by dropping selection options", () => {
     const store = useComposerDraftStore.getState();
 
-    store.setStickyModelSelection(modelSelection(CODEX_DRIVER, "gpt-5.4"));
+    store.setStickyModelSelection(modelSelection(PI_DRIVER, "gpt-5.4"));
 
-    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[CODEX_INSTANCE]).toEqual(
-      modelSelection(CODEX_DRIVER, "gpt-5.4"),
+    expect(useComposerDraftStore.getState().stickyModelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "gpt-5.4"),
     );
-    expect(useComposerDraftStore.getState().stickyActiveProvider).toBe("codex");
+    expect(useComposerDraftStore.getState().stickyActiveProvider).toBe("pi");
   });
 
   it("drops empty opencode model options when normalizing sticky state", () => {
@@ -2452,17 +2429,17 @@ describe("composerDraftStore sticky composer settings", () => {
 
     store.setModelSelection(
       draftId,
-      modelSelection(CODEX_DRIVER, "stale-model", { reasoningEffort: "low" }),
+      modelSelection(PI_DRIVER, "stale-model", { reasoningEffort: "low" }),
     );
     store.setStickyModelSelection(
-      modelSelection(CODEX_DRIVER, "sticky-model", { reasoningEffort: "xhigh" }),
+      modelSelection(PI_DRIVER, "sticky-model", { reasoningEffort: "xhigh" }),
     );
     store.applyStickyState(draftId);
 
     expect(draftByKey(draftId)).toMatchObject({
-      activeProvider: CODEX_INSTANCE,
+      activeProvider: PI_INSTANCE,
       modelSelectionByProvider: {
-        [CODEX_INSTANCE]: modelSelection(CODEX_DRIVER, "sticky-model", {
+        [PI_INSTANCE]: modelSelection(PI_DRIVER, "sticky-model", {
           reasoningEffort: "xhigh",
         }),
       },
@@ -2473,7 +2450,7 @@ describe("composerDraftStore sticky composer settings", () => {
     const store = useComposerDraftStore.getState();
     const draftId = DraftId.make("draft-stale-without-sticky");
 
-    store.setModelSelection(draftId, modelSelection(CODEX_DRIVER, "stale-model"));
+    store.setModelSelection(draftId, modelSelection(PI_DRIVER, "stale-model"));
     store.applyStickyState(draftId);
 
     expect(draftByKey(draftId)).toBeUndefined();
@@ -2517,11 +2494,11 @@ describe("composerDraftStore model seed migration", () => {
   });
 
   it.each([1, 2])(
-    "keeps the legacy sticky Codex selection when v%s storage omitted the provider",
+    "keeps the legacy sticky Pi selection when v%s storage omitted the provider",
     async (version) => {
       vi.useFakeTimers();
       try {
-        const stickySelection = modelSelection(CODEX_DRIVER, "gpt-5.6-terra", {
+        const stickySelection = modelSelection(PI_DRIVER, "gpt-5.6-terra", {
           reasoningEffort: "xhigh",
         });
         const storage = useComposerDraftStore.persist.getOptions().storage;
@@ -2534,7 +2511,7 @@ describe("composerDraftStore model seed migration", () => {
             projectDraftThreadIdByProjectId: {},
             stickyModel: stickySelection.model,
             stickyModelOptions: providerModelOptions({
-              [CODEX_DRIVER]: { reasoningEffort: "xhigh" },
+              [PI_DRIVER]: { reasoningEffort: "xhigh" },
             }),
           },
         } as never);
@@ -2543,7 +2520,7 @@ describe("composerDraftStore model seed migration", () => {
         await useComposerDraftStore.persist.rehydrate();
 
         expect(useComposerDraftStore.getState()).toMatchObject({
-          stickyModelSelectionByProvider: { [CODEX_INSTANCE]: stickySelection },
+          stickyModelSelectionByProvider: { [PI_INSTANCE]: stickySelection },
           stickyActiveProvider: null,
         });
       } finally {
@@ -2555,8 +2532,8 @@ describe("composerDraftStore model seed migration", () => {
   it("strips seeded models only from empty draft sessions when upgrading storage", async () => {
     vi.useFakeTimers();
     try {
-      const staleSelection = modelSelection(CODEX_DRIVER, "gpt-5.4");
-      const stickySelection = modelSelection(CODEX_DRIVER, "gpt-5.6-terra", {
+      const staleSelection = modelSelection(PI_DRIVER, "gpt-5.4");
+      const stickySelection = modelSelection(PI_DRIVER, "gpt-5.6-terra", {
         reasoningEffort: "xhigh",
       });
       const storage = useComposerDraftStore.persist.getOptions().storage;
@@ -2568,28 +2545,28 @@ describe("composerDraftStore model seed migration", () => {
             [staleDraftId]: {
               prompt: "",
               attachments: [],
-              modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-              activeProvider: CODEX_INSTANCE,
+              modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+              activeProvider: PI_INSTANCE,
               runtimeMode: "approval-required",
             },
             [typedDraftId]: {
               prompt: "keep this prompt",
               attachments: [],
-              modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-              activeProvider: CODEX_INSTANCE,
+              modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+              activeProvider: PI_INSTANCE,
             },
             [explicitDraftId]: {
               prompt: "",
               attachments: [],
-              modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-              activeProvider: CODEX_INSTANCE,
+              modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+              activeProvider: PI_INSTANCE,
               modelSelectionExplicit: true,
             },
             [serverThreadKey]: {
               prompt: "",
               attachments: [],
-              modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-              activeProvider: CODEX_INSTANCE,
+              modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+              activeProvider: PI_INSTANCE,
             },
           },
           draftThreadsByThreadKey: {
@@ -2600,8 +2577,8 @@ describe("composerDraftStore model seed migration", () => {
           logicalProjectDraftThreadKeyByLogicalProjectKey: {
             [logicalProjectKey]: staleDraftId,
           },
-          stickyModelSelectionByProvider: { [CODEX_INSTANCE]: stickySelection },
-          stickyActiveProvider: CODEX_INSTANCE,
+          stickyModelSelectionByProvider: { [PI_INSTANCE]: stickySelection },
+          stickyActiveProvider: PI_INSTANCE,
         },
       } as never);
       await vi.advanceTimersByTimeAsync(300);
@@ -2615,17 +2592,17 @@ describe("composerDraftStore model seed migration", () => {
       });
       expect(draftByKey(typedDraftId)).toMatchObject({
         prompt: "keep this prompt",
-        modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-        activeProvider: CODEX_INSTANCE,
+        modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+        activeProvider: PI_INSTANCE,
       });
       expect(draftByKey(explicitDraftId)).toMatchObject({
-        modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-        activeProvider: CODEX_INSTANCE,
+        modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+        activeProvider: PI_INSTANCE,
         modelSelectionExplicit: true,
       });
       expect(draftByKey(serverThreadKey)).toMatchObject({
-        modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-        activeProvider: CODEX_INSTANCE,
+        modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+        activeProvider: PI_INSTANCE,
       });
       expect(useComposerDraftStore.getState().draftThreadsByThreadKey[staleDraftId]).toMatchObject({
         environmentId: TEST_ENVIRONMENT_ID,
@@ -2633,8 +2610,8 @@ describe("composerDraftStore model seed migration", () => {
         logicalProjectKey,
       });
       expect(useComposerDraftStore.getState()).toMatchObject({
-        stickyModelSelectionByProvider: { [CODEX_INSTANCE]: stickySelection },
-        stickyActiveProvider: CODEX_INSTANCE,
+        stickyModelSelectionByProvider: { [PI_INSTANCE]: stickySelection },
+        stickyActiveProvider: PI_INSTANCE,
       });
     } finally {
       vi.useRealTimers();
@@ -2648,7 +2625,7 @@ describe("composerDraftStore model seed migration", () => {
       const markerDraftId = DraftId.make("draft-legacy-file-marker");
       const uploadedThreadId = ThreadId.make("thread-legacy-uploaded-file");
       const markerThreadId = ThreadId.make("thread-legacy-file-marker");
-      const staleSelection = modelSelection(CODEX_DRIVER, "gpt-5.4");
+      const staleSelection = modelSelection(PI_DRIVER, "gpt-5.4");
       const storage = useComposerDraftStore.persist.getOptions().storage;
       expect(storage).toBeDefined();
       storage?.setItem(COMPOSER_DRAFT_STORAGE_KEY, {
@@ -2668,8 +2645,8 @@ describe("composerDraftStore model seed migration", () => {
                   environmentId: TEST_ENVIRONMENT_ID,
                 },
               ],
-              modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-              activeProvider: CODEX_INSTANCE,
+              modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+              activeProvider: PI_INSTANCE,
             },
             [markerDraftId]: {
               prompt: "",
@@ -2682,8 +2659,8 @@ describe("composerDraftStore model seed migration", () => {
                   sizeBytes: 64,
                 },
               ],
-              modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-              activeProvider: CODEX_INSTANCE,
+              modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+              activeProvider: PI_INSTANCE,
               runtimeMode: "approval-required",
             },
           },
@@ -2709,8 +2686,8 @@ describe("composerDraftStore model seed migration", () => {
             uploadEnvironmentId: TEST_ENVIRONMENT_ID,
           },
         ],
-        modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-        activeProvider: CODEX_INSTANCE,
+        modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+        activeProvider: PI_INSTANCE,
       });
       expect(draftByKey(markerDraftId)).toMatchObject({
         files: [
@@ -2720,8 +2697,8 @@ describe("composerDraftStore model seed migration", () => {
             file: null,
           },
         ],
-        modelSelectionByProvider: { [CODEX_INSTANCE]: staleSelection },
-        activeProvider: CODEX_INSTANCE,
+        modelSelectionByProvider: { [PI_INSTANCE]: staleSelection },
+        activeProvider: PI_INSTANCE,
         runtimeMode: "approval-required",
       });
       expect(draftByKey(markerDraftId)?.files.every(composerFileNeedsReattach)).toBe(true);
@@ -2743,14 +2720,14 @@ describe("composerDraftStore provider-scoped option updates", () => {
     const store = useComposerDraftStore.getState();
     store.setModelSelection(
       threadRef,
-      modelSelection(CODEX_DRIVER, "gpt-5.3-codex", {
+      modelSelection(PI_DRIVER, "anthropic/claude-opus-4-6", {
         reasoningEffort: "medium",
       }),
     );
     store.setProviderModelOptions(threadRef, CLAUDE_AGENT_DRIVER, toSelections({ effort: "max" }));
     const draft = draftFor(threadId, TEST_ENVIRONMENT_ID);
-    expect(draft?.modelSelectionByProvider[CODEX_INSTANCE]).toEqual(
-      modelSelection(CODEX_DRIVER, "gpt-5.3-codex", { reasoningEffort: "medium" }),
+    expect(draft?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "anthropic/claude-opus-4-6", { reasoningEffort: "medium" }),
     );
     expect(draft?.modelSelectionByProvider[CLAUDE_AGENT_INSTANCE]?.options).toEqual(
       createModelSelection(
@@ -2759,7 +2736,7 @@ describe("composerDraftStore provider-scoped option updates", () => {
         toSelections({ effort: "max" }),
       ).options,
     );
-    expect(draft?.activeProvider).toBe("codex");
+    expect(draft?.activeProvider).toBe("pi");
   });
 });
 

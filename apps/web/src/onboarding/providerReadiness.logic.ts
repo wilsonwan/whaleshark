@@ -1,6 +1,5 @@
 import {
   ClaudeSettings,
-  CodexSettings,
   type ExecutionEnvironmentPlatformOs,
   type ServerProvider,
   type ServerSettings,
@@ -9,7 +8,6 @@ import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 
 const decodeClaudeSettings = Schema.decodeUnknownOption(ClaudeSettings);
-const decodeCodexSettings = Schema.decodeUnknownOption(CodexSettings);
 const SAFE_SHELL_BINARY_PATTERN = /^[A-Za-z0-9_./:\\-]+$/;
 
 function quoteProviderBinary(
@@ -81,10 +79,6 @@ const NATIVE_INSTALL_COMMANDS = {
     windows: "irm https://claude.ai/install.ps1 | iex",
     posix: "curl -fsSL https://claude.ai/install.sh | bash",
   },
-  codex: {
-    windows: "irm https://chatgpt.com/codex/install.ps1 | iex",
-    posix: "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
-  },
 } as const;
 
 /**
@@ -115,14 +109,6 @@ export function resolveOnboardingProviderLoginCommand(
     );
     const binaryPath = Option.isSome(config) ? config.value.binaryPath : "claude";
     return `${quoteProviderBinary(binaryPath, "claude", platform)} auth login`;
-  }
-
-  if (provider.driver === "codex") {
-    const config = decodeCodexSettings(
-      instance ? (instance.config ?? {}) : settings.providers.codex,
-    );
-    const binaryPath = Option.isSome(config) ? config.value.binaryPath : "codex";
-    return `${quoteProviderBinary(binaryPath, "codex", platform)} login`;
   }
 
   return provider.driver;

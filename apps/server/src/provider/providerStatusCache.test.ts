@@ -20,8 +20,8 @@ import {
 } from "./providerStatusCache.ts";
 
 const emptyCapabilities = createModelCapabilities({ optionDescriptors: [] });
-const CODEX_DRIVER = ProviderDriverKind.make("codex");
 const CLAUDE_AGENT_DRIVER = ProviderDriverKind.make("claudeAgent");
+const PI_DRIVER = ProviderDriverKind.make("pi");
 const OPENCODE_DRIVER = ProviderDriverKind.make("opencode");
 
 const makeProvider = (
@@ -80,8 +80,8 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const tempDir = yield* fs.makeTempDirectoryScoped({ prefix: "t3-provider-cache-" });
-      const codexProvider = makeProvider(CODEX_DRIVER);
-      const claudeProvider = makeProvider(CLAUDE_AGENT_DRIVER, {
+      const claudeProvider = makeProvider(CLAUDE_AGENT_DRIVER);
+      const piProvider = makeProvider(PI_DRIVER, {
         status: "warning",
         auth: { status: "unknown" },
       });
@@ -89,13 +89,13 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
         status: "warning",
         auth: { status: "unknown", type: "opencode" },
       });
-      const codexPath = yield* resolveProviderStatusCachePath({
-        cacheDir: tempDir,
-        instanceId: defaultInstanceIdForDriver(ProviderDriverKind.make("codex")),
-      });
       const claudePath = yield* resolveProviderStatusCachePath({
         cacheDir: tempDir,
         instanceId: defaultInstanceIdForDriver(ProviderDriverKind.make("claudeAgent")),
+      });
+      const piPath = yield* resolveProviderStatusCachePath({
+        cacheDir: tempDir,
+        instanceId: defaultInstanceIdForDriver(ProviderDriverKind.make("pi")),
       });
       const openCodePath = yield* resolveProviderStatusCachePath({
         cacheDir: tempDir,
@@ -103,31 +103,31 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
       });
 
       yield* writeProviderStatusCache({
-        filePath: codexPath,
-        provider: codexProvider,
-      });
-      yield* writeProviderStatusCache({
         filePath: claudePath,
         provider: claudeProvider,
+      });
+      yield* writeProviderStatusCache({
+        filePath: piPath,
+        provider: piProvider,
       });
       yield* writeProviderStatusCache({
         filePath: openCodePath,
         provider: openCodeProvider,
       });
 
-      assert.deepStrictEqual(yield* readProviderStatusCache(codexPath), codexProvider);
       assert.deepStrictEqual(yield* readProviderStatusCache(claudePath), claudeProvider);
+      assert.deepStrictEqual(yield* readProviderStatusCache(piPath), piProvider);
       assert.deepStrictEqual(yield* readProviderStatusCache(openCodePath), openCodeProvider);
     }),
   );
 
   it("hydrates cached provider status while preserving current settings-derived models", () => {
-    const cachedCodex = makeProvider(CODEX_DRIVER, {
+    const cachedClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
       checkedAt: "2026-04-10T12:00:00.000Z",
       models: [
         {
-          slug: "gpt-5-mini",
-          name: "GPT-5 Mini",
+          slug: "claude-old-mini",
+          name: "Claude Old Mini",
           isCustom: false,
           capabilities: emptyCapabilities,
         },
@@ -142,11 +142,11 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
         },
       ],
     });
-    const fallbackCodex = makeProvider(CODEX_DRIVER, {
+    const fallbackClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
       models: [
         {
-          slug: "gpt-5.4",
-          name: "GPT-5.4",
+          slug: "claude-sonnet-5",
+          name: "Claude Sonnet 5",
           isCustom: false,
           capabilities: emptyCapabilities,
         },
@@ -156,40 +156,40 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
 
     assert.deepStrictEqual(
       hydrateCachedProvider({
-        cachedProvider: cachedCodex,
-        fallbackProvider: fallbackCodex,
+        cachedProvider: cachedClaude,
+        fallbackProvider: fallbackClaude,
       }),
       {
-        ...fallbackCodex,
+        ...fallbackClaude,
         models: [
-          ...fallbackCodex.models,
+          ...fallbackClaude.models,
           {
-            slug: "gpt-5-mini",
-            name: "GPT-5 Mini",
+            slug: "claude-old-mini",
+            name: "Claude Old Mini",
             isCustom: false,
             capabilities: emptyCapabilities,
           },
         ],
-        installed: cachedCodex.installed,
-        version: cachedCodex.version,
-        status: cachedCodex.status,
-        auth: cachedCodex.auth,
-        checkedAt: cachedCodex.checkedAt,
-        slashCommands: cachedCodex.slashCommands,
-        skills: cachedCodex.skills,
-        message: cachedCodex.message,
+        installed: cachedClaude.installed,
+        version: cachedClaude.version,
+        status: cachedClaude.status,
+        auth: cachedClaude.auth,
+        checkedAt: cachedClaude.checkedAt,
+        slashCommands: cachedClaude.slashCommands,
+        skills: cachedClaude.skills,
+        message: cachedClaude.message,
       },
     );
   });
 
   it("does not resurrect cached custom models that settings no longer declare", () => {
     const builtIn = {
-      slug: "gpt-5.4",
-      name: "GPT-5.4",
+      slug: "claude-sonnet-5",
+      name: "Claude Sonnet 5",
       isCustom: false,
       capabilities: emptyCapabilities,
     } as const;
-    const cachedCodex = makeProvider(CODEX_DRIVER, {
+    const cachedClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
       models: [
         builtIn,
         {
@@ -200,34 +200,34 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
         },
       ],
     });
-    const fallbackCodex = makeProvider(CODEX_DRIVER, { models: [builtIn] });
+    const fallbackClaude = makeProvider(CLAUDE_AGENT_DRIVER, { models: [builtIn] });
 
     assert.deepStrictEqual(
       hydrateCachedProvider({
-        cachedProvider: cachedCodex,
-        fallbackProvider: fallbackCodex,
+        cachedProvider: cachedClaude,
+        fallbackProvider: fallbackClaude,
       }).models,
       [builtIn],
     );
   });
 
   it("ignores stale cached enabled state when the provider is now disabled", () => {
-    const cachedCodex = makeProvider(CODEX_DRIVER, {
+    const cachedClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
       checkedAt: "2026-04-10T12:00:00.000Z",
       message: "Cached ready status",
     });
-    const disabledFallback = makeProvider(CODEX_DRIVER, {
+    const disabledFallback = makeProvider(CLAUDE_AGENT_DRIVER, {
       enabled: false,
       installed: false,
       version: null,
       status: "disabled",
       auth: { status: "unknown" },
-      message: "Codex is disabled in T3 Code settings.",
+      message: "Claude is disabled in T3 Code settings.",
     });
 
     assert.deepStrictEqual(
       hydrateCachedProvider({
-        cachedProvider: cachedCodex,
+        cachedProvider: cachedClaude,
         fallbackProvider: disabledFallback,
       }),
       disabledFallback,
@@ -235,18 +235,18 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
   });
 
   it("rejects cached snapshots that are not correlated to the fallback instance", () => {
-    const fallbackCodex = makeProvider(CODEX_DRIVER, {
+    const fallbackClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
       models: [
         {
-          slug: "gpt-5.4",
-          name: "GPT-5.4",
+          slug: "claude-sonnet-5",
+          name: "Claude Sonnet 5",
           isCustom: false,
           capabilities: emptyCapabilities,
         },
       ],
     });
-    const legacyCachedCodex = {
-      provider: ProviderDriverKind.make("codex"),
+    const legacyCachedProvider = {
+      provider: ProviderDriverKind.make("pi"),
       enabled: true,
       installed: true,
       version: "1.0.0",
@@ -264,37 +264,37 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
       slashCommands: [],
       skills: [],
     } as unknown as ServerProvider;
-    const mismatchedCachedCodex = makeProvider(CODEX_DRIVER, {
-      instanceId: ProviderInstanceId.make("codex_personal"),
+    const mismatchedCachedClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
+      instanceId: ProviderInstanceId.make("claude_personal"),
     });
 
     assert.strictEqual(
       isCachedProviderCorrelated({
-        cachedProvider: legacyCachedCodex,
-        fallbackProvider: fallbackCodex,
+        cachedProvider: legacyCachedProvider,
+        fallbackProvider: fallbackClaude,
       }),
       false,
     );
     assert.deepStrictEqual(
       hydrateCachedProvider({
-        cachedProvider: legacyCachedCodex,
-        fallbackProvider: fallbackCodex,
+        cachedProvider: legacyCachedProvider,
+        fallbackProvider: fallbackClaude,
       }),
-      fallbackCodex,
+      fallbackClaude,
     );
     assert.strictEqual(
       isCachedProviderCorrelated({
-        cachedProvider: mismatchedCachedCodex,
-        fallbackProvider: fallbackCodex,
+        cachedProvider: mismatchedCachedClaude,
+        fallbackProvider: fallbackClaude,
       }),
       false,
     );
     assert.deepStrictEqual(
       hydrateCachedProvider({
-        cachedProvider: mismatchedCachedCodex,
-        fallbackProvider: fallbackCodex,
+        cachedProvider: mismatchedCachedClaude,
+        fallbackProvider: fallbackClaude,
       }),
-      fallbackCodex,
+      fallbackClaude,
     );
   });
 });

@@ -19,7 +19,7 @@ import {
   modelSelectionsEqual,
 } from "./model.ts";
 
-const codexCaps: ModelCapabilities = createModelCapabilities({
+const sampleCaps: ModelCapabilities = createModelCapabilities({
   optionDescriptors: [
     {
       id: "reasoningEffort",
@@ -115,7 +115,7 @@ describe("descriptor helpers", () => {
 
   it("builds wire-format option selections from descriptors", () => {
     const descriptors = getProviderOptionDescriptors({
-      caps: codexCaps,
+      caps: sampleCaps,
       selections: [
         { id: "reasoningEffort", value: "high" },
         { id: "fastMode", value: true },
@@ -130,7 +130,7 @@ describe("descriptor helpers", () => {
 
   it("builds dispatch options only from explicit selections", () => {
     const descriptors = getProviderOptionDescriptors({
-      caps: codexCaps,
+      caps: sampleCaps,
       selections: [{ id: "fastMode", value: true }],
     });
 
@@ -146,12 +146,12 @@ describe("descriptor helpers", () => {
 
   it("stores option selection arrays in model selections", () => {
     expect(
-      createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+      createModelSelection(ProviderInstanceId.make("opencode"), "gpt-5.4", [
         { id: "reasoningEffort", value: "high" },
         { id: "fastMode", value: true },
       ]),
     ).toEqual({
-      instanceId: "codex",
+      instanceId: "opencode",
       model: "gpt-5.4",
       options: [
         { id: "reasoningEffort", value: "high" },
@@ -161,7 +161,7 @@ describe("descriptor helpers", () => {
   });
 
   it("reads typed option selection values", () => {
-    const selection = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+    const selection = createModelSelection(ProviderInstanceId.make("opencode"), "gpt-5.4", [
       { id: "reasoningEffort", value: "high" },
       { id: "fastMode", value: true },
     ]);
@@ -179,11 +179,11 @@ describe("descriptor helpers", () => {
   });
 
   it("compares complete model selections independent of option ordering", () => {
-    const left = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+    const left = createModelSelection(ProviderInstanceId.make("opencode"), "gpt-5.4", [
       { id: "reasoningEffort", value: "high" },
       { id: "fastMode", value: true },
     ]);
-    const reordered = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+    const reordered = createModelSelection(ProviderInstanceId.make("opencode"), "gpt-5.4", [
       { id: "fastMode", value: true },
       { id: "reasoningEffort", value: "high" },
     ]);

@@ -60,7 +60,7 @@ import {
 } from "./RunExecutionService.ts";
 import { RunFinalizationObserver } from "./RunFinalizationService.ts";
 
-const driver = ProviderDriverKind.make("codex");
+const driver = ProviderDriverKind.make("claudeAgent");
 
 const RunExecutionTestLayer = runExecutionServiceLayer.pipe(
   Layer.provide(
@@ -444,7 +444,7 @@ it.effect("rechecks run ownership immediately before calling the provider", () =
     const runId = RunId.make("run:run-execution-start-guard");
     const attemptId = RunAttemptId.make("attempt:run-execution-start-guard");
     const providerThreadId = ProviderThreadId.make("provider-thread:run-execution-start-guard");
-    const providerInstanceId = ProviderInstanceId.make("codex");
+    const providerInstanceId = ProviderInstanceId.make("claudeAgent");
     const providerSessionId = ProviderSessionId.make("session:run-execution-start-guard");
     const rootNodeId = NodeId.make("node:run-execution-start-guard");
     const run = {
@@ -549,7 +549,7 @@ it.effect(
             id: RunId.make(`run:compact-routing:${index}`),
             threadId,
             ordinal: 1,
-            providerInstanceId: ProviderInstanceId.make("codex"),
+            providerInstanceId: ProviderInstanceId.make("claudeAgent"),
           } as OrchestrationV2Run,
           rootNode: {
             id: NodeId.make(`node:compact-routing:${index}`),
@@ -571,7 +571,7 @@ it.effect(
             createdBy: "user",
             creationSource: "web",
           },
-          modelSelection: { instanceId: ProviderInstanceId.make("codex"), model: "gpt-5.4" },
+          modelSelection: { instanceId: ProviderInstanceId.make("claudeAgent"), model: "gpt-5.4" },
           runtimePolicy: {
             runtimeMode: "full-access",
             interactionMode: "default",
@@ -616,7 +616,7 @@ it.effect("refreshes MCP credential liveness before calling the provider", () =>
           id: RunId.make("run:run-execution-mcp-liveness"),
           threadId,
           ordinal: 1,
-          providerInstanceId: ProviderInstanceId.make("codex"),
+          providerInstanceId: ProviderInstanceId.make("claudeAgent"),
         } as OrchestrationV2Run,
         rootNode: {
           id: NodeId.make("node:run-execution-mcp-liveness"),
@@ -642,7 +642,7 @@ it.effect("refreshes MCP credential liveness before calling the provider", () =>
           creationSource: "web",
         },
         modelSelection: {
-          instanceId: ProviderInstanceId.make("codex"),
+          instanceId: ProviderInstanceId.make("claudeAgent"),
           model: "gpt-5.4",
         },
         runtimePolicy: {
@@ -669,7 +669,7 @@ it.effect("keeps ingesting owned child events after the root turn terminalizes",
     const childThreadId = ThreadId.make("thread:run-execution-late-child:child");
     const runId = RunId.make("run:run-execution-late-child");
     const attemptId = RunAttemptId.make("attempt:run-execution-late-child");
-    const providerInstanceId = ProviderInstanceId.make("codex");
+    const providerInstanceId = ProviderInstanceId.make("claudeAgent");
     const providerSessionId = ProviderSessionId.make("session:run-execution-late-child");
     const providerThreadId = ProviderThreadId.make("provider-thread:run-execution-late-child");
     const childProviderThreadId = ProviderThreadId.make(
@@ -1090,7 +1090,7 @@ it.effect(
     Effect.gen(function* () {
       const key = "bg-roster-pending-work";
       const ids = backgroundScenarioIds(key);
-      const providerInstanceId = ProviderInstanceId.make("codex");
+      const providerInstanceId = ProviderInstanceId.make("claudeAgent");
       const now = yield* DateTime.now;
       const observed = yield* Ref.make<ReadonlyArray<string>>([]);
       const pendingByProviderThreadId = yield* Ref.make(new Map([[ids.providerThreadId, true]]));
@@ -1307,7 +1307,7 @@ it.effect("drops late root provider-thread writes from a superseded attempt", ()
     const key = "bg-roster-attempt-owner-lost";
     const ids = backgroundScenarioIds(key);
     const replacementAttemptId = RunAttemptId.make(`attempt:${key}:replacement`);
-    const providerInstanceId = ProviderInstanceId.make("codex");
+    const providerInstanceId = ProviderInstanceId.make("claudeAgent");
     const now = yield* DateTime.now;
     const observed = yield* Ref.make<ReadonlyArray<string>>([]);
     // Probe stays true forever so only ownership-loss can release the stream.
@@ -1520,7 +1520,7 @@ it.effect(
     Effect.gen(function* () {
       const key = "bg-item-after-owner-lost";
       const ids = backgroundScenarioIds(key);
-      const providerInstanceId = ProviderInstanceId.make("codex");
+      const providerInstanceId = ProviderInstanceId.make("claudeAgent");
       const now = yield* DateTime.now;
       const observed = yield* Ref.make<ReadonlyArray<string>>([]);
       // Probe stays true forever; open background items must pin the stream
@@ -1690,7 +1690,7 @@ it.effect(
     Effect.gen(function* () {
       const key = "bg-roster-sibling-not-pin";
       const ids = backgroundScenarioIds(key);
-      const providerInstanceId = ProviderInstanceId.make("codex");
+      const providerInstanceId = ProviderInstanceId.make("claudeAgent");
       const now = yield* DateTime.now;
       const observed = yield* Ref.make<ReadonlyArray<string>>([]);
       const ingestionDone = yield* Deferred.make<void>();
@@ -1856,7 +1856,7 @@ it.effect(
       const unrelatedChildThreadId = ThreadId.make(
         "thread:subagent-interrupt-cascade:unrelated-child",
       );
-      const providerInstanceId = ProviderInstanceId.make("codex");
+      const providerInstanceId = ProviderInstanceId.make("claudeAgent");
       const written = yield* Ref.make<ReadonlyArray<OrchestrationV2DomainEvent>>([]);
       const ingested = yield* Ref.make<ReadonlyArray<ProviderAdapterV2Event>>([]);
       const ingestionDone = yield* Deferred.make<void>();
@@ -2228,7 +2228,7 @@ it.effect(
       const unrelatedChildThreadId = ThreadId.make(
         "thread:subagent-link-survives-terminal:unrelated-child",
       );
-      const providerInstanceId = ProviderInstanceId.make("codex");
+      const providerInstanceId = ProviderInstanceId.make("claudeAgent");
       const written = yield* Ref.make<ReadonlyArray<OrchestrationV2DomainEvent>>([]);
       const ingestionDone = yield* Deferred.make<void>();
       const testLayer = runExecutionServiceLayer.pipe(
@@ -2455,7 +2455,7 @@ it.effect(
     }),
 );
 
-it.effect("cascade helper is provider-neutral for Claude and Codex-shaped child projections", () =>
+it.effect("cascade helper is provider-neutral for Claude and Pi-shaped child projections", () =>
   Effect.gen(function* () {
     const now = yield* DateTime.now;
     let nextId = 0;
@@ -2464,7 +2464,7 @@ it.effect("cascade helper is provider-neutral for Claude and Codex-shaped child 
 
     for (const driverKind of [
       ProviderDriverKind.make("claudeAgent"),
-      ProviderDriverKind.make("codex"),
+      ProviderDriverKind.make("pi"),
     ] as const) {
       const runId = RunId.make(`run:cascade-helper:${driverKind}`);
       const threadId = ThreadId.make(`thread:cascade-helper:${driverKind}`);
@@ -2878,7 +2878,7 @@ function captureRootRunTermination(input: {
 }) {
   return Effect.gen(function* () {
     const ids = backgroundScenarioIds(input.key);
-    const providerInstanceId = ProviderInstanceId.make("codex");
+    const providerInstanceId = ProviderInstanceId.make("claudeAgent");
     const runningSubagent = makeRunOwnedSubagentFixture({
       ids,
       providerInstanceId,
@@ -3367,7 +3367,7 @@ function runBackgroundItemScenario(
 ) {
   return Effect.gen(function* () {
     const ids = backgroundScenarioIds(key);
-    const providerInstanceId = ProviderInstanceId.make("codex");
+    const providerInstanceId = ProviderInstanceId.make("claudeAgent");
     const observed = yield* Ref.make<ReadonlyArray<string>>([]);
     const ingestionDone = yield* Deferred.make<void>();
     const testLayer = runExecutionServiceLayer.pipe(

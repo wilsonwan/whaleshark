@@ -10,20 +10,20 @@ import {
   type AtomCommandResult,
 } from "./runtime.ts";
 
-type CodexFeedbackSubmissionDetails = {
+type FeedbackSubmissionDetails = {
   readonly id: MessageId;
   readonly command: string;
   readonly createdAt: string;
 };
 
-export type CodexFeedbackSubmission = CodexFeedbackSubmissionDetails &
+export type FeedbackSubmission = FeedbackSubmissionDetails &
   (
     | { readonly status: "uploading" | "interrupted" }
     | { readonly status: "sent"; readonly feedbackId: string }
     | { readonly status: "failed"; readonly errorMessage: string }
   );
 
-export function parseCodexFeedbackCommand(text: string): { readonly reason?: string } | null {
+export function parseFeedbackCommand(text: string): { readonly reason?: string } | null {
   const match = /^\/feedback(?:\s+([\s\S]*))?$/iu.exec(text.trim());
   if (!match) {
     return null;
@@ -32,23 +32,23 @@ export function parseCodexFeedbackCommand(text: string): { readonly reason?: str
   return reason ? { reason } : {};
 }
 
-export function codexFeedbackNotice(submission: CodexFeedbackSubmission) {
+export function feedbackNotice(submission: FeedbackSubmission) {
   switch (submission.status) {
     case "interrupted":
       return null;
     case "uploading":
-      return { title: "Sending feedback to OpenAI...", description: undefined };
+      return { title: "Sending feedback...", description: undefined };
     case "sent":
       return {
-        title: "Feedback sent to OpenAI",
+        title: "Feedback sent",
         description: `Thread ID: ${submission.feedbackId}`,
       };
     case "failed":
-      return { title: "Could not send feedback to OpenAI", description: submission.errorMessage };
+      return { title: "Could not send feedback", description: submission.errorMessage };
   }
 }
 
-export function beginCodexFeedbackSubmission(
+export function beginFeedbackSubmission(
   submissionsInFlight: Set<string>,
   threadKey: string,
 ): (() => void) | null {
@@ -57,18 +57,18 @@ export function beginCodexFeedbackSubmission(
   return () => submissionsInFlight.delete(threadKey);
 }
 
-export function codexFeedbackMessage(
-  submission: CodexFeedbackSubmission,
+export function feedbackMessage(
+  submission: FeedbackSubmission,
   role: "user" | "assistant" = "user",
 ): OrchestrationMessage {
   const text =
     role === "user"
       ? submission.command
       : submission.status === "sent"
-        ? `Feedback sent to OpenAI.\n\nThread ID: \`${submission.feedbackId}\``
+        ? `Feedback sent.\n\nThread ID: \`${submission.feedbackId}\``
         : submission.status === "failed"
-          ? `Could not send feedback to OpenAI.\n\n${submission.errorMessage}`
-          : "Sending feedback to OpenAI...";
+          ? `Could not send feedback.\n\n${submission.errorMessage}`
+          : "Sending feedback...";
 
   return {
     id: role === "user" ? submission.id : MessageId.make(`${submission.id}:feedback`),
@@ -81,10 +81,10 @@ export function codexFeedbackMessage(
   };
 }
 
-export async function submitCodexFeedback<E>(input: {
-  readonly submission: CodexFeedbackSubmissionDetails;
+export async function submitFeedback<E>(input: {
+  readonly submission: FeedbackSubmissionDetails;
   readonly clearDraft: () => void;
-  readonly onUpdate: (submission: CodexFeedbackSubmission) => void;
+  readonly onUpdate: (submission: FeedbackSubmission) => void;
   readonly upload: () => Promise<AtomCommandResult<ProviderUploadFeedbackResult, E>>;
 }): Promise<AtomCommandResult<ProviderUploadFeedbackResult, E>> {
   input.onUpdate({ ...input.submission, status: "uploading" });

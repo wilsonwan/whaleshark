@@ -42,7 +42,7 @@ export const CLAUDE_LOCAL_BASH_TASK_PROMPT =
 export const CLAUDE_RESULT_IS_ERROR_PROMPT = "Say hello before the credentials expire.";
 export const CLAUDE_RESULT_IS_ERROR_FOLLOW_UP = "Try again now that auth is back.";
 export const TOOL_CALL_WRITE_PROMPT =
-  "Create or overwrite .codex-probe-write-action.txt with exactly this text: codex app-server approval fixture. Use a local shell command or file edit only, then briefly report what happened. Do not read package metadata, use GitHub, use web, or use MCP.";
+  "Create or overwrite .probe-write-action.txt with exactly this text: provider approval fixture. Use a local shell command or file edit only, then briefly report what happened. Do not read package metadata, use GitHub, use web, or use MCP.";
 export const MESSAGE_STEERING_INITIAL_PROMPT =
   "Respond with exactly: steering fixture initial response";
 export const SUBAGENT_PROMPT =
@@ -269,11 +269,6 @@ export interface FixtureIds {
   readonly threadId: ThreadId;
   readonly projectId: ProjectId;
 }
-
-export const CODEX_MODEL_SELECTION = {
-  instanceId: ProviderInstanceId.make("codex"),
-  model: "gpt-5.4",
-} satisfies ModelSelection;
 
 export const CLAUDE_MODEL_SELECTION = {
   instanceId: ProviderInstanceId.make("claudeAgent"),

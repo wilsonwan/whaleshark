@@ -13,9 +13,6 @@
  */
 import {
   DEFAULT_PROVIDER_HEALTH_REFRESH_INTERVAL,
-  UsageLimitSourceError,
-  type UsageLimitSourceConsumeResetCreditInput,
-  type ProviderConsumeResetCreditResult,
   type ServerSettings,
   type UsageLimitSourceConfig,
   type UsageLimitSourceId,
@@ -45,9 +42,6 @@ export class UsageLimitSources extends Context.Service<
     readonly streamChanges: Stream.Stream<ReadonlyArray<UsageLimitSourceSnapshot>>;
     /** Re-read every source now. Never fails; failures land on the snapshot. */
     readonly refresh: Effect.Effect<void>;
-    readonly consumeResetCredit: (
-      input: UsageLimitSourceConsumeResetCreditInput,
-    ) => Effect.Effect<ProviderConsumeResetCreditResult, UsageLimitSourceError>;
   }
 >()("t3/usage/UsageLimitSources") {}
 
@@ -115,27 +109,6 @@ export const make = Effect.gen(function* () {
     yield* publish(snapshots);
   }).pipe(refreshLock.withPermits(1), Effect.ignoreCause({ log: true }));
 
-  // Shares the refresh lock so a stale in-flight read cannot overwrite a redemption.
-  const consumeResetCredit = (input: UsageLimitSourceConsumeResetCreditInput) =>
-    Effect.gen(function* () {
-      const settings = yield* settingsService.getSettings.pipe(
-        Effect.mapError(
-          () => new UsageLimitSourceError({ detail: "Could not read hub settings." }),
-        ),
-      );
-      const config = settings.usageLimitSources[input.sourceId];
-      if (!config?.enabled || !config.managementKey) {
-        return yield* new UsageLimitSourceError({
-          detail: "The usage limit source is missing or disabled.",
-        });
-      }
-      const result = yield* api.consume(config, input.accountId, input.creditId);
-      const snapshot = yield* readSource(input.sourceId, config);
-      const previous = yield* Ref.get(stateRef);
-      yield* publish(previous.map((source) => (source.id === input.sourceId ? snapshot : source)));
-      return result;
-    }).pipe(refreshLock.withPermits(1));
-
   // Settings edits re-read straight away so a new hub shows up without
   // waiting for the interval, and a removed one leaves the list.
   yield* settingsService.streamChanges.pipe(
@@ -166,7 +139,6 @@ export const make = Effect.gen(function* () {
 
   return {
     current: Ref.get(stateRef),
-    consumeResetCredit,
     refresh,
     get streamChanges() {
       return Stream.unwrap(

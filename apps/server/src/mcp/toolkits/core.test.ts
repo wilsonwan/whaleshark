@@ -58,7 +58,7 @@ const scope: McpInvocationScope = {
   environmentId: EnvironmentId.make("mcp-core-environment"),
   threadId,
   providerSessionId: "mcp-core-session",
-  providerInstanceId: ProviderInstanceId.make("codex"),
+  providerInstanceId: ProviderInstanceId.make("claudeAgent"),
   issuedAt: 0,
   capabilities: new Set(["orchestration"]),
 };

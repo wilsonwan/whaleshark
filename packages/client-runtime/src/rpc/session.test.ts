@@ -962,8 +962,8 @@ describe("RpcSessionFactory", () => {
         payload: {
           providers: [
             {
-              instanceId: ProviderInstanceId.make("codex"),
-              driver: ProviderDriverKind.make("codex"),
+              instanceId: ProviderInstanceId.make("claudeAgent"),
+              driver: ProviderDriverKind.make("claudeAgent"),
               enabled: true,
               installed: true,
               version: "1.0.0",
@@ -980,8 +980,8 @@ describe("RpcSessionFactory", () => {
       expectedConfig: {
         providers: [
           {
-            instanceId: ProviderInstanceId.make("codex"),
-            driver: ProviderDriverKind.make("codex"),
+            instanceId: ProviderInstanceId.make("claudeAgent"),
+            driver: ProviderDriverKind.make("claudeAgent"),
             enabled: true,
             installed: true,
             version: "1.0.0",

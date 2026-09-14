@@ -7,7 +7,7 @@ import { HostProcessPlatform } from "@t3tools/shared/hostProcess";
 export interface FakeCliOptions {
   /** Directory the launcher and its stub are written into. */
   readonly directory: string;
-  /** Command name as callers spawn it, e.g. `codex`. */
+  /** Command name as callers spawn it, e.g. `claude`. */
   readonly name: string;
   /** ES module source the launcher runs with `node`. `process.argv.slice(2)` carries the CLI args. */
   readonly source: string;

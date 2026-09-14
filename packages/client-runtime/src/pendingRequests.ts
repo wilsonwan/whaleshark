@@ -100,13 +100,11 @@ const staleRequestFailureDetails = {
     "stale pending approval request",
     "unknown pending approval request",
     "unknown pending permission request",
-    "unknown pending codex approval request",
   ],
   "provider.user-input.respond.failed": [
     "stale pending user-input request",
     "unknown pending user-input request",
     "unknown pending user input request",
-    "unknown pending codex user input request",
   ],
 } as const;
 

@@ -16,19 +16,19 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
 import { SqlitePersistenceMemory } from "../persistence/Layers/Sqlite.ts";
-import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
+import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
 import { OrchestratorV2 } from "./Orchestrator.ts";
 import { ProjectionStoreV2, layer as projectionLayer } from "./ProjectionStore.ts";
 import type { ProviderAdapterV2Shape } from "./ProviderAdapter.ts";
 import * as ProviderAdapterRegistry from "./ProviderAdapterRegistry.ts";
 import { makeOrchestratorV2ReplayLayerWithRegistry } from "./testkit/ProviderReplayHarness.ts";
 
-const instanceId = ProviderInstanceId.make("codex");
-const modelSelection = { instanceId, model: "gpt-5.1-codex" };
+const instanceId = ProviderInstanceId.make("claudeAgent");
+const modelSelection = { instanceId, model: "claude-sonnet-4-6" };
 const adapter = {
   instanceId,
-  driver: ProviderDriverKind.make("codex"),
-  getCapabilities: () => Effect.succeed(CodexProviderCapabilitiesV2),
+  driver: ProviderDriverKind.make("claudeAgent"),
+  getCapabilities: () => Effect.succeed(ClaudeProviderCapabilitiesV2),
   planSelectionTransition: () => Effect.succeed({ type: "apply_on_next_turn" as const }),
   openSession: () => Effect.die("No provider process needed for metadata controls"),
 } as ProviderAdapterV2Shape;
@@ -101,7 +101,7 @@ it.effect(
           status: "ready",
           cwd: "/repo",
           model: "gpt-6",
-          capabilities: CodexProviderCapabilitiesV2,
+          capabilities: ClaudeProviderCapabilitiesV2,
           createdAt: now,
           updatedAt: now,
           lastError: null,

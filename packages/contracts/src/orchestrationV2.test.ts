@@ -339,9 +339,9 @@ describe("orchestration V2 contracts", () => {
         id: "run-1",
         threadId: "thread-1",
         ordinal: 1,
-        providerInstanceId: "codex",
+        providerInstanceId: "claudeAgent",
         modelSelection: {
-          instanceId: "codex",
+          instanceId: "claudeAgent",
           model: "gpt-5.4",
         },
         providerThreadId: "provider-thread-1",
@@ -476,8 +476,8 @@ describe("orchestration V2 contracts", () => {
 
   it("decodes provider-neutral replay transcripts", () => {
     const transcript = decodeProviderReplayTranscript({
-      provider: "codex",
-      protocol: "codex.app-server",
+      provider: "claudeAgent",
+      protocol: "claude-agent-sdk.query",
       version: "0.120.0",
       scenario: "simple",
       metadata: {
@@ -502,7 +502,7 @@ describe("orchestration V2 contracts", () => {
     });
 
     expect(transcript.entries).toHaveLength(3);
-    expect(transcript.protocol).toBe("codex.app-server");
+    expect(transcript.protocol).toBe("claude-agent-sdk.query");
   });
 
   it("decodes strictly typed turn items for known tools and dynamic fallback tools", () => {
@@ -514,7 +514,7 @@ describe("orchestration V2 contracts", () => {
       nodeId: "node-file-change-1",
       providerThreadId: "provider-thread-1",
       providerTurnId: "provider-turn-1",
-      nativeItemRef: { driver: "codex", nativeId: "item-file-change-1", strength: "strong" },
+      nativeItemRef: { driver: "claudeAgent", nativeId: "item-file-change-1", strength: "strong" },
       parentItemId: null,
       ordinal: 3,
       status: "completed",
@@ -535,7 +535,7 @@ describe("orchestration V2 contracts", () => {
       nodeId: "node-dynamic-1",
       providerThreadId: "provider-thread-1",
       providerTurnId: "provider-turn-1",
-      nativeItemRef: { driver: "codex", nativeId: "item-dynamic-1", strength: "strong" },
+      nativeItemRef: { driver: "claudeAgent", nativeId: "item-dynamic-1", strength: "strong" },
       parentItemId: null,
       ordinal: 4,
       status: "completed",
@@ -601,12 +601,12 @@ describe("orchestration V2 contracts", () => {
       parentNodeId: "node-root-1",
       origin: "provider_native",
       createdBy: "agent",
-      driver: "codex",
-      providerInstanceId: "codex",
+      driver: "claudeAgent",
+      providerInstanceId: "claudeAgent",
       providerThreadId: "provider-thread-subagent-1",
       childThreadId: null,
       nativeTaskRef: {
-        driver: "codex",
+        driver: "claudeAgent",
         nativeId: "native-task-1",
         strength: "strong",
       },
@@ -662,8 +662,8 @@ describe("orchestration V2 contracts", () => {
       parentNodeId: "node-root-1",
       origin: "app_owned",
       createdBy: "agent",
-      driver: "codex",
-      providerInstanceId: "codex",
+      driver: "claudeAgent",
+      providerInstanceId: "claudeAgent",
       providerThreadId: null,
       childThreadId: "thread-child-1",
       nativeTaskRef: null,
@@ -695,8 +695,11 @@ describe("orchestration V2 contracts", () => {
         id: "thread-1",
         projectId: "project-1",
         title: "Thread",
-        providerInstanceId: "codex",
-        modelSelection: { instanceId: ProviderInstanceId.make("codex"), model: "gpt-5-codex" },
+        providerInstanceId: "claudeAgent",
+        modelSelection: {
+          instanceId: ProviderInstanceId.make("claudeAgent"),
+          model: "claude-sonnet-4-6",
+        },
         runtimeMode: "full-access",
         interactionMode: "default",
         branch: null,
@@ -732,7 +735,7 @@ describe("orchestration V2 contracts", () => {
           nodeId: "node-command-1",
           providerThreadId: "provider-thread-1",
           providerTurnId: "provider-turn-1",
-          nativeItemRef: { driver: "codex", nativeId: "item-command-1", strength: "strong" },
+          nativeItemRef: { driver: "claudeAgent", nativeId: "item-command-1", strength: "strong" },
           parentItemId: null,
           ordinal: 1,
           status: "completed",
@@ -759,7 +762,11 @@ describe("orchestration V2 contracts", () => {
             nodeId: "node-command-1",
             providerThreadId: "provider-thread-1",
             providerTurnId: "provider-turn-1",
-            nativeItemRef: { driver: "codex", nativeId: "item-command-1", strength: "strong" },
+            nativeItemRef: {
+              driver: "claudeAgent",
+              nativeId: "item-command-1",
+              strength: "strong",
+            },
             parentItemId: null,
             ordinal: 1,
             status: "completed",
@@ -814,7 +821,7 @@ describe("orchestration V2 contracts", () => {
       ordinal: 5,
       status: "running",
       title: "Compacting context...",
-      driver: "codex",
+      driver: "claudeAgent",
       beforeTokenCount: 180000,
       startedAt: now,
       completedAt: null,
@@ -834,12 +841,12 @@ describe("orchestration V2 contracts", () => {
       status: "completed",
       title: "Handed off to Claude",
       contextHandoffId: "handoff-1",
-      fromProviderThreadIds: ["provider-thread-codex-1"],
+      fromProviderThreadIds: ["provider-thread-opencode-1"],
       toProviderThreadId: "provider-thread-claude-1",
-      fromProviderInstanceIds: ["codex"],
+      fromProviderInstanceIds: ["opencode"],
       toProviderInstanceId: "claudeAgent",
       strategy: "delta_since_target_last_seen",
-      summary: "Codex completed the setup work.",
+      summary: "Opencode completed the setup work.",
       startedAt: now,
       completedAt: now,
       updatedAt: now,

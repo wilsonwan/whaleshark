@@ -12,7 +12,7 @@ import {
 import * as Effect from "effect/Effect";
 
 import { AcpProviderCapabilitiesV2 } from "./Adapters/AcpAdapterV2.ts";
-import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
+import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
 import {
   CommandPolicyCapabilityUnsupportedError,
   CommandPolicyV2,
@@ -24,7 +24,7 @@ const commandId = CommandId.make("command-policy-test");
 const threadId = ThreadId.make("command-policy-thread");
 const activeRunId = RunId.make("command-policy-active-run");
 
-const baseCapabilities: OrchestrationV2ProviderCapabilities = CodexProviderCapabilitiesV2;
+const baseCapabilities: OrchestrationV2ProviderCapabilities = ClaudeProviderCapabilitiesV2;
 
 function capabilities(
   override: (current: OrchestrationV2ProviderCapabilities) => OrchestrationV2ProviderCapabilities,
@@ -128,7 +128,7 @@ layer("CommandPolicyV2", (it) => {
       const result = yield* policy.decideSteeringExecution({
         commandId,
         threadId,
-        providerInstanceId: ProviderInstanceId.make("codex"),
+        providerInstanceId: ProviderInstanceId.make("claudeAgent"),
         capabilities: baseCapabilities,
       });
 
@@ -143,7 +143,7 @@ layer("CommandPolicyV2", (it) => {
       const result = yield* policy.decideSteeringExecution({
         commandId,
         threadId,
-        providerInstanceId: ProviderInstanceId.make("codex"),
+        providerInstanceId: ProviderInstanceId.make("claudeAgent"),
         capabilities: capabilities((current) => ({
           ...current,
           turns: {
@@ -181,8 +181,8 @@ layer("CommandPolicyV2", (it) => {
       const result = yield* policy.decideSteeringExecution({
         commandId,
         threadId,
-        providerInstanceId: ProviderInstanceId.make("codex"),
-        capabilities: CodexProviderCapabilitiesV2,
+        providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+        capabilities: ClaudeProviderCapabilitiesV2,
         forceRestart: true,
       });
 
@@ -198,7 +198,7 @@ layer("CommandPolicyV2", (it) => {
         .decideSteeringExecution({
           commandId,
           threadId,
-          providerInstanceId: ProviderInstanceId.make("codex"),
+          providerInstanceId: ProviderInstanceId.make("claudeAgent"),
           capabilities: capabilities((current) => ({
             ...current,
             turns: {
@@ -224,7 +224,7 @@ layer("CommandPolicyV2", (it) => {
         .ensureNativeFork({
           commandId,
           threadId,
-          providerInstanceId: ProviderInstanceId.make("codex"),
+          providerInstanceId: ProviderInstanceId.make("claudeAgent"),
           fromSpecificTurn: true,
           capabilities: capabilities((current) => ({
             ...current,
@@ -248,8 +248,8 @@ layer("CommandPolicyV2", (it) => {
       const result = yield* policy.decideForkExecution({
         commandId,
         threadId,
-        providerInstanceId: ProviderInstanceId.make("codex"),
-        capabilities: CodexProviderCapabilitiesV2,
+        providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+        capabilities: ClaudeProviderCapabilitiesV2,
         sameProvider: true,
         hasStrongNativeSource: true,
         fromSpecificTurn: true,
@@ -340,7 +340,7 @@ layer("CommandPolicyV2", (it) => {
         .ensureRollback({
           commandId,
           threadId,
-          providerInstanceId: ProviderInstanceId.make("codex"),
+          providerInstanceId: ProviderInstanceId.make("claudeAgent"),
           capabilities: capabilities((current) => ({
             ...current,
             checkpointing: {
@@ -364,7 +364,7 @@ layer("CommandPolicyV2", (it) => {
         .ensureContextHandoff({
           commandId,
           threadId,
-          providerInstanceId: ProviderInstanceId.make("codex"),
+          providerInstanceId: ProviderInstanceId.make("claudeAgent"),
           strategy: "fork_delta_context",
           capabilities: capabilities((current) => ({
             ...current,
@@ -389,7 +389,7 @@ layer("CommandPolicyV2", (it) => {
         .ensureQueuedMessages({
           commandId,
           threadId,
-          providerInstanceId: ProviderInstanceId.make("codex"),
+          providerInstanceId: ProviderInstanceId.make("claudeAgent"),
           capabilities: capabilities((current) => ({
             ...current,
             turns: {

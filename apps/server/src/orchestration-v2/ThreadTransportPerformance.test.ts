@@ -25,7 +25,7 @@ const ROW_COUNT = 600;
 const OUTPUT_BYTES_PER_ROW = 8_192;
 const NOW = DateTime.makeUnsafe("2026-06-20T00:00:00.000Z");
 const THREAD_ID = ThreadId.make("thread-perf");
-const PROVIDER_INSTANCE_ID = ProviderInstanceId.make("codex");
+const PROVIDER_INSTANCE_ID = ProviderInstanceId.make("claudeAgent");
 
 // Recorded before bounded WebSocket fallback at 91b193653ec. Keep this number
 // here so later transport changes retain a direct, reproducible comparison.

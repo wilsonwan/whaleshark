@@ -268,19 +268,6 @@ describe("normalizeCliError", () => {
     expect(error.detail).toContain("not available on PATH");
   });
 
-  it("uses the CLI name from the first argument for codex", () => {
-    const error = normalizeCliError(
-      "codex",
-      "generateBranchName",
-      new Error("Command not found: codex"),
-      "Something went wrong",
-    );
-
-    expect(error).toBeInstanceOf(TextGenerationError);
-    expect(error.detail).toContain("Codex CLI");
-    expect(error.detail).toContain("not available on PATH");
-  });
-
   it("returns the error as-is if it is already a TextGenerationError", () => {
     const existing = new TextGenerationError({
       operation: "generatePrContent",
@@ -293,7 +280,7 @@ describe("normalizeCliError", () => {
   });
 
   it("wraps unknown non-Error values with the fallback message", () => {
-    const result = normalizeCliError("codex", "generateCommitMessage", "string error", "fallback");
+    const result = normalizeCliError("claude", "generateCommitMessage", "string error", "fallback");
 
     expect(result).toBeInstanceOf(TextGenerationError);
     expect(result.detail).toBe("fallback");
@@ -301,7 +288,7 @@ describe("normalizeCliError", () => {
 
   it("does not expose CLI failure details in the public error message", () => {
     const result = normalizeCliError(
-      "codex",
+      "claude",
       "generateCommitMessage",
       new Error("request failed with access_token=secret-token"),
       "Failed to generate a commit message",

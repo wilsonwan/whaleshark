@@ -8,7 +8,7 @@ import * as NodeSqliteClient from "@t3tools/shared/nodeSqliteClient";
 
 const layer = it.layer(Layer.mergeAll(NodeSqliteClient.layerMemory()));
 
-const MODEL_SELECTION = '{"instanceId":"codex","model":"gpt-5.6-sol"}';
+const MODEL_SELECTION = '{"instanceId":"claudeAgent","model":"gpt-5.6-sol"}';
 
 layer("046_RepairAutomaticSettlementTimestamps", (it) => {
   it.effect("repairs automatic stamps and leaves manual settlement alone", () =>

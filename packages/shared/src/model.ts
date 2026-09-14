@@ -12,7 +12,7 @@ import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import { copySorted } from "./Array.ts";
 
-const DEFAULT_PROVIDER_DRIVER_KIND = ProviderDriverKind.make("codex");
+const DEFAULT_PROVIDER_DRIVER_KIND = ProviderDriverKind.make("claudeAgent");
 
 /** Choose the command for a model change against the thread's current provider instance. */
 export function modelSelectionCommandType(
@@ -272,11 +272,6 @@ export function buildExplicitProviderOptionSelectionsFromDescriptors(
 
 export function isClaudeUltrathinkPrompt(text: string | null | undefined): boolean {
   return typeof text === "string" && /\bultrathink\b/i.test(text);
-}
-
-/** Compare Codex model families without changing provider-owned dispatch identifiers. */
-export function codexModelFamily(slug: string): string {
-  return slug.startsWith("openai.gpt-") ? slug.slice("openai.".length) : slug;
 }
 
 export function normalizeModelSlug(

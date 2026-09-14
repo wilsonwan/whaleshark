@@ -16,22 +16,6 @@ function fastModeDescriptor(
   return { id: "fastMode", label: "Fast Mode", type: "boolean", currentValue };
 }
 
-function serviceTierDescriptor(
-  currentValue: "default" | "priority" | "flex",
-): Extract<ProviderOptionDescriptor, { type: "select" }> {
-  return {
-    id: "serviceTier",
-    label: "Service Tier",
-    type: "select",
-    options: [
-      { id: "default", label: "Standard", isDefault: true },
-      { id: "priority", label: "Fast" },
-      { id: "flex", label: "Flex" },
-    ],
-    currentValue,
-  };
-}
-
 const EFFORT = selectDescriptor(
   "reasoningEffort",
   [
@@ -49,11 +33,11 @@ const CONTEXT_WINDOW = selectDescriptor(
   "1m",
 );
 
-const CODEX = ProviderDriverKind.make("codex");
+const CLAUDE = ProviderDriverKind.make("claudeAgent");
 
 function display(descriptors: ReadonlyArray<ProviderOptionDescriptor>) {
   return buildTraitsTriggerDisplay({
-    provider: CODEX,
+    provider: CLAUDE,
     descriptors,
     primarySelectDescriptorId: "reasoningEffort",
     ultrathinkPromptControlled: false,
@@ -72,35 +56,6 @@ describe("buildTraitsTriggerDisplay", () => {
     expect(display([EFFORT, fastModeDescriptor(true), CONTEXT_WINDOW])).toEqual({
       label: "High · 1M",
       showFastModeIcon: true,
-    });
-  });
-
-  it("treats Codex standard and fast service tiers as fast mode states", () => {
-    expect(display([EFFORT, serviceTierDescriptor("default")])).toEqual({
-      label: "High",
-      showFastModeIcon: false,
-    });
-    expect(display([EFFORT, serviceTierDescriptor("priority")])).toEqual({
-      label: "High",
-      showFastModeIcon: true,
-    });
-  });
-
-  it("keeps other Codex service tiers in the label", () => {
-    expect(display([EFFORT, serviceTierDescriptor("flex")])).toEqual({
-      label: "High · Flex",
-      showFastModeIcon: false,
-    });
-  });
-
-  it("keeps the Codex service tier readable when it is the only trait", () => {
-    expect(display([serviceTierDescriptor("default")])).toEqual({
-      label: "Standard",
-      showFastModeIcon: false,
-    });
-    expect(display([serviceTierDescriptor("priority")])).toEqual({
-      label: "Fast",
-      showFastModeIcon: false,
     });
   });
 
@@ -147,7 +102,7 @@ describe("buildTraitsTriggerDisplay", () => {
   it("still renders the prompt-controlled ultrathink label alongside the bolt", () => {
     expect(
       buildTraitsTriggerDisplay({
-        provider: CODEX,
+        provider: CLAUDE,
         descriptors: [EFFORT, fastModeDescriptor(true)],
         primarySelectDescriptorId: "reasoningEffort",
         ultrathinkPromptControlled: true,

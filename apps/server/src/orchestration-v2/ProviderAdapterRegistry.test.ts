@@ -27,9 +27,9 @@ import {
   ProviderAdapterRegistryV2,
 } from "./ProviderAdapterRegistry.ts";
 
-const driver = ProviderDriverKind.make("codex");
-const personalId = ProviderInstanceId.make("codex_personal");
-const workId = ProviderInstanceId.make("codex_work");
+const driver = ProviderDriverKind.make("claudeAgent");
+const personalId = ProviderInstanceId.make("claude_personal");
+const workId = ProviderInstanceId.make("claude_work");
 
 const makeAdapter = (instanceId: ProviderInstanceId): ProviderAdapterV2Shape =>
   ({
@@ -48,7 +48,7 @@ const makeInstance = (
   driverKind: driver,
   continuationIdentity: {
     driverKind: driver,
-    continuationKey: `codex:test:${instanceId}`,
+    continuationKey: `claude:test:${instanceId}`,
   },
   displayName: String(instanceId),
   enabled: true,

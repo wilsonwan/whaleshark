@@ -63,7 +63,10 @@ describe("resolveProjectSettings", () => {
   });
 
   it("honours the aggregate's own fields only until the server has folded them", () => {
-    const aggregateModel = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.5");
+    const aggregateModel = createModelSelection(
+      ProviderInstanceId.make("claudeAgent"),
+      "claude-opus-4-6",
+    );
     const project = {
       defaultModelSelection: aggregateModel,
       defaultThreadEnvMode: "local" as const,

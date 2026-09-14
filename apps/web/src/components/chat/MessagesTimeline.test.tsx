@@ -1487,8 +1487,8 @@ describe("MessagesTimeline", () => {
     const { MessagesTimeline } = await import("./MessagesTimeline");
     const providerStatuses = [
       {
-        instanceId: "codex_personal",
-        driver: "codex",
+        instanceId: "claude_personal",
+        driver: "claudeAgent",
         enabled: true,
         installed: true,
         version: null,
@@ -1556,9 +1556,9 @@ describe("MessagesTimeline", () => {
         providerStatuses={providerStatuses}
         timelineEntries={[
           buildHandoffEntry({
-            fromProviderInstanceIds: ["codex_personal"],
+            fromProviderInstanceIds: ["claude_personal"],
             toProviderInstanceId: "claudeAgent",
-            fromModelSelections: [{ instanceId: "codex_personal", model: "gpt-5.6-sol" }],
+            fromModelSelections: [{ instanceId: "claude_personal", model: "gpt-5.6-sol" }],
             toModel: "claude-fable-5",
           }),
         ]}
@@ -1578,8 +1578,8 @@ describe("MessagesTimeline", () => {
       {
         id: "run-1",
         ordinal: 1,
-        providerInstanceId: "codex_personal",
-        modelSelection: { instanceId: "codex_personal", model: "gpt-5.6-sol" },
+        providerInstanceId: "claude_personal",
+        modelSelection: { instanceId: "claude_personal", model: "gpt-5.6-sol" },
       },
       {
         id: "run-2",
@@ -1595,7 +1595,7 @@ describe("MessagesTimeline", () => {
         runs={legacyRuns}
         timelineEntries={[
           buildHandoffEntry({
-            fromProviderInstanceIds: ["codex_personal"],
+            fromProviderInstanceIds: ["claude_personal"],
             toProviderInstanceId: "claudeAgent",
           }),
         ]}
@@ -1614,14 +1614,14 @@ describe("MessagesTimeline", () => {
         providerStatuses={providerStatuses}
         timelineEntries={[
           buildHandoffEntry({
-            fromProviderInstanceIds: ["codex_personal"],
+            fromProviderInstanceIds: ["claude_personal"],
             toProviderInstanceId: "claudeAgent",
           }),
         ]}
       />,
     );
 
-    expect(bareMarkup).toContain("Codex Personal");
+    expect(bareMarkup).toContain("Claude Personal");
     expect(bareMarkup).not.toContain("Full conversation context");
   });
 
@@ -1830,16 +1830,16 @@ describe("MessagesTimeline", () => {
         {...buildProps()}
         timelineEntries={[
           {
-            id: "codex-subagent-result",
+            id: "claudeAgent-subagent-result",
             kind: "event",
             createdAt: MESSAGE_CREATED_AT,
             projectedItem: {
               position: 0,
               visibility: "local",
               sourceThreadId: "thread-1",
-              sourceItemId: "codex-subagent-result",
+              sourceItemId: "claudeAgent-subagent-result",
               item: {
-                id: "codex-subagent-result",
+                id: "claudeAgent-subagent-result",
                 threadId: "thread-1",
                 runId: "run-1",
                 nodeId: "node-subagent-1",
@@ -1856,8 +1856,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "codex",
-                providerInstanceId: "codex",
+                driver: "claudeAgent",
+                providerInstanceId: "claudeAgent",
                 childThreadId: "thread-subagent-1",
                 prompt: "Explain test isolation",
                 result: "Tests should be isolated.\n\nResult: no shared state.",
@@ -1912,8 +1912,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "codex",
-                providerInstanceId: "codex",
+                driver: "claudeAgent",
+                providerInstanceId: "claudeAgent",
                 childThreadId: "thread-subagent-1",
                 prompt: "Inspect the package",
                 progress: "Reading src/index.ts",
@@ -1966,8 +1966,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "codex",
-                providerInstanceId: "codex",
+                driver: "claudeAgent",
+                providerInstanceId: "claudeAgent",
                 childThreadId: "thread-subagent-1",
                 prompt: "Inspect the package",
                 progress: null,
@@ -2019,8 +2019,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "codex",
-                providerInstanceId: "codex",
+                driver: "claudeAgent",
+                providerInstanceId: "claudeAgent",
                 childThreadId: "thread-subagent-1",
                 prompt: "Inspect the package",
                 progress: "Reading src/index.ts",
@@ -2072,8 +2072,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "codex",
-                providerInstanceId: "codex",
+                driver: "claudeAgent",
+                providerInstanceId: "claudeAgent",
                 childThreadId: "thread-subagent-1",
                 prompt: "Inspect the package",
                 progress: "Audited 12 packages",

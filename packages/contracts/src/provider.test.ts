@@ -27,14 +27,14 @@ function getOptionValue(
 }
 
 describe("ProviderSessionStartInput", () => {
-  it("accepts codex-compatible payloads", () => {
+  it("accepts claude-compatible payloads", () => {
     const parsed = decodeProviderSessionStartInput({
       threadId: "thread-1",
-      provider: "codex",
+      provider: "claudeAgent",
       cwd: "/tmp/workspace",
       modelSelection: {
-        provider: "codex",
-        model: "gpt-5.3-codex",
+        provider: "claudeAgent",
+        model: "claude-sonnet-4-6",
         options: [
           { id: "reasoningEffort", value: "high" },
           { id: "fastMode", value: true },
@@ -43,8 +43,8 @@ describe("ProviderSessionStartInput", () => {
       runtimeMode: "full-access",
     });
     expect(parsed.runtimeMode).toBe("full-access");
-    expect(parsed.modelSelection?.instanceId).toBe("codex");
-    expect(parsed.modelSelection?.model).toBe("gpt-5.3-codex");
+    expect(parsed.modelSelection?.instanceId).toBe("claudeAgent");
+    expect(parsed.modelSelection?.model).toBe("claude-sonnet-4-6");
     expect(getOptionValue(parsed.modelSelection?.options, "reasoningEffort")).toBe("high");
     expect(getOptionValue(parsed.modelSelection?.options, "fastMode")).toBe(true);
   });
@@ -53,7 +53,7 @@ describe("ProviderSessionStartInput", () => {
     expect(() =>
       decodeProviderSessionStartInput({
         threadId: "thread-1",
-        provider: "codex",
+        provider: "claudeAgent",
       }),
     ).toThrow();
   });
@@ -121,12 +121,12 @@ describe("ProviderSessionStartInput", () => {
 });
 
 describe("ProviderSendTurnInput", () => {
-  it("accepts codex modelSelection", () => {
+  it("accepts claude modelSelection", () => {
     const parsed = decodeProviderSendTurnInput({
       threadId: "thread-1",
       modelSelection: {
-        provider: "codex",
-        model: "gpt-5.3-codex",
+        provider: "claudeAgent",
+        model: "claude-sonnet-4-6",
         options: [
           { id: "reasoningEffort", value: "xhigh" },
           { id: "fastMode", value: true },
@@ -134,8 +134,8 @@ describe("ProviderSendTurnInput", () => {
       },
     });
 
-    expect(parsed.modelSelection?.instanceId).toBe("codex");
-    expect(parsed.modelSelection?.model).toBe("gpt-5.3-codex");
+    expect(parsed.modelSelection?.instanceId).toBe("claudeAgent");
+    expect(parsed.modelSelection?.model).toBe("claude-sonnet-4-6");
     expect(getOptionValue(parsed.modelSelection?.options, "reasoningEffort")).toBe("xhigh");
     expect(getOptionValue(parsed.modelSelection?.options, "fastMode")).toBe(true);
   });
@@ -172,7 +172,7 @@ describe("provider feedback", () => {
     });
   });
 
-  it("returns the shareable Codex feedback identifier", () => {
+  it("returns the shareable feedback identifier", () => {
     expect(decodeProviderUploadFeedbackResult({ feedbackId: "provider-thread-1" })).toEqual({
       feedbackId: "provider-thread-1",
     });
@@ -196,7 +196,7 @@ describe("providerInstanceId routing key (slice-2 invariant)", () => {
   it("decodes a ProviderSessionStartInput without providerInstanceId (legacy producer)", () => {
     const parsed = decodeProviderSessionStartInput({
       threadId: "thread-1",
-      provider: "codex",
+      provider: "claudeAgent",
       runtimeMode: "full-access",
     });
     expect(parsed.providerInstanceId).toBeUndefined();
@@ -205,24 +205,24 @@ describe("providerInstanceId routing key (slice-2 invariant)", () => {
   it("decodes a ProviderSessionStartInput with providerInstanceId (post-migration producer)", () => {
     const parsed = decodeProviderSessionStartInput({
       threadId: "thread-1",
-      provider: "codex",
-      providerInstanceId: "codex_personal",
+      provider: "claudeAgent",
+      providerInstanceId: "claude_personal",
       runtimeMode: "full-access",
     });
-    expect(parsed.providerInstanceId).toBe("codex_personal");
+    expect(parsed.providerInstanceId).toBe("claude_personal");
   });
 
   it("propagates providerInstanceId through ProviderSession decode", () => {
     const session = decodeProviderSession({
-      provider: "codex",
-      providerInstanceId: "codex_work",
+      provider: "claudeAgent",
+      providerInstanceId: "claude_work",
       status: "ready",
       runtimeMode: "full-access",
       threadId: "thread-1",
       createdAt: "2024-01-01T00:00:00Z",
       updatedAt: "2024-01-01T00:00:00Z",
     });
-    expect(session.providerInstanceId).toBe("codex_work");
+    expect(session.providerInstanceId).toBe("claude_work");
   });
 
   it("decodes ProviderSession for fork-provided driver kinds", () => {
@@ -244,21 +244,21 @@ describe("providerInstanceId routing key (slice-2 invariant)", () => {
     const event = decodeProviderEvent({
       id: "event-1",
       kind: "notification",
-      provider: "codex",
-      providerInstanceId: "codex_personal",
+      provider: "claudeAgent",
+      providerInstanceId: "claude_personal",
       threadId: "thread-1",
       createdAt: "2024-01-01T00:00:00Z",
       method: "session.created",
     });
-    expect(event.provider).toBe("codex");
-    expect(event.providerInstanceId).toBe("codex_personal");
+    expect(event.provider).toBe("claudeAgent");
+    expect(event.providerInstanceId).toBe("claude_personal");
   });
 
   it("rejects providerInstanceId values that fail the slug pattern (defense in depth)", () => {
     expect(() =>
       decodeProviderSessionStartInput({
         threadId: "thread-1",
-        provider: "codex",
+        provider: "claudeAgent",
         providerInstanceId: "1bad",
         runtimeMode: "full-access",
       }),

@@ -126,13 +126,13 @@ vi.mock("../../state/entities", () => ({
 import { EnvironmentProviderSettings } from "./ProviderSettingsPanel";
 
 const environmentId = EnvironmentId.make("remote-device");
-const codexId = ProviderInstanceId.make("codex");
-const customId = ProviderInstanceId.make("codex_work");
+const claudeId = ProviderInstanceId.make("claudeAgent");
+const customId = ProviderInstanceId.make("claude_work");
 
 function provider(): ServerProvider {
   return {
-    instanceId: codexId,
-    driver: ProviderDriverKind.make("codex"),
+    instanceId: claudeId,
+    driver: ProviderDriverKind.make("claudeAgent"),
     enabled: true,
     installed: true,
     version: "1.0.0",
@@ -146,7 +146,7 @@ function provider(): ServerProvider {
       status: "behind_latest",
       currentVersion: "1.0.0",
       latestVersion: "1.1.0",
-      updateCommand: "pnpm add -g @openai/codex@latest",
+      updateCommand: "pnpm add -g @anthropic-ai/claude-code@latest",
       canUpdate: true,
       checkedAt: "2026-07-24T12:00:00.000Z",
       message: "Update available.",
@@ -239,7 +239,7 @@ describe("EnvironmentProviderSettings routing", () => {
     const providerCard = visitElements(
       panel,
       (element) =>
-        element.props.instanceId === codexId && typeof element.props.onRunUpdate === "function",
+        element.props.instanceId === claudeId && typeof element.props.onRunUpdate === "function",
     );
     expect(providerCard).not.toBeNull();
     (providerCard?.props.onRunUpdate as (() => void) | undefined)?.();
@@ -247,7 +247,7 @@ describe("EnvironmentProviderSettings routing", () => {
 
     expect(commands.updateProvider).toHaveBeenCalledWith({
       environmentId,
-      input: { provider: ProviderDriverKind.make("codex"), instanceId: codexId },
+      input: { provider: ProviderDriverKind.make("claudeAgent"), instanceId: claudeId },
     });
   });
 
@@ -255,7 +255,7 @@ describe("EnvironmentProviderSettings routing", () => {
     settingsState.value = {
       ...DEFAULT_UNIFIED_SETTINGS,
       providerInstances: {
-        [customId]: { driver: ProviderDriverKind.make("codex"), enabled: true },
+        [customId]: { driver: ProviderDriverKind.make("claudeAgent"), enabled: true },
       },
     };
     atoms.providers = [provider()];
@@ -265,21 +265,21 @@ describe("EnvironmentProviderSettings routing", () => {
   });
 
   it.each([
-    ["onFavoriteModelsChange", { favorites: [{ provider: codexId, model: "chosen" }] }],
+    ["onFavoriteModelsChange", { favorites: [{ provider: claudeId, model: "chosen" }] }],
     [
       "onHiddenModelsChange",
-      { providerModelPreferences: { [codexId]: { hiddenModels: ["chosen"], modelOrder: [] } } },
+      { providerModelPreferences: { [claudeId]: { hiddenModels: ["chosen"], modelOrder: [] } } },
     ],
     [
       "onModelOrderChange",
-      { providerModelPreferences: { [codexId]: { hiddenModels: [], modelOrder: ["chosen"] } } },
+      { providerModelPreferences: { [claudeId]: { hiddenModels: [], modelOrder: ["chosen"] } } },
     ],
   ])("saves %s on this device without changing the selected server", (action, expected) => {
     atoms.providers = [provider()];
     const panel = renderPanel();
     const editor = visitElements(
       panel,
-      (element) => element.props.instanceId === codexId && element.props.mode === "editor",
+      (element) => element.props.instanceId === claudeId && element.props.mode === "editor",
     );
     expect(editor).not.toBeNull();
     if (!editor) throw new Error("Provider editor was not rendered");
@@ -300,7 +300,7 @@ describe("EnvironmentProviderSettings routing", () => {
       ...DEFAULT_UNIFIED_SETTINGS,
       providerInstances: {
         [customId]: {
-          driver: ProviderDriverKind.make("codex"),
+          driver: ProviderDriverKind.make("claudeAgent"),
           enabled: true,
         },
       },
@@ -363,12 +363,12 @@ describe("EnvironmentProviderSettings routing", () => {
     settingsState.value = {
       ...DEFAULT_UNIFIED_SETTINGS,
       providerInstances: {
-        [codexId]: {
-          driver: ProviderDriverKind.make("codex"),
+        [claudeId]: {
+          driver: ProviderDriverKind.make("claudeAgent"),
           enabled: false,
         },
         [customId]: {
-          driver: ProviderDriverKind.make("codex"),
+          driver: ProviderDriverKind.make("claudeAgent"),
           enabled: true,
         },
       },
@@ -400,13 +400,13 @@ describe("EnvironmentProviderSettings routing", () => {
     settingsState.mutateProviderInstance.mockClear();
     const defaultRow = visitElements(
       panel,
-      (element) => element.props.instanceId === codexId && element.props.mode === "list",
+      (element) => element.props.instanceId === claudeId && element.props.mode === "list",
     );
     (defaultRow?.props.onSelect as (() => void) | undefined)?.();
     panel = renderPanel();
     const defaultCard = visitElements(
       panel,
-      (element) => element.props.instanceId === codexId && element.props.mode === "editor",
+      (element) => element.props.instanceId === claudeId && element.props.mode === "editor",
     );
     const resetAction = defaultCard?.props.headerAction;
     const resetButton = visitElements(
@@ -418,7 +418,7 @@ describe("EnvironmentProviderSettings routing", () => {
     await flushPromises();
 
     const [resetMutation, resetPatch] = settingsState.mutateProviderInstance.mock.lastCall ?? [];
-    expect(resetMutation).toEqual({ operation: "remove", instanceId: codexId });
+    expect(resetMutation).toEqual({ operation: "remove", instanceId: claudeId });
     expect(Object.keys(resetPatch ?? {}).sort()).toEqual(["providers"]);
     expect(resetPatch).not.toHaveProperty("favorites");
     expect(resetPatch).not.toHaveProperty("providerModelPreferences");
@@ -429,7 +429,7 @@ describe("EnvironmentProviderSettings routing", () => {
       ...DEFAULT_UNIFIED_SETTINGS,
       providerInstances: {
         [customId]: {
-          driver: ProviderDriverKind.make("codex"),
+          driver: ProviderDriverKind.make("claudeAgent"),
           enabled: true,
           displayName: "Work",
         },
@@ -438,7 +438,7 @@ describe("EnvironmentProviderSettings routing", () => {
     const panel = renderPanel();
     const card = visitElements(panel, (element) => element.props.instanceId === customId);
     const next = {
-      driver: ProviderDriverKind.make("codex"),
+      driver: ProviderDriverKind.make("claudeAgent"),
       enabled: false,
       displayName: "Work",
     };

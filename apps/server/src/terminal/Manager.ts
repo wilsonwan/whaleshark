@@ -35,7 +35,6 @@ import {
   type TerminalSummary,
   type TerminalWriteInput,
   ClaudeSettings,
-  CodexSettings,
   ProviderInstanceId,
 } from "@t3tools/contracts";
 import { makeKeyedCoalescingWorker } from "@t3tools/shared/KeyedCoalescingWorker";
@@ -62,7 +61,6 @@ import * as SynchronizedRef from "effect/SynchronizedRef";
 
 import * as ServerConfig from "../config.ts";
 import { mergeProviderInstanceEnvironment } from "../provider/ProviderInstanceEnvironment.ts";
-import { resolveCodexHomeLayout } from "../provider/Drivers/CodexHomeLayout.ts";
 import { makeClaudeEnvironment } from "../provider/Drivers/ClaudeHome.ts";
 import { deriveProviderInstanceConfigMap } from "../provider/Layers/ProviderInstanceRegistryHydration.ts";
 import * as ServerSettings from "../serverSettings.ts";
@@ -106,7 +104,6 @@ const TERMINAL_ENV_BLOCKLIST = new Set(["PORT", "ELECTRON_RENDERER_PORT", "ELECT
 const nowIso = Effect.map(DateTime.now, DateTime.formatIso);
 const MAX_TERMINAL_LABEL_LENGTH = 128;
 const decodeClaudeSettings = Schema.decodeUnknownOption(ClaudeSettings);
-const decodeCodexSettings = Schema.decodeUnknownOption(CodexSettings);
 
 class TerminalSubprocessCheckError extends Schema.TaggedError<TerminalSubprocessCheckError>()(
   "TerminalSubprocessCheckError",
@@ -1299,8 +1296,7 @@ function createTerminalSpawnEnv(
         platform === "win32"
           ? Object.keys(spawnEnv).find((candidate) => candidate.toLowerCase() === key.toLowerCase())
           : undefined;
-      spawnEnv[existingKey ?? key] =
-        key === "CODEX_HOME" || key === "CLAUDE_CONFIG_DIR" ? expandHomePath(value) : value;
+      spawnEnv[existingKey ?? key] = key === "CLAUDE_CONFIG_DIR" ? expandHomePath(value) : value;
     }
   }
   // An explicit empty override opts out for terminals started without a client.
@@ -1377,16 +1373,7 @@ export const resolveProviderInstanceTerminalEnvironment = Effect.fn(
   }
 
   let resolved = mergeProviderInstanceEnvironment(instance.environment, input.env ?? {});
-  if (instance.driver === "codex") {
-    const config = decodeCodexSettings(instance.config ?? {});
-    if (Option.isSome(config)) {
-      const layout = yield* resolveCodexHomeLayout(config.value).pipe(
-        Effect.provideService(Path.Path, input.path),
-      );
-      if (layout.effectiveHomePath)
-        resolved = { ...resolved, CODEX_HOME: layout.effectiveHomePath };
-    }
-  } else if (instance.driver === "claudeAgent") {
+  if (instance.driver === "claudeAgent") {
     const config = decodeClaudeSettings(instance.config ?? {});
     if (Option.isSome(config)) {
       resolved = yield* makeClaudeEnvironment(config.value, resolved).pipe(

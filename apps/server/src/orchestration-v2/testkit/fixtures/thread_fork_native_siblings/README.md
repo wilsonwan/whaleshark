@@ -4,8 +4,8 @@ This fixture records two independent provider-native forks from the same source
 turn. It verifies that both forks inherit source context while keeping their
 fork-local context isolated.
 
-Both `codex_transcript.ndjson` and `claude_transcript.ndjson` record the same
-logical scenario using each provider's native thread or session mechanism.
+`claude_transcript.ndjson` records the logical scenario using the provider's native
+session mechanism.
 
 ## Conversation Graph
 

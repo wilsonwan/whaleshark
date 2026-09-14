@@ -396,8 +396,9 @@ function resolveTextGenerationProvider(settings: ServerSettings): ServerSettings
 
 function fallbackTextGenerationProvider(settings: ServerSettings): ServerSettings {
   // Same precedence as isModelSelectionProviderEnabled: an explicit provider
-  // instance wins over the legacy providers map, which decodes to defaults
-  // (codex enabled) when the Providers UI has only written providerInstances.
+  // instance wins over the legacy providers map, which decodes to the
+  // defaults (Claude enabled) when the Providers UI has only written
+  // providerInstances.
   const fallbackEntry = Object.entries(settings.providers).find(([driver, provider]) => {
     const instance = settings.providerInstances[ProviderInstanceId.make(driver)];
     return instance === undefined ? provider.enabled : resolveProviderInstanceEnabled(instance);

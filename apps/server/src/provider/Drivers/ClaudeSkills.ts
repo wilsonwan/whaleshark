@@ -4,12 +4,12 @@
  * Claude Code loads skills from `<config dir>/skills` (user scope) and
  * `<cwd>/.claude/skills` (project scope), one directory per skill with a
  * `SKILL.md` carrying YAML frontmatter. The user root wins on name collisions,
- * matching the CLI. `.agents/skills` is a Codex location: verified against the
+ * matching the CLI. `.agents/skills` is a legacy location: verified against the
  * CLI, a skill that lives only there is answered with `Unknown command`, so it
  * is not scanned here.
  * The Agent SDK init handshake surfaces skills only as slash commands without
  * their filesystem paths, so the provider snapshot scans the same locations
- * directly, mirroring how the Codex app-server reports its skills.
+ * directly, mirroring how the CLI reports its skills.
  *
  * @module provider/Drivers/ClaudeSkills
  */

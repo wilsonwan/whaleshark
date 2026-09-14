@@ -23,7 +23,7 @@ import * as Layer from "effect/Layer";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
 
 import { SqlitePersistenceMemory } from "../persistence/Layers/Sqlite.ts";
-import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
+import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
 import { EffectOutboxV2, layer as effectOutboxLayer } from "./EffectOutbox.ts";
 import { ProjectionStoreV2, layer as projectionStoreLayer } from "./ProjectionStore.ts";
 import { restartContinuationRun } from "./RestartContinuation.ts";
@@ -31,9 +31,9 @@ import { restartContinuationRun } from "./RestartContinuation.ts";
 const TestLayer = Layer.mergeAll(projectionStoreLayer, effectOutboxLayer).pipe(
   Layer.provideMerge(SqlitePersistenceMemory),
 );
-const providerInstanceId = ProviderInstanceId.make("codex");
+const providerInstanceId = ProviderInstanceId.make("claudeAgent");
 const modelSelection = { instanceId: providerInstanceId, model: "gpt-5.4" };
-const driver = ProviderDriverKind.make("codex");
+const driver = ProviderDriverKind.make("claudeAgent");
 
 const createThread = Effect.fn(function* (
   name: string,
@@ -308,7 +308,7 @@ it.effect("includes shared sessions and provider-owned background rosters in rec
           status: "ready",
           cwd: "/workspace",
           model: modelSelection.model,
-          capabilities: CodexProviderCapabilitiesV2,
+          capabilities: ClaudeProviderCapabilitiesV2,
           createdAt: now,
           updatedAt: now,
           lastError: null,
@@ -359,7 +359,7 @@ it.effect("includes shared sessions and provider-owned background rosters in rec
         status: "stopped",
         cwd: "/workspace",
         model: modelSelection.model,
-        capabilities: CodexProviderCapabilitiesV2,
+        capabilities: ClaudeProviderCapabilitiesV2,
         createdAt: now,
         updatedAt: now,
         lastError: null,

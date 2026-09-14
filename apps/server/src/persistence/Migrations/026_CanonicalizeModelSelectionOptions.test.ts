@@ -41,7 +41,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
               'project-no-options',
               'No options project',
               '/tmp/no-options',
-              '{"provider":"codex","model":"gpt-5.4"}',
+              '{"provider":"claudeAgent","model":"gpt-5.4"}',
               '[]',
               '2026-01-01T00:00:00.000Z',
               '2026-01-01T00:00:00.000Z',
@@ -61,7 +61,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
               'project-already-array',
               'Already-canonical options project',
               '/tmp/already-array',
-              '{"provider":"codex","model":"gpt-5.4","options":[{"id":"reasoningEffort","value":"high"}]}',
+              '{"provider":"claudeAgent","model":"gpt-5.4","options":[{"id":"reasoningEffort","value":"high"}]}',
               '[]',
               '2026-01-01T00:00:00.000Z',
               '2026-01-01T00:00:00.000Z',
@@ -105,7 +105,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
               'thread-empty-options',
               'project-legacy',
               'Empty options thread',
-              '{"provider":"codex","model":"gpt-5.4","options":{}}',
+              '{"provider":"claudeAgent","model":"gpt-5.4","options":{}}',
               NULL, NULL, NULL,
               '2026-01-01T00:00:00.000Z',
               '2026-01-01T00:00:00.000Z',
@@ -127,7 +127,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
               'thread-no-options',
               'project-legacy',
               'No options thread',
-              '{"provider":"codex","model":"gpt-5.4"}',
+              '{"provider":"claudeAgent","model":"gpt-5.4"}',
               NULL, NULL, NULL,
               '2026-01-01T00:00:00.000Z',
               '2026-01-01T00:00:00.000Z',
@@ -138,7 +138,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
               'thread-already-array',
               'project-legacy',
               'Already array thread',
-              '{"provider":"codex","model":"gpt-5.4","options":[{"id":"fastMode","value":true}]}',
+              '{"provider":"claudeAgent","model":"gpt-5.4","options":[{"id":"fastMode","value":true}]}',
               NULL, NULL, NULL,
               '2026-01-01T00:00:00.000Z',
               '2026-01-01T00:00:00.000Z',
@@ -188,7 +188,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
               NULL,
               'corr-pmu',
               'user',
-              '{"projectId":"project-legacy","defaultModelSelection":{"provider":"codex","model":"gpt-5.4","options":{"reasoningEffort":"low"}},"updatedAt":"2026-01-01T00:00:00.000Z"}',
+              '{"projectId":"project-legacy","defaultModelSelection":{"provider":"claudeAgent","model":"gpt-5.4","options":{"reasoningEffort":"low"}},"updatedAt":"2026-01-01T00:00:00.000Z"}',
               '{}'
             ),
             (
@@ -230,7 +230,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
               NULL,
               'corr-tmu',
               'user',
-              '{"threadId":"thread-legacy","modelSelection":{"provider":"codex","model":"gpt-5.4","options":{"fastMode":true}},"updatedAt":"2026-01-01T00:00:00.000Z"}',
+              '{"threadId":"thread-legacy","modelSelection":{"provider":"claudeAgent","model":"gpt-5.4","options":{"fastMode":true}},"updatedAt":"2026-01-01T00:00:00.000Z"}',
               '{}'
             ),
             (
@@ -258,7 +258,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
               NULL,
               'corr-taa',
               'user',
-              '{"threadId":"thread-already-array","projectId":"project-legacy","title":"Already Array","modelSelection":{"provider":"codex","model":"gpt-5.4","options":[{"id":"reasoningEffort","value":"medium"}]},"runtimeMode":"full-access","interactionMode":"default","branch":null,"worktreePath":null,"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}',
+              '{"threadId":"thread-already-array","projectId":"project-legacy","title":"Already Array","modelSelection":{"provider":"claudeAgent","model":"gpt-5.4","options":[{"id":"reasoningEffort","value":"medium"}]},"runtimeMode":"full-access","interactionMode":"default","branch":null,"worktreePath":null,"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}',
               '{}'
             ),
             (
@@ -299,7 +299,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
           {
             projectId: "project-already-array",
             selection: {
-              provider: "codex",
+              provider: "claudeAgent",
               model: "gpt-5.4",
               options: [{ id: "reasoningEffort", value: "high" }],
             },
@@ -317,7 +317,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
           },
           {
             projectId: "project-no-options",
-            selection: { provider: "codex", model: "gpt-5.4" },
+            selection: { provider: "claudeAgent", model: "gpt-5.4" },
           },
           { projectId: "project-null-selection", selection: null },
         ],
@@ -343,7 +343,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
           {
             threadId: "thread-already-array",
             selection: {
-              provider: "codex",
+              provider: "claudeAgent",
               model: "gpt-5.4",
               options: [{ id: "fastMode", value: true }],
             },
@@ -360,7 +360,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
           },
           {
             threadId: "thread-empty-options",
-            selection: { provider: "codex", model: "gpt-5.4", options: [] },
+            selection: { provider: "claudeAgent", model: "gpt-5.4", options: [] },
           },
           {
             threadId: "thread-legacy",
@@ -376,7 +376,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
           },
           {
             threadId: "thread-no-options",
-            selection: { provider: "codex", model: "gpt-5.4" },
+            selection: { provider: "claudeAgent", model: "gpt-5.4" },
           },
         ],
       );
@@ -405,7 +405,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
       });
 
       assert.deepStrictEqual(payloads["event-project-meta-updated"].defaultModelSelection, {
-        provider: "codex",
+        provider: "claudeAgent",
         model: "gpt-5.4",
         options: [{ id: "reasoningEffort", value: "low" }],
       });
@@ -422,7 +422,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
       });
 
       assert.deepStrictEqual(payloads["event-thread-meta-updated"].modelSelection, {
-        provider: "codex",
+        provider: "claudeAgent",
         model: "gpt-5.4",
         options: [{ id: "fastMode", value: true }],
       });
@@ -438,7 +438,7 @@ layer("026_CanonicalizeModelSelectionOptions", (it) => {
 
       // Already-array records are left untouched.
       assert.deepStrictEqual(payloads["event-thread-already-array"].modelSelection, {
-        provider: "codex",
+        provider: "claudeAgent",
         model: "gpt-5.4",
         options: [{ id: "reasoningEffort", value: "medium" }],
       });

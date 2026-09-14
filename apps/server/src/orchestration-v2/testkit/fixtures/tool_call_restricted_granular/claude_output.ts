@@ -32,7 +32,7 @@ export function assertToolCallRestrictedGranularClaudeOutput(
     "assistant_message",
   ]);
   assertUserMessagesInclude(projection, [TOOL_CALL_WRITE_PROMPT]);
-  assertAssistantTextIncludes(projection, "codex app-server approval fixture");
+  assertAssistantTextIncludes(projection, "provider approval fixture");
   assertRuntimeRequestCounts(projection, { total: 1, resolved: 1 });
   assertRuntimeRequestKinds(projection, ["command"]);
   assertAllRuntimeRequestsResolved(projection);

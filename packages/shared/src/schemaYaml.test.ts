@@ -17,13 +17,13 @@ describe("schemaYaml helpers", () => {
       decodeConfig(`name: t3code
 enabled: true
 tags:
-  - codex
+  - claude
   - effect
 `),
     ).toEqual({
       name: "t3code",
       enabled: true,
-      tags: ["codex", "effect"],
+      tags: ["claude", "effect"],
     });
   });
 
@@ -34,12 +34,12 @@ tags:
       encodeConfig({
         name: "t3code",
         enabled: true,
-        tags: ["codex"],
+        tags: ["claude"],
       }),
     ).toBe(`name: t3code
 enabled: true
 tags:
-  - codex
+  - claude
 `);
   });
 

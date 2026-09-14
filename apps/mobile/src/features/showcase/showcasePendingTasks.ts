@@ -28,8 +28,8 @@ export const SHOWCASE_PENDING_TASK_DEFINITIONS = [
 ] as const;
 
 const FALLBACK_MODEL_SELECTION = {
-  instanceId: ProviderInstanceId.make("codex"),
-  model: "gpt-5.4",
+  instanceId: ProviderInstanceId.make("claudeAgent"),
+  model: "claude-fable-5-1",
 } as const;
 
 export function buildShowcasePendingTasks(

@@ -18,7 +18,7 @@ it.layer(NodeSqliteClient.layerMemory())("049_ProjectionThreadsActiveOrderKey", 
           created_at, updated_at
         ) VALUES (
           'thread-1', 'project-1', 'Existing thread',
-          '{"instanceId":"codex","model":"gpt-5.4"}', 'full-access', ${now}, ${now}
+          '{"instanceId":"claudeAgent","model":"gpt-5.4"}', 'full-access', ${now}, ${now}
         )
       `;
       yield* runMigrations({ toMigrationInclusive: 49 });

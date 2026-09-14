@@ -59,8 +59,8 @@ function nativeSnapshot(input: {
       pid: 4_242,
       ppid: process.pid,
       startTimeMs: 200,
-      name: "codex",
-      command: "codex app-server",
+      name: "claude",
+      command: "claude",
       cpuTimeMs: input.childCpuTimeMs,
       ioWriteBytes: input.childWriteBytes,
     }),
@@ -583,9 +583,9 @@ describe("ResourceTelemetry", () => {
 
         yield* TestClock.adjust(Duration.seconds(1));
         const second = yield* telemetry.refresh;
-        const codex = second.processes.find((entry) => entry.identity.pid === 4_242);
-        expect(codex?.cpuPercent).toBe(25);
-        expect(codex?.ioWriteBytesPerSecond).toBe(4_000);
+        const agentProcess = second.processes.find((entry) => entry.identity.pid === 4_242);
+        expect(agentProcess?.cpuPercent).toBe(25);
+        expect(agentProcess?.ioWriteBytesPerSecond).toBe(4_000);
         expect(second.groups.backend.ioWriteBytes).toBe(4_000);
         expect(second.health.collectionDurationMicros).toBe(300);
         expect(second.health.scannedProcessCount).toBe(80);

@@ -8,15 +8,15 @@ import {
   shouldShowInstanceBadge,
 } from "./providerInstanceDisplay.ts";
 
-const codex = ProviderDriverKind.make("codex");
+const pi = ProviderDriverKind.make("pi");
 const claude = ProviderDriverKind.make("claudeAgent");
 
 describe("resolveProviderInstanceDisplayName", () => {
   it("keeps a snapshot name that differs from the brand label", () => {
     expect(
       resolveProviderInstanceDisplayName({
-        instanceId: ProviderInstanceId.make("codex"),
-        driver: codex,
+        instanceId: ProviderInstanceId.make("pi"),
+        driver: pi,
         displayName: "Work",
       }),
     ).toBe("Work");
@@ -25,34 +25,34 @@ describe("resolveProviderInstanceDisplayName", () => {
   it("humanizes a custom instance id when the snapshot only carries the brand label", () => {
     expect(
       resolveProviderInstanceDisplayName({
-        instanceId: ProviderInstanceId.make("codex_personal"),
-        driver: codex,
-        displayName: "Codex",
+        instanceId: ProviderInstanceId.make("pi_personal"),
+        driver: pi,
+        displayName: "Pi",
       }),
-    ).toBe("Codex Personal");
+    ).toBe("Pi Personal");
   });
 
   it("uses the brand label for the default instance", () => {
     expect(
       resolveProviderInstanceDisplayName({
-        instanceId: ProviderInstanceId.make("codex"),
-        driver: codex,
+        instanceId: ProviderInstanceId.make("pi"),
+        driver: pi,
       }),
-    ).toBe("Codex");
+    ).toBe("Pi");
   });
 });
 
 describe("providerInstanceInitials", () => {
   it("takes the first two characters of a single word", () => {
-    expect(providerInstanceInitials("Codex")).toBe("CO");
+    expect(providerInstanceInitials("Pi")).toBe("PI");
   });
 
   it("takes the first character of each of the first two words", () => {
-    expect(providerInstanceInitials("Codex Personal")).toBe("CP");
+    expect(providerInstanceInitials("Pi Personal")).toBe("PP");
   });
 
   it("ignores words past the first two", () => {
-    expect(providerInstanceInitials("Codex Personal Backup Account")).toBe("CP");
+    expect(providerInstanceInitials("Pi Personal Backup Account")).toBe("PP");
   });
 
   it("returns an empty string for an empty label", () => {
@@ -90,18 +90,18 @@ describe("normalizeProviderAccentColor", () => {
 
 describe("shouldShowInstanceBadge", () => {
   it("shows the badge when the entry has an accent color", () => {
-    const entry = { driverKind: codex, accentColor: "#ff8800" };
+    const entry = { driverKind: pi, accentColor: "#ff8800" };
     expect(shouldShowInstanceBadge(entry, [entry])).toBe(true);
   });
 
   it("shows the badge when two entries share a driver, even without an accent", () => {
-    const first = { driverKind: codex, accentColor: undefined };
-    const second = { driverKind: codex, accentColor: undefined };
+    const first = { driverKind: pi, accentColor: undefined };
+    const second = { driverKind: pi, accentColor: undefined };
     expect(shouldShowInstanceBadge(first, [first, second])).toBe(true);
   });
 
   it("hides the badge for a single instance of a driver with no accent", () => {
-    const entry = { driverKind: codex, accentColor: undefined };
+    const entry = { driverKind: pi, accentColor: undefined };
     const other = { driverKind: claude, accentColor: undefined };
     expect(shouldShowInstanceBadge(entry, [entry, other])).toBe(false);
   });

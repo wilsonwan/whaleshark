@@ -2,7 +2,9 @@ import { assert, it } from "@effect/vitest";
 import {
   DEFAULT_SERVER_SETTINGS,
   DEFAULT_MODEL,
+  DEFAULT_MODEL_BY_PROVIDER,
   ProjectId,
+  ProviderDriverKind,
   ProviderInstanceId,
 } from "@t3tools/contracts";
 import * as Deferred from "effect/Deferred";
@@ -15,10 +17,10 @@ import * as GitVcsDriver from "./vcs/GitVcsDriver.ts";
 import * as ServerConfig from "./config.ts";
 import * as ServerRuntimeStartup from "./serverRuntimeStartup.ts";
 
-it("uses the canonical Codex model for auto-bootstrap", () => {
+it("uses the canonical Pi model for auto-bootstrap", () => {
   assert.deepEqual(ServerRuntimeStartup.getAutoBootstrapThreadModelSelection(), {
-    instanceId: ProviderInstanceId.make("codex"),
-    model: DEFAULT_MODEL,
+    instanceId: ProviderInstanceId.make("pi"),
+    model: DEFAULT_MODEL_BY_PROVIDER[ProviderDriverKind.make("pi")] ?? DEFAULT_MODEL,
   });
 });
 

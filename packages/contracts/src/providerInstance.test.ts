@@ -23,7 +23,7 @@ describe("provider slug validation (shared by driver + instance ids)", () => {
 
   for (const { schemaName, decode } of cases) {
     describe(schemaName, () => {
-      it.each(["codex", "codex_personal", "codex-work", "claudeAgent", "x", "abc123", "ollama"])(
+      it.each(["claudeAgent", "claude_personal", "claude-work", "pi", "x", "abc123", "ollama"])(
         "accepts %s",
         (id) => {
           expect(decode(id)).toBe(id);
@@ -32,18 +32,18 @@ describe("provider slug validation (shared by driver + instance ids)", () => {
 
       it.each([
         ["empty string", ""],
-        ["leading digit", "1codex"],
-        ["leading dash", "-codex"],
-        ["leading underscore", "_codex"],
-        ["whitespace inside", "codex personal"],
-        ["dot inside", "codex.personal"],
-        ["slash inside", "codex/personal"],
+        ["leading digit", "1claude"],
+        ["leading dash", "-claude"],
+        ["leading underscore", "_claude"],
+        ["whitespace inside", "claude personal"],
+        ["dot inside", "claude.personal"],
+        ["slash inside", "claude/personal"],
       ])("rejects %s", (_label, value) => {
         expect(() => decode(value)).toThrow();
       });
 
       it("trims surrounding whitespace before validating", () => {
-        expect(decode("  codex_work  ")).toBe("codex_work");
+        expect(decode("  claude_work  ")).toBe("claude_work");
       });
 
       it("rejects ids longer than 64 characters", () => {
@@ -59,11 +59,11 @@ describe("provider slug validation (shared by driver + instance ids)", () => {
 describe("ProviderInstanceRef", () => {
   it("decodes a driver ref", () => {
     const ref = decodeProviderInstanceRef({
-      instanceId: "codex_work",
-      driver: "codex",
+      instanceId: "claude_work",
+      driver: "claudeAgent",
     });
-    expect(ref.instanceId).toBe("codex_work");
-    expect(ref.driver).toBe("codex");
+    expect(ref.instanceId).toBe("claude_work");
+    expect(ref.driver).toBe("claudeAgent");
   });
 
   it("decodes a fork-defined driver ref without complaint", () => {
@@ -78,7 +78,7 @@ describe("ProviderInstanceRef", () => {
   it("rejects refs whose driver field is not a valid slug", () => {
     expect(() =>
       decodeProviderInstanceRef({
-        instanceId: "codex",
+        instanceId: "claudeAgent",
         driver: "1nope",
       }),
     ).toThrow();
@@ -87,23 +87,23 @@ describe("ProviderInstanceRef", () => {
 
 describe("ProviderInstanceConfig", () => {
   it("accepts a minimal config envelope for a driver", () => {
-    const decoded = decodeProviderInstanceConfig({ driver: "codex" });
-    expect(decoded.driver).toBe("codex");
+    const decoded = decodeProviderInstanceConfig({ driver: "claudeAgent" });
+    expect(decoded.driver).toBe("claudeAgent");
     expect(decoded.displayName).toBeUndefined();
     expect(decoded.enabled).toBeUndefined();
     expect(decoded.config).toBeUndefined();
   });
 
   it("preserves driver-opaque config payloads verbatim", () => {
-    const opaqueConfig = { homePath: "~/.codex_personal", binaryPath: "codex" };
+    const opaqueConfig = { homePath: "~/.claude_personal", binaryPath: "claude" };
     const decoded = decodeProviderInstanceConfig({
-      driver: "codex",
-      displayName: "Codex (personal)",
+      driver: "claudeAgent",
+      displayName: "Claude (personal)",
       accentColor: "#dc2626",
       enabled: true,
       config: opaqueConfig,
     });
-    expect(decoded.displayName).toBe("Codex (personal)");
+    expect(decoded.displayName).toBe("Claude (personal)");
     expect(decoded.accentColor).toBe("#dc2626");
     expect(decoded.enabled).toBe(true);
     expect(decoded.config).toEqual(opaqueConfig);
@@ -111,15 +111,15 @@ describe("ProviderInstanceConfig", () => {
 
   it("trims provider instance envelope fields", () => {
     const decoded = decodeProviderInstanceConfig({
-      driver: "  codex  ",
-      displayName: "  Codex Personal  ",
+      driver: "  claudeAgent  ",
+      displayName: "  Claude Personal  ",
       accentColor: "  #dc2626  ",
       environment: [{ name: "  OPENROUTER_API_KEY  ", value: "  sk-or-test  " }],
     });
 
     expect(decoded).toMatchObject({
-      driver: "codex",
-      displayName: "Codex Personal",
+      driver: "claudeAgent",
+      displayName: "Claude Personal",
       accentColor: "#dc2626",
       environment: [{ name: "OPENROUTER_API_KEY", value: "  sk-or-test  " }],
     });
@@ -145,7 +145,7 @@ describe("ProviderInstanceConfig", () => {
   it("rejects invalid environment variable names", () => {
     expect(() =>
       decodeProviderInstanceConfig({
-        driver: "codex",
+        driver: "claudeAgent",
         environment: [{ name: "HAS-DASH", value: "x", sensitive: false }],
       }),
     ).toThrow();
@@ -164,7 +164,9 @@ describe("ProviderInstanceConfig", () => {
   });
 
   it("rejects a blank displayName (must be trimmed non-empty)", () => {
-    expect(() => decodeProviderInstanceConfig({ driver: "codex", displayName: "   " })).toThrow();
+    expect(() =>
+      decodeProviderInstanceConfig({ driver: "claudeAgent", displayName: "   " }),
+    ).toThrow();
   });
 
   it("rejects driver values that do not satisfy the slug pattern", () => {
@@ -176,24 +178,24 @@ describe("ProviderInstanceConfig", () => {
 describe("ProviderInstanceConfigMap", () => {
   it("decodes a multi-instance map mixing first-party and fork drivers", () => {
     const decoded = decodeProviderInstanceConfigMap({
-      codex_personal: {
-        driver: "codex",
-        displayName: "Codex (personal)",
-        config: { homePath: "~/.codex_personal" },
+      claude_personal: {
+        driver: "claudeAgent",
+        displayName: "Claude (personal)",
+        config: { homePath: "~/.claude_personal" },
       },
-      codex_work: {
-        driver: "codex",
-        config: { homePath: "~/.codex_work" },
+      claude_work: {
+        driver: "claudeAgent",
+        config: { homePath: "~/.claude_work" },
       },
       claudeAgent: { driver: "claudeAgent" },
       ollama_local: { driver: "ollama", config: { endpoint: "http://localhost:11434" } },
     });
     expect(new Set(Object.keys(decoded))).toEqual(
-      new Set(["claudeAgent", "codex_personal", "codex_work", "ollama_local"]),
+      new Set(["claudeAgent", "claude_personal", "claude_work", "ollama_local"]),
     );
-    expect(decoded[ProviderInstanceId.make("codex_personal")]?.driver).toBe("codex");
-    expect(decoded[ProviderInstanceId.make("codex_work")]?.config).toEqual({
-      homePath: "~/.codex_work",
+    expect(decoded[ProviderInstanceId.make("claude_personal")]?.driver).toBe("claudeAgent");
+    expect(decoded[ProviderInstanceId.make("claude_work")]?.config).toEqual({
+      homePath: "~/.claude_work",
     });
     expect(decoded[ProviderInstanceId.make("ollama_local")]?.driver).toBe("ollama");
   });
@@ -201,7 +203,7 @@ describe("ProviderInstanceConfigMap", () => {
   it("rejects keys that fail the instance-id pattern", () => {
     expect(() =>
       decodeProviderInstanceConfigMap({
-        "1codex": { driver: "codex" },
+        "1claude": { driver: "claudeAgent" },
       }),
     ).toThrow();
   });

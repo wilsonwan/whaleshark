@@ -201,7 +201,7 @@ internal class ReviewDiffCanvasDrawing(context: Context) {
   fun drawWordDiffRanges(
     canvas: Canvas,
     row: DiffRow,
-    codeX: Float,
+    contentX: Float,
     top: Int,
     bottom: Int
   ) {
@@ -213,8 +213,8 @@ internal class ReviewDiffCanvasDrawing(context: Context) {
     val highlightHeight = max(4f * density, min(bottom - top - 4f * density, fontHeight))
     val highlightTop = (top + bottom - highlightHeight) / 2f
     row.wordDiffRanges.forEach { range ->
-      val left = codeX + range.start * characterWidth
-      val right = max(left + 2f * density, codeX + range.end * characterWidth)
+      val left = contentX + range.start * characterWidth
+      val right = max(left + 2f * density, contentX + range.end * characterWidth)
       canvas.drawRoundRect(
         RectF(left, highlightTop, right, highlightTop + highlightHeight),
         3f * density,

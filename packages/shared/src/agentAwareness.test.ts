@@ -26,7 +26,7 @@ describe("projectThreadAwarenessV2", () => {
   ) => ({
     id: "thread-2" as ThreadId,
     title: "Integrate orchestration",
-    modelSelection: { instanceId: ProviderInstanceId.make("codex"), model: "gpt-5.4" },
+    modelSelection: { instanceId: ProviderInstanceId.make("opencode"), model: "gpt-5.4" },
     status: "running" as const,
     pendingRuntimeRequest: null,
     updatedAt,

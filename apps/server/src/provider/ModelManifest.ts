@@ -19,7 +19,6 @@ import {
   type ProviderDriverKind,
   type ServerProviderModel,
 } from "@t3tools/contracts";
-import { codexModelFamily } from "@t3tools/shared/model";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
@@ -213,15 +212,12 @@ function isLegacyModel(
   driverKind: ProviderDriverKind,
   slug: string,
 ): boolean {
-  const family = driverKind === "codex" ? codexModelFamily(slug) : slug;
   const catalog = manifest.providers?.[driverKind]?.models;
-  const catalogModel =
-    catalog?.find((model) => model.slug === slug) ??
-    catalog?.find((model) => model.slug === family);
+  const catalogModel = catalog?.find((model) => model.slug === slug);
   if (catalogModel) return catalogModel.status === "legacy";
   const currentModels = manifest.currentModels[driverKind];
   if (!currentModels) return false;
-  return !currentModels.includes(slug) && !currentModels.includes(family);
+  return !currentModels.includes(slug);
 }
 
 /**
@@ -264,14 +260,7 @@ export function applyManifestDefault(
 ): ReadonlyArray<ServerProviderModel> {
   const requestedSlug = manifestDefaultModel(manifest, driverKind);
   if (requestedSlug === undefined) return models;
-  const slug =
-    models.find((model) => model.slug === requestedSlug)?.slug ??
-    (driverKind === "codex"
-      ? models.find(
-          (model) =>
-            !model.isCustom && codexModelFamily(model.slug) === codexModelFamily(requestedSlug),
-        )?.slug
-      : undefined);
+  const slug = models.find((model) => model.slug === requestedSlug)?.slug;
   if (slug === undefined) return models;
   const previous = models.find((model) => model.isDefault && model.slug !== slug);
   if (!previous) return models;

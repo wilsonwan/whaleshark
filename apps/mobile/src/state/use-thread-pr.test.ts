@@ -12,7 +12,7 @@ const pullRequest: NonNullable<VcsStatusResult["pr"]> = {
   title: "Desktop-style pull request indicator",
   url: "https://github.com/t3tools/t3code/pull/3774",
   baseRef: "main",
-  headRef: "codex/desktop-style-pr-indicator",
+  headRef: "feat/desktop-style-pr-indicator",
   state: "merged",
 };
 
