@@ -1,7 +1,7 @@
 /**
  * OpenCodeDriver — `ProviderDriver` for the OpenCode runtime.
  *
- * Mirrors the Codex / Claude drivers: a plain value whose `create()`
+ * Mirrors the Claude driver: a plain value whose `create()`
  * bundles `snapshot` / `adapter` / `textGeneration` closures over the
  * per-instance `OpenCodeSettings`.
  *

@@ -30,8 +30,6 @@ const emitInTurnTaskOutputThenLateDuplicate =
 const injectedReportTriggerPath = process.env.T3_ACP_INJECTED_REPORT_TRIGGER_PATH;
 const emitAskQuestion = process.env.T3_ACP_EMIT_ASK_QUESTION === "1";
 const emitElicitation = process.env.T3_ACP_EMIT_ELICITATION === "1";
-const emitMcpToolApprovalElicitation =
-  process.env.T3_ACP_EMIT_MCP_TOOL_APPROVAL_ELICITATION === "1";
 const emitUrlElicitation = process.env.T3_ACP_EMIT_URL_ELICITATION === "1";
 const emitXAiAskUserQuestion = process.env.T3_ACP_EMIT_XAI_ASK_USER_QUESTION === "1";
 const emitXAiExitPlanMode = process.env.T3_ACP_EMIT_XAI_EXIT_PLAN_MODE === "1";
@@ -324,7 +322,7 @@ function configOptions(): ReadonlyArray<AcpSchema.SessionConfigOption> {
         { value: "default", name: "Auto" },
         { value: "composer-2", name: "Composer 2" },
         { value: "composer-2[fast=true]", name: "Composer 2 Fast" },
-        { value: "gpt-5.3-codex[reasoning=medium,fast=false]", name: "Codex 5.3" },
+        { value: "gpt-5.4[reasoning=medium,fast=false]", name: "GPT-5.4 Reasoning" },
       ],
     },
   ];
@@ -1446,7 +1444,7 @@ const program = Effect.gen(function* () {
         return yield* finishPrompt(requestedSessionId, "end_turn");
       }
 
-      if (emitElicitation || emitMcpToolApprovalElicitation) {
+      if (emitElicitation) {
         yield* agent.client.elicit({
           sessionId: requestedSessionId,
           message: "Approve this request?",
@@ -1457,9 +1455,6 @@ const program = Effect.gen(function* () {
               approved: { type: "boolean", title: "Approved" },
             },
           },
-          ...(emitMcpToolApprovalElicitation
-            ? { _meta: { codex_approval_kind: "mcp_tool_call" } }
-            : {}),
         });
         return yield* finishPrompt(requestedSessionId, "end_turn");
       }

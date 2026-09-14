@@ -79,7 +79,7 @@ it.layer(TestLayer)("ContextHandoffService legacy import", (it) => {
         threadId: ThreadId.make("thread:legacy-context"),
         targetRunId: RunId.make("run:first-v2"),
         toProviderThreadId: ProviderThreadId.make("provider-thread:first-v2"),
-        toProviderInstanceId: ProviderInstanceId.make("codex"),
+        toProviderInstanceId: ProviderInstanceId.make("claudeAgent"),
         items: [
           importedItem({ role: "user", id: "one", text: "What did we decide?", ordinal: 1 }),
           importedItem({
@@ -112,7 +112,7 @@ it.layer(TestLayer)("ContextHandoffService legacy import", (it) => {
         threadId: ThreadId.make("thread:legacy-context"),
         targetRunId: RunId.make("run:first-v2"),
         toProviderThreadId: ProviderThreadId.make("provider-thread:first-v2"),
-        toProviderInstanceId: ProviderInstanceId.make("codex"),
+        toProviderInstanceId: ProviderInstanceId.make("claudeAgent"),
         items: [
           importedItem({
             role: "user",
@@ -137,7 +137,7 @@ it.layer(TestLayer)("ContextHandoffService legacy import", (it) => {
         threadId: ThreadId.make("thread:legacy-context"),
         targetRunId: RunId.make("run:first-v2"),
         toProviderThreadId: ProviderThreadId.make("provider-thread:first-v2"),
-        toProviderInstanceId: ProviderInstanceId.make("codex"),
+        toProviderInstanceId: ProviderInstanceId.make("claudeAgent"),
         items: [
           importedItem({
             role: "assistant",

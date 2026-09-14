@@ -189,7 +189,7 @@ describe("acpPermissionDisposition", () => {
 });
 
 describe("acpMcpToolApprovalElicitationDisposition", () => {
-  it("applies runtime policy only to explicitly tagged MCP approval elicitations", () => {
+  it("applies runtime policy only to natively tagged MCP approval elicitations", () => {
     const fullAccess: AcpRuntimePolicy = {
       runtimeMode: "full-access",
       cwd: process.cwd(),
@@ -198,20 +198,27 @@ describe("acpMcpToolApprovalElicitationDisposition", () => {
       runtimeMode: "approval-required",
       cwd: process.cwd(),
     };
-    const tagged = {
+    const approvalForm = {
       sessionId: "session-1",
       message: "Approve this request?",
       mode: "form",
       requestedSchema: { type: "object", properties: {} },
-      _meta: { codex_approval_kind: "mcp_tool_call" },
     } satisfies EffectAcpSchema.CreateElicitationRequest;
+    const nativeRequestId = "mcp_tool_call_approval_exec-123";
 
-    assert.equal(acpMcpToolApprovalElicitationDisposition(fullAccess, tagged), "allow");
-    assert.equal(acpMcpToolApprovalElicitationDisposition(approvalRequired, tagged), "ask");
+    assert.equal(
+      acpMcpToolApprovalElicitationDisposition(fullAccess, approvalForm, nativeRequestId),
+      "allow",
+    );
+    assert.equal(
+      acpMcpToolApprovalElicitationDisposition(approvalRequired, approvalForm, nativeRequestId),
+      "ask",
+    );
     assert.equal(
       acpMcpToolApprovalElicitationDisposition(
         { ...fullAccess, approvalPolicy: "on-request" },
-        tagged,
+        approvalForm,
+        nativeRequestId,
       ),
       "ask",
     );
@@ -227,34 +234,25 @@ describe("acpMcpToolApprovalElicitationDisposition", () => {
             networkAccess: false,
           },
         },
-        tagged,
+        approvalForm,
+        nativeRequestId,
       ),
       "allow",
     );
-    const { _meta: _tag, ...untagged } = tagged;
-    assert.equal(
+    // Without the native request id the elicitation is not an MCP approval.
+    assert.isUndefined(acpMcpToolApprovalElicitationDisposition(fullAccess, approvalForm));
+    assert.isUndefined(
       acpMcpToolApprovalElicitationDisposition(
         fullAccess,
-        untagged,
-        "mcp_tool_call_approval_exec-123",
+        {
+          sessionId: "session-1",
+          message: "Authenticate",
+          mode: "url",
+          elicitationId: "elicitation-1",
+          url: "https://example.com/login",
+        },
+        nativeRequestId,
       ),
-      "allow",
-    );
-    assert.isUndefined(
-      acpMcpToolApprovalElicitationDisposition(fullAccess, {
-        ...tagged,
-        _meta: { codex_approval_kind: "ordinary_form" },
-      }),
-    );
-    assert.isUndefined(
-      acpMcpToolApprovalElicitationDisposition(fullAccess, {
-        sessionId: "session-1",
-        message: "Authenticate",
-        mode: "url",
-        elicitationId: "elicitation-1",
-        url: "https://example.com/login",
-        _meta: { codex_approval_kind: "mcp_tool_call" },
-      }),
     );
   });
 });

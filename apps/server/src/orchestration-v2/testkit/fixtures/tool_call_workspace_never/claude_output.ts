@@ -26,7 +26,7 @@ export function assertToolCallWorkspaceNeverClaudeOutput(
   assertVisibleTurnItemsMirrorLocalTurnItems(projection);
   assertTurnItemTypes(projection, ["user_message", "command_execution", "assistant_message"]);
   assertUserMessagesInclude(projection, [TOOL_CALL_WRITE_PROMPT]);
-  assertAssistantTextIncludes(projection, "codex app-server approval fixture");
+  assertAssistantTextIncludes(projection, "provider approval fixture");
   assertRuntimeRequestCounts(projection, { total: 0 });
   assert.equal(projection.turnItems.filter((item) => item.type === "approval_request").length, 0);
   assertReplayLabelPrefixCount(transcript, "permission.request:", 0);

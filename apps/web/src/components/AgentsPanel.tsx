@@ -40,7 +40,7 @@ const STATUS_VISUALS: Record<RuntimeSubagent["status"], { dotClass: string; labe
   pending: { dotClass: "bg-info", label: "Working" },
   running: { dotClass: "bg-info", label: "Working" },
   waiting: { dotClass: "bg-info", label: "Working" },
-  // Idle reads as settled (muted, not sky): a resting Codex child looks done
+  // Idle reads as settled (muted, not sky): a resting child looks done
   // unless resumed — live-test: sky idle dots read as stuck in-progress.
   idle: { dotClass: "bg-muted-foreground/50", label: "Idle · resumable" },
   completed: { dotClass: "bg-success", label: "Completed" },

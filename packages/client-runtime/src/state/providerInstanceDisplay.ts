@@ -14,7 +14,7 @@ import {
 
 /**
  * Title-case a slug: splits on `_` / `-` and camelCase boundaries, so
- * `codex_personal` becomes "Codex Personal" and `myCustomInstance` becomes
+ * `claude_personal` becomes "Claude Personal" and `myCustomInstance` becomes
  * "My Custom Instance".
  */
 function humanizeSlug(slug: string): string {
@@ -32,7 +32,7 @@ function humanizeSlug(slug: string): string {
  *      the server has explicitly named this instance, trust it.
  *   2. For non-default instances, a humanized `instanceId` — the server fell
  *      back to the driver-level label (the same for every instance of that
- *      kind), so the slug is what keeps "Codex" and "Codex Personal" apart.
+ *      kind), so the slug is what keeps "Claude" and "Claude Personal" apart.
  *   3. The snapshot's `displayName`, or the brand label from contracts.
  */
 export function resolveProviderInstanceDisplayName(

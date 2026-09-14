@@ -20,7 +20,7 @@ import { layer, ThreadForkServiceV2 } from "./ThreadForkService.ts";
 const sourceThreadId = ThreadId.make("thread:fork-snoozed-source");
 const targetThreadId = ThreadId.make("thread:fork-awake-target");
 const sourceRunId = RunId.make("run:fork-snoozed-source");
-const providerInstanceId = ProviderInstanceId.make("codex");
+const providerInstanceId = ProviderInstanceId.make("claudeAgent");
 const modelSelection = {
   instanceId: providerInstanceId,
   model: "gpt-5.4",

@@ -1631,13 +1631,13 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
                 activity.kind = 'provider.user-input.respond.failed'
                 AND (
                   lower(COALESCE(json_extract(activity.payload_json, '$.detail'), ''))
-                    LIKE '%stale pending user-input request%'
+                    LIKE '%stale pending %user-input request%'
                   OR lower(COALESCE(json_extract(activity.payload_json, '$.detail'), ''))
-                    LIKE '%unknown pending user-input request%'
+                    LIKE '%stale pending %user input request%'
                   OR lower(COALESCE(json_extract(activity.payload_json, '$.detail'), ''))
-                    LIKE '%unknown pending user input request%'
+                    LIKE '%unknown pending %user-input request%'
                   OR lower(COALESCE(json_extract(activity.payload_json, '$.detail'), ''))
-                    LIKE '%unknown pending codex user input request%'
+                    LIKE '%unknown pending %user input request%'
                 )
               )
             )

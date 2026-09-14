@@ -11,9 +11,9 @@ import {
 
 function warningProvider(): ServerProvider {
   return {
-    instanceId: ProviderInstanceId.make("codex"),
-    driver: ProviderDriverKind.make("codex"),
-    displayName: "Codex",
+    instanceId: ProviderInstanceId.make("claudeAgent"),
+    driver: ProviderDriverKind.make("claudeAgent"),
+    displayName: "Claude",
     enabled: true,
     installed: true,
     version: "1.0.0",
@@ -71,7 +71,7 @@ describe("ProviderStatusBanner", () => {
     );
 
     expect(markup).toContain('role="alert"');
-    expect(markup).toContain('aria-label="Dismiss Codex provider warning"');
+    expect(markup).toContain('aria-label="Dismiss Claude provider warning"');
   });
 
   it("labels error dismiss controls with the correct severity", () => {
@@ -82,7 +82,7 @@ describe("ProviderStatusBanner", () => {
       />,
     );
 
-    expect(markup).toContain('aria-label="Dismiss Codex provider error"');
+    expect(markup).toContain('aria-label="Dismiss Claude provider error"');
   });
 
   it("opens provider setup only when the environment reports setup capability", () => {
@@ -144,14 +144,14 @@ describe("getProviderStatusMessage", () => {
     expect(
       getProviderStatusMessage({
         ...warningProvider(),
-        displayName: "Codex work account",
+        displayName: "Claude work account",
         installed: false,
         status: "error",
         auth: { status: "unauthenticated" },
         message: "",
         setup: { canAuthenticate: true, canInstall: true },
       }),
-    ).toBe("Open provider setup to install Codex on this environment.");
+    ).toBe("Open provider setup to install Claude Agent on this environment.");
   });
 
   it("keeps CLI sign-in advice for a provider without integrated setup", () => {

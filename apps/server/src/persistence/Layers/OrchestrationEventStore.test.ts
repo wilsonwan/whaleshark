@@ -118,7 +118,7 @@ layer("OrchestrationEventStore", (it) => {
         causationEventId: null,
         correlationId: CommandId.make("cmd-store-roundtrip"),
         metadata: {
-          adapterKey: "codex",
+          adapterKey: "claudeAgent",
           origin: {
             surface: "cli",
           },
@@ -153,7 +153,7 @@ layer("OrchestrationEventStore", (it) => {
       );
       assert.equal(replayed.length, 1);
       assert.equal(replayed[0]?.type, "project.created");
-      assert.equal(replayed[0]?.metadata.adapterKey, "codex");
+      assert.equal(replayed[0]?.metadata.adapterKey, "claudeAgent");
       assert.deepEqual(replayed[0]?.metadata.origin, { surface: "cli" });
     }),
   );
@@ -215,7 +215,7 @@ layer("OrchestrationEventStore", (it) => {
       const eventStore = yield* OrchestrationEventStore;
       const projectId = ProjectId.make("project-shared-stream");
       const threadId = ThreadId.make("thread-shared-stream");
-      const providerInstanceId = ProviderInstanceId.make("codex");
+      const providerInstanceId = ProviderInstanceId.make("claudeAgent");
       const occurredAt = DateTime.makeUnsafe("2026-01-02T00:00:00.000Z");
       const now = DateTime.formatIso(occurredAt);
       const baselineSequence = yield* eventStore.latestApplicationSequence;

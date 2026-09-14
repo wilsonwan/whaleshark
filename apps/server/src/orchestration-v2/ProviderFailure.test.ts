@@ -86,7 +86,7 @@ it("does not serialize arbitrary provider causes", () => {
 it.effect("keys terminal failure items by provider turn across retries and fallback paths", () =>
   Effect.gen(function* () {
     const idAllocator = yield* IdAllocatorV2;
-    const driver = ProviderDriverKind.make("codex");
+    const driver = ProviderDriverKind.make("claudeAgent");
     const runId = RunId.make("run:provider-failure-id");
     const base = {
       idAllocator,

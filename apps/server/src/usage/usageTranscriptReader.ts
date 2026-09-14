@@ -20,14 +20,7 @@ import * as NodePath from "node:path";
 
 import type { UsageProviderKind } from "@t3tools/contracts";
 
-import {
-  initialCodexScanState,
-  mightCarryUsage,
-  parseClaudeLine,
-  parseCodexLine,
-  type CodexScanState,
-  type UsageRecord,
-} from "./usageTranscripts.ts";
+import { mightCarryUsage, parseClaudeLine, type UsageRecord } from "./usageTranscripts.ts";
 
 export interface TranscriptFile {
   readonly path: string;
@@ -53,8 +46,6 @@ export interface TranscriptParsePosition {
   readonly guardLength: number;
   /** FNV-1a hash of that window. */
   readonly guardHash: number;
-  /** Codex reducer state as of `resumeOffset`; `null` for stateless providers. */
-  readonly codexState: CodexScanState | null;
 }
 
 export interface TranscriptParseResult {
@@ -176,10 +167,6 @@ async function guardMatches(
  * With `resumeFrom`, parsing continues from that position when its guard bytes
  * still match, so only appended lines are read; otherwise the whole file is
  * re-parsed from the start and `resumed` reports `false`.
- *
- * Codex carries the active model on `turn_context` lines that hold no usage of
- * their own, so those still have to pass through the reducer to keep model
- * attribution correct.
  */
 export async function readTranscriptRecords(
   filePath: string,
@@ -194,33 +181,18 @@ export async function readTranscriptRecords(
   }
 
   try {
-    let codexState = initialCodexScanState();
     let resumed = false;
     let start = 0;
     if (
       resumeFrom !== undefined &&
       resumeFrom.resumeOffset > 0 &&
-      (provider !== "codex" || resumeFrom.codexState !== null) &&
       (await guardMatches(handle, resumeFrom))
     ) {
-      if (resumeFrom.codexState !== null) codexState = { ...resumeFrom.codexState };
       start = resumeFrom.resumeOffset;
       resumed = true;
     }
 
-    const parseLine = (line: string, state: CodexScanState, out: UsageRecord[]): void => {
-      if (provider === "codex") {
-        if (
-          !mightCarryUsage(line, provider) &&
-          !line.includes('"turn_context"') &&
-          !line.includes('"session_meta"')
-        ) {
-          return;
-        }
-        const record = parseCodexLine(line, state);
-        if (record !== null) out.push(record);
-        return;
-      }
+    const parseLine = (line: string, out: UsageRecord[]): void => {
       if (!mightCarryUsage(line, provider)) return;
       const record = parseClaudeLine(line);
       if (record !== null) out.push(record);
@@ -257,7 +229,7 @@ export async function readTranscriptRecords(
       for (;;) {
         const newlineIndex = buffer.indexOf(NEWLINE, lineStart);
         if (newlineIndex === -1) break;
-        parseLine(toLineString(buffer.subarray(lineStart, newlineIndex)), codexState, records);
+        parseLine(toLineString(buffer.subarray(lineStart, newlineIndex)), records);
         lineStart = newlineIndex + 1;
       }
       resumeOffset += lineStart;
@@ -270,7 +242,7 @@ export async function readTranscriptRecords(
     const tailRecords: UsageRecord[] = [];
     if (pendingChunks.length > 0) {
       const pending = pendingChunks.length === 1 ? pendingChunks[0]! : Buffer.concat(pendingChunks);
-      if (pending.length > 0) parseLine(toLineString(pending), { ...codexState }, tailRecords);
+      if (pending.length > 0) parseLine(toLineString(pending), tailRecords);
     }
 
     const guardLength = Math.min(GUARD_LENGTH, resumeOffset);
@@ -288,7 +260,6 @@ export async function readTranscriptRecords(
         resumeOffset,
         guardLength,
         guardHash,
-        codexState: provider === "codex" ? codexState : null,
       },
       resumed,
     };

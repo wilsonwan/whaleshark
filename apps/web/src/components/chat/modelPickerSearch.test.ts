@@ -34,9 +34,9 @@ describe("scoreModelPickerSearch", () => {
     expect(
       scoreModelPickerSearch(
         {
-          driverKind: "codex",
-          providerDisplayName: "codex",
-          name: "GPT-5 Codex",
+          driverKind: "claudeAgent",
+          providerDisplayName: "Claude",
+          name: "Fable-5 Preview",
         },
         "coplt op",
       ),
@@ -120,9 +120,9 @@ describe("scoreModelPickerSearch", () => {
     expect(
       scoreModelPickerSearch(
         {
-          driverKind: "codex",
-          providerDisplayName: "Codex Personal",
-          name: "GPT-5 Codex",
+          driverKind: "claudeAgent",
+          providerDisplayName: "Claude Personal",
+          name: "Fable-5 Preview",
         },
         "personal",
       ),

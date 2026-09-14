@@ -18,7 +18,7 @@ function candidate(
   return {
     title: path.split("/").at(-1) ?? path,
     path,
-    sources: ["codex"],
+    sources: ["claudeAgent"],
     threadCount: 3,
     lastActiveAt: "2026-08-20T12:00:00.000Z",
     alreadyImported: false,

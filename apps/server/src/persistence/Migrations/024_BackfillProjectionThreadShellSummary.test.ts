@@ -39,7 +39,7 @@ layer("024_BackfillProjectionThreadShellSummary", (it) => {
           'thread-1',
           'project-1',
           'Thread 1',
-          '{"provider":"codex","model":"gpt-5-codex"}',
+          '{"provider":"claudeAgent","model":"gpt-5"}',
           'approval-required',
           'plan',
           NULL,

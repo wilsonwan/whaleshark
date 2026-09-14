@@ -1,7 +1,7 @@
 import { isPublicFaviconHost } from "./hostClassification.ts";
 
 /**
- * Mirrors Codex's generic Browser Use fallback: ask the page origin for its
+ * Browser Use fallback: ask the page origin for its
  * conventional favicon and let the image element fall back to a browser glyph.
  * Chrome-backed tools can pass their tab's explicit favicon URL separately.
  */
@@ -54,7 +54,7 @@ function explicitFaviconUrl(rawUrl: string | null | undefined): string | null {
 
 /**
  * Chooses a website icon for the app's resolved theme. Provider-supplied
- * variants mirror Codex's Chrome-selected favicon path. A small site-owned
+ * variants mirror the Chrome-selected favicon path. A small site-owned
  * fallback table covers websites whose conventional favicon is illegible in
  * one appearance without recoloring full-color icons.
  */

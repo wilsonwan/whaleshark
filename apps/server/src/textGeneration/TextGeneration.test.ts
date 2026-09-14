@@ -62,7 +62,7 @@ const makeStubRegistry = (
 describe("makeTextGenerationFromRegistry", () => {
   it.effect("delegates to the matching instance's textGeneration closure", () =>
     Effect.gen(function* () {
-      const personalId = ProviderInstanceId.make("codex_personal");
+      const personalId = ProviderInstanceId.make("claude_personal");
       const personalCalls: string[] = [];
       const personal = makeStubInstance(
         personalId,
@@ -74,7 +74,7 @@ describe("makeTextGenerationFromRegistry", () => {
         }),
       );
 
-      const workId = ProviderInstanceId.make("codex_work");
+      const workId = ProviderInstanceId.make("claude_work");
       const work = makeStubInstance(
         workId,
         makeStubTextGeneration({
@@ -87,7 +87,10 @@ describe("makeTextGenerationFromRegistry", () => {
       const result = yield* tg.generateBranchName({
         cwd: process.cwd(),
         message: "Refactor the routing layer",
-        modelSelection: createModelSelection(ProviderInstanceId.make("codex_personal"), "gpt-5"),
+        modelSelection: createModelSelection(
+          ProviderInstanceId.make("claude_personal"),
+          "claude-opus-5",
+        ),
       });
 
       expect(result.branch).toBe("personal-branch");

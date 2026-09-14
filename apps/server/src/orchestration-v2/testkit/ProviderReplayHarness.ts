@@ -208,10 +208,7 @@ export function runOrchestratorV2ProviderReplayScenario<
   return runOrchestratorV2Scenario(scenario, { replayGate }).pipe(Effect.provide(layer));
 }
 
-export function makeOrchestratorV2ProviderReplayLayer<
-  Transcript extends ProviderReplayTranscript,
-  Error,
->(
+function makeOrchestratorV2ProviderReplayLayer<Transcript extends ProviderReplayTranscript, Error>(
   scenario: OrchestratorV2ProviderReplayScenario<Transcript>,
   harness: OrchestratorV2ProviderReplayHarness<Transcript, Error>,
   options: {

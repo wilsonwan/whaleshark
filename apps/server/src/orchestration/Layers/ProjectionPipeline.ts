@@ -160,6 +160,15 @@ function shouldRefreshThreadShellSummary(event: OrchestrationEvent): boolean {
   }
 }
 
+/**
+ * Provider-agnostic wording for a `provider.user-input.respond.failed` detail
+ * that marks the request gone: `<stale|unknown> pending [<provider>] user-input
+ * request`. Must stay in step with the decider's `isStaleRequestFailureDetail`
+ * and the equivalent SQL predicate in `ProjectionSnapshotQuery`.
+ */
+const PENDING_USER_INPUT_FAILURE_DETAIL =
+  /(?:stale|unknown) pending (?:[a-z0-9_-]+ )*user[ -]input request/;
+
 function derivePendingUserInputCountFromActivities(
   activities: ReadonlyArray<ProjectionThreadActivity>,
 ): number {
@@ -194,10 +203,7 @@ function derivePendingUserInputCountFromActivities(
     if (
       activity.kind === "provider.user-input.respond.failed" &&
       detail !== null &&
-      (detail.includes("stale pending user-input request") ||
-        detail.includes("unknown pending user-input request") ||
-        detail.includes("unknown pending user input request") ||
-        detail.includes("unknown pending codex user input request"))
+      PENDING_USER_INPUT_FAILURE_DETAIL.test(detail)
     ) {
       openRequestIds.delete(requestId);
     }

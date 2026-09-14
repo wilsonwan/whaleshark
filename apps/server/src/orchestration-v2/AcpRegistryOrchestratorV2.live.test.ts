@@ -12,7 +12,6 @@ import {
 import * as Console from "effect/Console";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as CodexResetCredit from "../provider/Layers/codexResetCredit.ts";
 import { FetchHttpClient } from "effect/unstable/http";
 import { describe } from "vite-plus/test";
 
@@ -103,7 +102,6 @@ const liveLayer = OrchestrationV2LayerLive.pipe(
   Layer.provide(serverConfigLayer),
   Layer.provide(serverSettingsLayer),
   Layer.provide(providerInstanceRegistryLayer),
-  Layer.provide(CodexResetCredit.layer),
   Layer.provide(backgroundPolicyLayer),
   Layer.provide(worktreeRepairDependenciesTestLayer),
   Layer.provide(NodeServices.layer),

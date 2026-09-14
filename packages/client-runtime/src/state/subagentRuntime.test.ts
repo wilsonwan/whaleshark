@@ -196,9 +196,9 @@ describe("foldSubagentActivities", () => {
 
   it("idle is nonterminal: an idle agent resumes without losing identity", () => {
     const agents = fold([
-      activity("task.started", { taskId: "codex-child-1", title: "Marlow", role: "explorer" }),
-      activity("task.updated", { taskId: "codex-child-1", status: "idle" }),
-      activity("task.updated", { taskId: "codex-child-1", status: "running" }),
+      activity("task.started", { taskId: "child-1", title: "Marlow", role: "explorer" }),
+      activity("task.updated", { taskId: "child-1", status: "idle" }),
+      activity("task.updated", { taskId: "child-1", status: "running" }),
     ]);
     expect(agents).toHaveLength(1);
     expect(agents[0]!.activationCount).toBe(2);
@@ -636,7 +636,7 @@ describe("background task exclusion", () => {
     expect(agents.map((agent) => agent.id)).toEqual(["agent-1"]);
   });
 
-  it("rows without a taskType stay in the roster (workflow members, Codex children)", () => {
+  it("rows without a taskType stay in the roster (workflow members, child agents)", () => {
     const agents = fold([
       activity("task.progress", { taskId: "wf-1:wf:0", status: "running", parentAgentId: "wf-1" }),
     ]);

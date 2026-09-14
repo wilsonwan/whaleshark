@@ -43,8 +43,8 @@ const runId = RunId.make("run:control-reads");
 const messageId = MessageId.make("message:control-reads");
 const requestId = RuntimeRequestId.make("request:control-reads");
 const nodeId = NodeId.make("node:control-reads");
-const providerInstanceId = ProviderInstanceId.make("codex");
-const driver = ProviderDriverKind.make("codex");
+const providerInstanceId = ProviderInstanceId.make("claudeAgent");
+const driver = ProviderDriverKind.make("claudeAgent");
 const modelSelection = { instanceId: providerInstanceId, model: "gpt-6" };
 
 function fixtureEvents(now: DateTime.Utc): ReadonlyArray<OrchestrationV2DomainEvent> {

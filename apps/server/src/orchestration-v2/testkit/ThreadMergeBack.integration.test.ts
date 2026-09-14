@@ -16,7 +16,6 @@ import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 
 import { ClaudeOrchestratorReplayHarness } from "../Adapters/ClaudeAdapterV2.testkit.ts";
-import { CodexOrchestratorReplayHarness } from "../Adapters/CodexAdapterV2.testkit.ts";
 import { IdAllocatorV2, layer as idAllocatorLayer } from "../IdAllocator.ts";
 import { provideDeterministicTestRuntime } from "./DeterministicRuntime.ts";
 import {
@@ -35,15 +34,8 @@ import {
 } from "./fixtures/shared.ts";
 import { runOrchestratorV2ProviderReplayScenario } from "./ProviderReplayHarness.ts";
 import { makeCheckpointWorkspace } from "./ReplayFixtureWorkspace.ts";
-import {
-  decodeProviderReplayNdjson,
-  materializeReplayTranscriptWorkspace,
-} from "./ReplayTranscriptNdjson.ts";
+import { decodeProviderReplayNdjson } from "./ReplayTranscriptNdjson.ts";
 
-const CODEX_MODEL_SELECTION = {
-  instanceId: ProviderInstanceId.make("codex"),
-  model: "gpt-5.4",
-} as const;
 const CLAUDE_MODEL_SELECTION = {
   instanceId: ProviderInstanceId.make("claudeAgent"),
   model: "claude-sonnet-4-6",
@@ -62,24 +54,19 @@ interface ProviderVariant {
 
 const PROVIDERS: ReadonlyArray<ProviderVariant> = [
   {
-    driver: ProviderDriverKind.make("codex"),
-    modelSelection: CODEX_MODEL_SELECTION,
-  },
-  {
     driver: ProviderDriverKind.make("claudeAgent"),
     modelSelection: CLAUDE_MODEL_SELECTION,
   },
 ];
 
-function transcriptPath(scenario: string, driver: ProviderDriverKind): string {
-  const fileName = driver === "codex" ? "codex_transcript.ndjson" : "claude_transcript.ndjson";
-  return `${import.meta.dirname}/fixtures/${scenario}/${fileName}`;
+function transcriptPath(scenario: string): string {
+  return `${import.meta.dirname}/fixtures/${scenario}/claude_transcript.ndjson`;
 }
 
-function readTranscript(scenario: string, driver: ProviderDriverKind) {
+function readTranscript(scenario: string) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const text = yield* fs.readFileString(transcriptPath(scenario, driver));
+    const text = yield* fs.readFileString(transcriptPath(scenario));
     return yield* decodeProviderReplayNdjson(text);
   });
 }
@@ -205,7 +192,7 @@ describe("orchestration V2 merge-back provider replay", () => {
   for (const variant of PROVIDERS) {
     it.effect(`merges one fork delta back into the original ${variant.driver} thread`, () =>
       Effect.gen(function* () {
-        const rawTranscript = yield* readTranscript("thread_merge_back_continue", variant.driver);
+        const rawTranscript = yield* readTranscript("thread_merge_back_continue");
         const materialized = yield* Effect.gen(function* () {
           const ids = yield* IdAllocatorV2;
           const projectId = yield* ids.allocate.project({
@@ -347,27 +334,14 @@ describe("orchestration V2 merge-back provider replay", () => {
           projectionThreadIds: [materialized.sourceThreadId, materialized.forkThreadId],
           runtimePolicyOverride: { cwd },
         };
-        const result =
-          variant.driver === "codex"
-            ? yield* runOrchestratorV2ProviderReplayScenario(
-                {
-                  ...scenario,
-                  transcript: yield* CodexOrchestratorReplayHarness.decodeTranscript(
-                    materializeReplayTranscriptWorkspace(parameterizedTranscript, cwd),
-                  ),
-                },
-                CodexOrchestratorReplayHarness,
-              ).pipe(provideDeterministicTestRuntime)
-            : yield* runOrchestratorV2ProviderReplayScenario(
-                {
-                  ...scenario,
-                  transcript:
-                    yield* ClaudeOrchestratorReplayHarness.decodeTranscript(
-                      parameterizedTranscript,
-                    ),
-                },
-                ClaudeOrchestratorReplayHarness,
-              ).pipe(provideDeterministicTestRuntime);
+        const result = yield* runOrchestratorV2ProviderReplayScenario(
+          {
+            ...scenario,
+            transcript:
+              yield* ClaudeOrchestratorReplayHarness.decodeTranscript(parameterizedTranscript),
+          },
+          ClaudeOrchestratorReplayHarness,
+        ).pipe(provideDeterministicTestRuntime);
 
         const source = result.projections.get(materialized.sourceThreadId);
         const fork = result.projections.get(materialized.forkThreadId);
@@ -398,7 +372,7 @@ describe("orchestration V2 merge-back provider replay", () => {
 
     it.effect(`merges two sibling fork deltas into the original ${variant.driver} thread`, () =>
       Effect.gen(function* () {
-        const rawTranscript = yield* readTranscript("thread_merge_back_siblings", variant.driver);
+        const rawTranscript = yield* readTranscript("thread_merge_back_siblings");
         const materialized = yield* Effect.gen(function* () {
           const ids = yield* IdAllocatorV2;
           const fixtureName = `thread-merge-back-siblings-${variant.driver}`;
@@ -601,24 +575,13 @@ describe("orchestration V2 merge-back provider replay", () => {
           ],
           runtimePolicyOverride: { cwd },
         };
-        const result =
-          variant.driver === "codex"
-            ? yield* runOrchestratorV2ProviderReplayScenario(
-                {
-                  ...scenario,
-                  transcript: yield* CodexOrchestratorReplayHarness.decodeTranscript(
-                    materializeReplayTranscriptWorkspace(transcript, cwd),
-                  ),
-                },
-                CodexOrchestratorReplayHarness,
-              ).pipe(provideDeterministicTestRuntime)
-            : yield* runOrchestratorV2ProviderReplayScenario(
-                {
-                  ...scenario,
-                  transcript: yield* ClaudeOrchestratorReplayHarness.decodeTranscript(transcript),
-                },
-                ClaudeOrchestratorReplayHarness,
-              ).pipe(provideDeterministicTestRuntime);
+        const result = yield* runOrchestratorV2ProviderReplayScenario(
+          {
+            ...scenario,
+            transcript: yield* ClaudeOrchestratorReplayHarness.decodeTranscript(transcript),
+          },
+          ClaudeOrchestratorReplayHarness,
+        ).pipe(provideDeterministicTestRuntime);
 
         const source = result.projections.get(materialized.sourceThreadId);
         const firstFork = result.projections.get(materialized.firstForkThreadId);

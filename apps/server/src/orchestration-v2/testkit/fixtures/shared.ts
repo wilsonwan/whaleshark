@@ -31,10 +31,6 @@ import type { RuntimePolicyV2Override } from "../../RuntimePolicy.ts";
 export const SIMPLE_PROMPT = "Respond with the following text: fixture simple ok";
 export const MULTI_TURN_FIRST_PROMPT = "Respond with exactly: first fixture turn complete";
 export const MULTI_TURN_SECOND_PROMPT = "Respond with exactly: second fixture turn complete";
-export const PROVIDER_THREAD_RESUME_FIRST_PROMPT =
-  "Respond with exactly: provider thread resume fixture first turn complete";
-export const PROVIDER_THREAD_RESUME_SECOND_PROMPT =
-  "Using the conversation history available in this resumed thread, first repeat the exact final answer you gave in the previous turn. Then on a new line write exactly: provider thread resume fixture second turn complete";
 export const TOOL_CALL_READ_ONLY_WORKSPACE_ROOT = "/tmp/claude-replay-tool_call_read_only";
 export const TOOL_CALL_READ_ONLY_PROMPT = `Read ${TOOL_CALL_READ_ONLY_WORKSPACE_ROOT}/package.json and ${TOOL_CALL_READ_ONLY_WORKSPACE_ROOT}/tsconfig.json, then answer exactly: read only tool fixture complete`;
 export const CLAUDE_LOCAL_BASH_TASK_PROMPT =
@@ -42,19 +38,13 @@ export const CLAUDE_LOCAL_BASH_TASK_PROMPT =
 export const CLAUDE_RESULT_IS_ERROR_PROMPT = "Say hello before the credentials expire.";
 export const CLAUDE_RESULT_IS_ERROR_FOLLOW_UP = "Try again now that auth is back.";
 export const TOOL_CALL_WRITE_PROMPT =
-  "Create or overwrite .codex-probe-write-action.txt with exactly this text: codex app-server approval fixture. Use a local shell command or file edit only, then briefly report what happened. Do not read package metadata, use GitHub, use web, or use MCP.";
+  "Create or overwrite .probe-write-action.txt with exactly this text: provider approval fixture. Use a local shell command or file edit only, then briefly report what happened. Do not read package metadata, use GitHub, use web, or use MCP.";
 export const MESSAGE_STEERING_INITIAL_PROMPT =
   "Respond with exactly: steering fixture initial response";
 export const SUBAGENT_PROMPT =
   "Spawn 2 subagents, one to read package.json and one to read tsconfig.json";
-export const SUBAGENT_V2_PROMPT = "just say hello";
 export const OPENCODE_SUBAGENT_PROMPT =
   "Use the task tool exactly once. Delegate to the general subagent with this prompt: Respond exactly CHILD_OK. After the task completes, respond exactly PARENT_OK.";
-export const SUBAGENT_CONTINUE_PROMPT =
-  "Spawn one subagent and have it reply exactly: initial subagent response";
-export const SUBAGENT_CONTINUE_PARENT_PROMPT =
-  "@hooke have the same subagent reply exactly: continued subagent response";
-export const SUBAGENT_CONTINUE_CHILD_PROMPT = "Reply exactly: continued subagent response";
 export const TURN_INTERRUPT_PROMPT =
   "Do not answer immediately. First run the local shell command `sleep 30`, then respond with exactly: interrupt fixture should not finish naturally.";
 export const TURN_INTERRUPT_MID_TOOL_PROMPT =
@@ -147,8 +137,6 @@ export const TODO_LIST_PROMPT =
   "Use the update_plan tool to track exactly three steps: inspect package.json, inspect tsconfig.json, report completion. Then read package.json and tsconfig.json, and answer exactly: todo list fixture complete";
 export const PLAN_QUESTIONS_PROMPT =
   "Use request_user_input to ask one multiple-choice clarifying question about whether this fixture should prefer strict schemas or UI flexibility. After receiving the answer, respond exactly: plan questions fixture complete";
-export const PROPOSED_PLAN_PROMPT =
-  "Create a short implementation plan for adding deterministic replay fixtures. Do not ask questions. Present the final plan in a proposed plan block.";
 export const WEB_SEARCH_PROMPT =
   "Search the web for FIFA World Cup ticket pricing, then answer exactly: web search fixture complete";
 
@@ -269,11 +257,6 @@ export interface FixtureIds {
   readonly threadId: ThreadId;
   readonly projectId: ProjectId;
 }
-
-export const CODEX_MODEL_SELECTION = {
-  instanceId: ProviderInstanceId.make("codex"),
-  model: "gpt-5.4",
-} satisfies ModelSelection;
 
 export const CLAUDE_MODEL_SELECTION = {
   instanceId: ProviderInstanceId.make("claudeAgent"),

@@ -44,7 +44,7 @@ it.effect("maps application lifecycle operations to V2-native commands", () => {
     yield* service.setModelSelection({
       commandId: CommandId.make("model"),
       threadId,
-      modelSelection: { instanceId: ProviderInstanceId.make("codex"), model: "gpt-5.2" },
+      modelSelection: { instanceId: ProviderInstanceId.make("claudeAgent"), model: "gpt-5.2" },
     });
     yield* service.delete({ commandId: CommandId.make("delete"), threadId });
     assert.deepEqual(commands, [

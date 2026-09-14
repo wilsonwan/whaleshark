@@ -84,8 +84,8 @@ describe("hasAvailableCompactionProvider", () => {
 
 describe("resolveContextWindowModelDisplayName", () => {
   it("uses the selected model from the exact provider instance", () => {
-    const primaryInstanceId = ProviderInstanceId.make("codex");
-    const selectedInstanceId = ProviderInstanceId.make("codex-work");
+    const primaryInstanceId = ProviderInstanceId.make("claudeAgent");
+    const selectedInstanceId = ProviderInstanceId.make("claude-work");
     const modelOptionsByInstance = new Map([
       [
         primaryInstanceId,
@@ -106,7 +106,7 @@ describe("resolveContextWindowModelDisplayName", () => {
   });
 
   it("falls back to the selected model slug when model metadata is unavailable", () => {
-    const selectedInstanceId = ProviderInstanceId.make("codex-work");
+    const selectedInstanceId = ProviderInstanceId.make("claude-work");
 
     expect(
       resolveContextWindowModelDisplayName(
@@ -176,7 +176,7 @@ describe("shouldOfferResumeCompaction", () => {
   it("does not show Claude's resume prompt for another provider", () => {
     expect(
       shouldOfferResumeCompaction({
-        provider: "codex",
+        provider: "opencode",
         usedTokens: 300_000,
         updatedAt: "2026-08-24T09:00:00.000Z",
         now,

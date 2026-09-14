@@ -91,31 +91,31 @@ function updateCandidate(input: Parameters<typeof provider>[0]): ProviderUpdateC
 
 describe("provider update launch notification logic", () => {
   it("detects enabled providers with a latest-version advisory", () => {
-    expect(isProviderUpdateCandidate(provider({ driver: driver("codex") }))).toBe(true);
-    expect(isProviderUpdateCandidate(provider({ driver: driver("codex"), enabled: false }))).toBe(
+    expect(isProviderUpdateCandidate(provider({ driver: driver("pi") }))).toBe(true);
+    expect(isProviderUpdateCandidate(provider({ driver: driver("pi"), enabled: false }))).toBe(
       false,
     );
     expect(
       isProviderUpdateCandidate(
-        provider({ driver: driver("codex"), advisoryStatus: "current", latestVersion: null }),
+        provider({ driver: driver("pi"), advisoryStatus: "current", latestVersion: null }),
       ),
     ).toBe(false);
-    expect(
-      isProviderUpdateCandidate(provider({ driver: driver("codex"), latestVersion: null })),
-    ).toBe(false);
+    expect(isProviderUpdateCandidate(provider({ driver: driver("pi"), latestVersion: null }))).toBe(
+      false,
+    );
   });
 
   it("deduplicates multi-instance provider candidates by driver", () => {
     expect(
       collectProviderUpdateCandidates([
         provider({
-          driver: driver("codex"),
-          instanceId: instanceId("codex_personal"),
+          driver: driver("pi"),
+          instanceId: instanceId("pi_personal"),
           latestVersion: "1.1.0",
         }),
         provider({
-          driver: driver("codex"),
-          instanceId: instanceId("codex"),
+          driver: driver("pi"),
+          instanceId: instanceId("pi"),
           latestVersion: "1.1.0",
         }),
         provider({ driver: driver("claudeAgent"), latestVersion: "0.3.0" }),
@@ -184,7 +184,7 @@ describe("provider update launch notification logic", () => {
 
   it("keeps the inline update action available while a provider update is already running", () => {
     const candidate = updateCandidate({
-      driver: driver("codex"),
+      driver: driver("pi"),
       updateState: {
         status: "running",
         startedAt: checkedAt,
@@ -199,8 +199,8 @@ describe("provider update launch notification logic", () => {
   });
 
   it("builds a notification key from provider latest versions", () => {
-    const codex = updateCandidate({
-      driver: driver("codex"),
+    const pi = updateCandidate({
+      driver: driver("pi"),
       version: "1.0.0",
       latestVersion: "1.1.0",
     });
@@ -210,23 +210,23 @@ describe("provider update launch notification logic", () => {
       latestVersion: "0.3.0",
     });
 
-    expect(providerUpdateNotificationKey([codex, claude])).toBe("claudeAgent:0.3.0|codex:1.1.0");
+    expect(providerUpdateNotificationKey([pi, claude])).toBe("claudeAgent:0.3.0|pi:1.1.0");
     expect(providerUpdateNotificationKey([])).toBeNull();
   });
 
   it("keeps the same notification key while the published update version is unchanged", () => {
     const first = updateCandidate({
-      driver: driver("codex"),
+      driver: driver("pi"),
       version: "1.0.0",
       latestVersion: "1.2.0",
     });
     const second = updateCandidate({
-      driver: driver("codex"),
+      driver: driver("pi"),
       version: "1.1.0",
       latestVersion: "1.2.0",
     });
     const nextPublishedVersion = updateCandidate({
-      driver: driver("codex"),
+      driver: driver("pi"),
       version: "1.1.0",
       latestVersion: "1.3.0",
     });
@@ -238,10 +238,10 @@ describe("provider update launch notification logic", () => {
   });
 
   it("tracks updated provider snapshots by instance instead of collapsing to a sibling driver", () => {
-    const targetInstanceId = instanceId("codex_personal");
-    const siblingInstanceId = instanceId("codex");
+    const targetInstanceId = instanceId("pi_personal");
+    const siblingInstanceId = instanceId("pi");
     const updatedPersonal = provider({
-      driver: driver("codex"),
+      driver: driver("pi"),
       instanceId: targetInstanceId,
       version: "1.1.0",
       latestVersion: "1.1.0",
@@ -255,7 +255,7 @@ describe("provider update launch notification logic", () => {
       },
     });
     const currentDefaultSibling = provider({
-      driver: driver("codex"),
+      driver: driver("pi"),
       instanceId: siblingInstanceId,
       version: "1.1.0",
       latestVersion: "1.1.0",
@@ -277,14 +277,14 @@ describe("provider update launch notification logic", () => {
 
   it("describes a single one-click update", () => {
     const view = getProviderUpdateInitialToastView({
-      updateProviders: [updateCandidate({ driver: driver("codex"), latestVersion: "1.1.0" })],
-      oneClickProviders: [updateCandidate({ driver: driver("codex"), latestVersion: "1.1.0" })],
+      updateProviders: [updateCandidate({ driver: driver("pi"), latestVersion: "1.1.0" })],
+      oneClickProviders: [updateCandidate({ driver: driver("pi"), latestVersion: "1.1.0" })],
     });
 
     expect(view).toMatchObject({
       phase: "initial",
       type: "warning",
-      title: "Update Available: Codex v1.1.0",
+      title: "Update Available: Pi v1.1.0",
       description: "Install the update now or review provider settings.",
     });
   });
@@ -292,20 +292,20 @@ describe("provider update launch notification logic", () => {
   it("describes settings-only updates without one-click support", () => {
     const view = getProviderUpdateInitialToastView({
       updateProviders: [
-        updateCandidate({ driver: driver("codex"), canUpdate: false }),
+        updateCandidate({ driver: driver("pi"), canUpdate: false }),
         updateCandidate({ driver: driver("claudeAgent"), canUpdate: false }),
       ],
       oneClickProviders: [],
     });
 
-    expect(view.description).toBe("Codex and Claude can be updated from provider settings.");
+    expect(view.description).toBe("Pi and Claude can be updated from provider settings.");
   });
 
   it("uses server update state for running progress", () => {
     const view = getProviderUpdateProgressToastView({
       providers: [
         provider({
-          driver: driver("codex"),
+          driver: driver("pi"),
           updateState: {
             status: "running",
             startedAt: checkedAt,
@@ -330,8 +330,8 @@ describe("provider update launch notification logic", () => {
     expect(
       shouldShowPrimaryProviderUpdateToast(
         getProviderUpdateInitialToastView({
-          updateProviders: [updateCandidate({ driver: driver("codex") })],
-          oneClickProviders: [updateCandidate({ driver: driver("codex") })],
+          updateProviders: [updateCandidate({ driver: driver("pi") })],
+          oneClickProviders: [updateCandidate({ driver: driver("pi") })],
         }),
       ),
     ).toBe(true);
@@ -344,7 +344,7 @@ describe("provider update launch notification logic", () => {
     const view = getProviderUpdateProgressToastView({
       providers: [
         provider({
-          driver: driver("codex"),
+          driver: driver("pi"),
           updateState: {
             status: "failed",
             startedAt: checkedAt,
@@ -394,7 +394,7 @@ describe("provider update launch notification logic", () => {
     const view = getProviderUpdateProgressToastView({
       providers: [
         provider({
-          driver: driver("codex"),
+          driver: driver("pi"),
           version: "1.1.0",
           latestVersion: "1.1.0",
           advisoryStatus: "current",
@@ -431,9 +431,9 @@ describe("provider update launch notification logic", () => {
   });
 
   it("collects only attempted provider snapshots from update responses", () => {
-    const codex = provider({ driver: driver("codex") });
+    const pi = provider({ driver: driver("pi") });
     const claude = provider({ driver: driver("claudeAgent") });
-    const results = [AsyncResult.success({ providers: [codex, claude] })];
+    const results = [AsyncResult.success({ providers: [pi, claude] })];
 
     expect(
       collectUpdatedProviderSnapshots({
@@ -446,7 +446,7 @@ describe("provider update launch notification logic", () => {
   it("summarizes active provider updates for the sidebar pill", () => {
     const view = getProviderUpdateSidebarPillView([
       provider({
-        driver: driver("codex"),
+        driver: driver("pi"),
         updateState: {
           status: "running",
           startedAt: checkedAt,
@@ -470,14 +470,14 @@ describe("provider update launch notification logic", () => {
     expect(view).toMatchObject({
       tone: "loading",
       title: "Updating 2 providers",
-      description: "Codex and Claude updates are in progress.",
+      description: "Pi and Claude updates are in progress.",
     });
   });
 
   it("uses the provider name for single active sidebar pill updates", () => {
     const view = getProviderUpdateSidebarPillView([
       provider({
-        driver: driver("codex"),
+        driver: driver("pi"),
         updateState: {
           status: "running",
           startedAt: checkedAt,
@@ -489,10 +489,10 @@ describe("provider update launch notification logic", () => {
     ]);
 
     expect(view).toMatchObject({
-      key: "loading:codex:running",
+      key: "loading:pi:running",
       tone: "loading",
-      title: "Updating Codex",
-      description: "Codex update in progress.",
+      title: "Updating Pi",
+      description: "Pi update in progress.",
     });
   });
 
@@ -526,7 +526,7 @@ describe("provider update launch notification logic", () => {
     const view = getProviderUpdateSidebarPillView(
       [
         provider({
-          driver: driver("codex"),
+          driver: driver("pi"),
           version: "1.1.0",
           latestVersion: "1.1.0",
           advisoryStatus: "current",
@@ -543,9 +543,9 @@ describe("provider update launch notification logic", () => {
     );
 
     expect(view).toMatchObject({
-      key: "succeeded:codex:2026-04-23T10:00:00.000Z:Provider updated.",
+      key: "succeeded:pi:2026-04-23T10:00:00.000Z:Provider updated.",
       tone: "success",
-      title: "Codex updated: v1.1.0",
+      title: "Pi updated: v1.1.0",
       description: "New sessions will use the updated provider.",
       dismissAfterVisibleMs: 3_000,
     });
@@ -581,7 +581,7 @@ describe("provider update launch notification logic", () => {
       getProviderUpdateSidebarPillView(
         [
           provider({
-            driver: driver("codex"),
+            driver: driver("pi"),
             updateState: {
               status: "failed",
               startedAt: checkedAt,
@@ -609,7 +609,7 @@ describe("provider update launch notification logic", () => {
         },
       }),
       provider({
-        driver: driver("codex"),
+        driver: driver("pi"),
         version: "1.2.0",
         latestVersion: "1.2.0",
         advisoryStatus: "current",
@@ -627,14 +627,14 @@ describe("provider update launch notification logic", () => {
       visibleAfterIso: sessionStartedAt,
     });
     expect(successView).toMatchObject({
-      key: "succeeded:codex:2026-04-23T10:01:00.000Z:Provider updated.",
+      key: "succeeded:pi:2026-04-23T10:01:00.000Z:Provider updated.",
       tone: "success",
-      title: "Codex updated: v1.2.0",
+      title: "Pi updated: v1.2.0",
     });
 
     const failureView = getProviderUpdateSidebarPillView(providers, {
       visibleAfterIso: sessionStartedAt,
-      dismissedKeys: new Set(["succeeded:codex:2026-04-23T10:01:00.000Z:Provider updated."]),
+      dismissedKeys: new Set(["succeeded:pi:2026-04-23T10:01:00.000Z:Provider updated."]),
     });
     expect(failureView).toMatchObject({
       key: "failed:claudeAgent:2026-04-23T10:00:00.000Z:Update command exited with code 1.",
@@ -646,7 +646,7 @@ describe("provider update launch notification logic", () => {
   it("does not show a sidebar pill for passive update availability", () => {
     expect(
       getProviderUpdateSidebarPillView([
-        provider({ driver: driver("codex"), canUpdate: true }),
+        provider({ driver: driver("pi"), canUpdate: true }),
         provider({ driver: driver("claudeAgent"), canUpdate: false }),
       ]),
     ).toBeNull();
@@ -673,8 +673,8 @@ describe("provider update launch notification logic", () => {
       value: {
         environmentId: environment as LocalProviderUpdateOutcome["environmentId"],
         isPrimary,
-        driver: snapshot?.driver ?? driver("codex"),
-        instanceId: snapshot?.instanceId ?? instanceId("codex"),
+        driver: snapshot?.driver ?? driver("pi"),
+        instanceId: snapshot?.instanceId ?? instanceId("pi"),
         provider: snapshot,
       },
     });
@@ -684,14 +684,14 @@ describe("provider update launch notification logic", () => {
         fulfilledOutcome(
           true,
           provider({
-            driver: driver("codex"),
+            driver: driver("pi"),
             updateState: terminalState("succeeded", "Provider updated."),
           }),
         ),
         fulfilledOutcome(
           false,
           provider({
-            driver: driver("codex"),
+            driver: driver("pi"),
             updateState: terminalState("failed", "npm: NotFound"),
           }),
         ),
@@ -709,14 +709,14 @@ describe("provider update launch notification logic", () => {
         fulfilledOutcome(
           true,
           provider({
-            driver: driver("codex"),
+            driver: driver("pi"),
             updateState: terminalState("succeeded", "Provider updated."),
           }),
         ),
         fulfilledOutcome(
           false,
           provider({
-            driver: driver("codex"),
+            driver: driver("pi"),
             updateState: terminalState("unchanged", "still outdated"),
           }),
         ),
@@ -733,14 +733,14 @@ describe("provider update launch notification logic", () => {
         fulfilledOutcome(
           true,
           provider({
-            driver: driver("codex"),
+            driver: driver("pi"),
             updateState: terminalState("succeeded", "Provider updated."),
           }),
         ),
         fulfilledOutcome(
           false,
           provider({
-            driver: driver("codex"),
+            driver: driver("pi"),
             updateState: terminalState("succeeded", "Provider updated."),
           }),
         ),
@@ -753,7 +753,7 @@ describe("provider update launch notification logic", () => {
 
     it("ignores backends that did not return the targeted instance", () => {
       const primary = provider({
-        driver: driver("codex"),
+        driver: driver("pi"),
         updateState: terminalState("succeeded", "Provider updated."),
       });
       const snapshots = collectProviderUpdateOutcomeSnapshots([
@@ -766,7 +766,7 @@ describe("provider update launch notification logic", () => {
 
     it("treats a rejected dispatch as not contributing a snapshot", () => {
       const primary = provider({
-        driver: driver("codex"),
+        driver: driver("pi"),
         updateState: terminalState("succeeded", "Provider updated."),
       });
       const results: PromiseSettledResult<LocalProviderUpdateOutcome>[] = [
@@ -799,12 +799,12 @@ describe("provider update launch notification logic", () => {
           environmentId: "env-windows",
           label: "Windows",
           isPrimary: true,
-          providers: [provider({ driver: driver("codex"), latestVersion: "1.1.0" })],
+          providers: [provider({ driver: driver("pi"), latestVersion: "1.1.0" })],
         }),
         environment({
           environmentId: "env-wsl",
           label: "WSL",
-          providers: [provider({ driver: driver("codex"), latestVersion: "1.1.0" })],
+          providers: [provider({ driver: driver("pi"), latestVersion: "1.1.0" })],
         }),
       ]);
 
@@ -818,7 +818,7 @@ describe("provider update launch notification logic", () => {
         environment({
           environmentId: "env-windows",
           isPrimary: true,
-          providers: [provider({ driver: driver("codex") })],
+          providers: [provider({ driver: driver("pi") })],
         }),
         environment({ environmentId: "env-wsl", connectionState: "connecting", providers: [] }),
       ]);
@@ -835,12 +835,12 @@ describe("provider update launch notification logic", () => {
         environment({
           environmentId: "env-windows",
           isPrimary: true,
-          providers: [provider({ driver: driver("codex") })],
+          providers: [provider({ driver: driver("pi") })],
         }),
         environment({
           environmentId: "env-wsl",
           providers: [
-            provider({ driver: driver("codex"), advisoryStatus: "current", latestVersion: null }),
+            provider({ driver: driver("pi"), advisoryStatus: "current", latestVersion: null }),
           ],
         }),
       ]);
@@ -856,7 +856,7 @@ describe("provider update launch notification logic", () => {
           environmentId: "env-windows",
           isPrimary: true,
           providers: [
-            provider({ driver: driver("codex"), advisoryStatus: "current", latestVersion: null }),
+            provider({ driver: driver("pi"), advisoryStatus: "current", latestVersion: null }),
           ],
         }),
       ]);
@@ -866,16 +866,16 @@ describe("provider update launch notification logic", () => {
         environment({
           environmentId: "env-windows",
           isPrimary: true,
-          providers: [provider({ driver: driver("codex"), latestVersion: "1.1.0" })],
+          providers: [provider({ driver: driver("pi"), latestVersion: "1.1.0" })],
         }),
         environment({
           environmentId: "env-wsl",
-          providers: [provider({ driver: driver("codex"), latestVersion: "1.1.0" })],
+          providers: [provider({ driver: driver("pi"), latestVersion: "1.1.0" })],
         }),
       ]);
       const key = localEnvironmentUpdateNotificationKey(both.groups);
-      expect(key).toContain("env-windows=codex:1.1.0");
-      expect(key).toContain("env-wsl=codex:1.1.0");
+      expect(key).toContain("env-windows=pi:1.1.0");
+      expect(key).toContain("env-wsl=pi:1.1.0");
     });
 
     it("labels environments by platform so they are distinguishable", () => {
@@ -939,7 +939,7 @@ describe("provider update launch notification logic", () => {
       label: "WSL",
       isPrimary: false,
       isSettling: false,
-      candidates: [updateCandidate({ driver: driver("codex"), latestVersion: "1.1.0" })],
+      candidates: [updateCandidate({ driver: driver("pi"), latestVersion: "1.1.0" })],
       providers: [],
     };
     const runningResult: ProviderUpdateToastView = {
@@ -955,9 +955,9 @@ describe("provider update launch notification logic", () => {
       description: "New sessions will use the updated provider.",
     };
     const successPill: ProviderUpdateSidebarPillView = {
-      key: "succeeded:codex",
+      key: "succeeded:pi",
       tone: "success",
-      title: "Codex updated",
+      title: "Pi updated",
       description: "New sessions will use the updated provider.",
     };
 
@@ -1034,7 +1034,7 @@ describe("provider update launch notification logic", () => {
           pill: null,
           isPending: false,
         }),
-      ).toMatchObject({ kind: "idle", text: "Codex" });
+      ).toMatchObject({ kind: "idle", text: "Pi" });
     });
   });
 });

@@ -204,9 +204,9 @@ describe("persistence error correlation", () => {
         )
         VALUES (
           ${threadId},
-          ${"codex"},
+          ${"claudeAgent"},
           NULL,
-          ${"codex"},
+          ${"claudeAgent"},
           ${"invalid-runtime-mode"},
           ${"running"},
           ${lastSeenAt},
@@ -218,9 +218,9 @@ describe("persistence error correlation", () => {
       const validThreadId = ThreadId.make("thread-valid");
       yield* runtimes.upsert({
         threadId: validThreadId,
-        providerName: "codex",
+        providerName: "claudeAgent",
         providerInstanceId: null,
-        adapterKey: "codex",
+        adapterKey: "claudeAgent",
         runtimeMode: "full-access",
         status: "running",
         lastSeenAt,
@@ -238,9 +238,9 @@ describe("persistence error correlation", () => {
       const sqlFailure = yield* Effect.flip(
         runtimes.upsert({
           threadId,
-          providerName: "codex",
+          providerName: "claudeAgent",
           providerInstanceId: null,
-          adapterKey: "codex",
+          adapterKey: "claudeAgent",
           runtimeMode: "full-access",
           status: "running",
           lastSeenAt,

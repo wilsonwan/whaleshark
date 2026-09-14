@@ -208,11 +208,7 @@ export function acpMcpToolApprovalElicitationDisposition(
   request: EffectAcpSchema.CreateElicitationRequest,
   nativeRequestId?: string,
 ): AcpPermissionDisposition | undefined {
-  if (
-    request.mode !== "form" ||
-    (unknownRecord(request._meta)?.codex_approval_kind !== "mcp_tool_call" &&
-      nativeRequestId?.startsWith("mcp_tool_call_approval_") !== true)
-  ) {
+  if (request.mode !== "form" || nativeRequestId?.startsWith("mcp_tool_call_approval_") !== true) {
     return undefined;
   }
   // This request comes from T3's authenticated, scope-checked MCP endpoint,

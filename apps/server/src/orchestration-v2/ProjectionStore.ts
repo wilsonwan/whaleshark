@@ -1212,7 +1212,7 @@ export function threadShellFromProjection(
 /**
  * Provider instances that have owned this thread's root conversation, oldest
  * first. Subagent provider threads carry an owner node and are excluded so a
- * delegated Codex child does not make a Claude thread look handed off.
+ * delegated subagent child does not make a Claude thread look handed off.
  */
 function providerInstanceHistoryForShell(input: {
   readonly threadId: ThreadId;

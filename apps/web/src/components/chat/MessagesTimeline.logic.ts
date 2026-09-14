@@ -1,6 +1,5 @@
 import * as Equal from "effect/Equal";
 import { shallow } from "zustand/vanilla/shallow";
-import { renderCodexDirectivesForCopy } from "@t3tools/client-runtime/codex-markdown-directives";
 import { commandProgramName } from "@t3tools/client-runtime/work-log/command-label";
 import {
   liveActivityToolStatus,
@@ -501,7 +500,7 @@ export function resolveAssistantMessageCopyState({
   const hasText = text !== null && text.trim().length > 0;
   const visible = showCopyButton && hasText && !streaming;
   return {
-    text: hasText ? (visible ? renderCodexDirectivesForCopy(text) : text) : null,
+    text: hasText ? text : null,
     visible,
   };
 }

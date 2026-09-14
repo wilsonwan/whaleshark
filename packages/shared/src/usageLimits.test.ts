@@ -40,8 +40,8 @@ const window = {
 
 function provider(overrides: Partial<ServerProvider>): ServerProvider {
   return {
-    instanceId: ProviderInstanceId.make("codex"),
-    driver: ProviderDriverKind.make("codex"),
+    instanceId: ProviderInstanceId.make("opencode"),
+    driver: ProviderDriverKind.make("opencode"),
     enabled: true,
     installed: true,
     version: null,
@@ -92,19 +92,19 @@ describe("limitsNotice", () => {
       limitsNotice({
         checkedAt,
         windows: [],
-        unavailable: { reason: "probeFailed", message: "Codex timed out." },
+        unavailable: { reason: "probeFailed", message: "Opencode timed out." },
       }),
-    ).toBe("Codex timed out.");
+    ).toBe("Opencode timed out.");
   });
 });
 
 describe("providersWithLimits", () => {
   it("keeps only usable providers whose driver reports limits at all", () => {
     const limits = { checkedAt: "2026-09-03T11:00:00.000Z", windows: [window] };
-    const codex = provider({ usageLimits: limits });
+    const withLimits = provider({ usageLimits: limits });
     expect(
       providersWithLimits([
-        codex,
+        withLimits,
         provider({
           instanceId: ProviderInstanceId.make("example"),
           driver: ProviderDriverKind.make("example"),
@@ -125,16 +125,19 @@ describe("providersWithLimits", () => {
           usageLimits: limits,
         }),
       ]),
-    ).toEqual([codex]);
+    ).toEqual([withLimits]);
   });
 });
 
 describe("collectLimitsGroups", () => {
   it("labels environments only when more than one reports limits", () => {
     const limits = { checkedAt: "2026-09-03T11:00:00.000Z", windows: [window] };
-    const codex = provider({ usageLimits: limits });
+    const withLimits = provider({ usageLimits: limits });
     const one = new Map([
-      ["env-a", { entry: { target: { label: "Laptop" } }, serverConfig: { providers: [codex] } }],
+      [
+        "env-a",
+        { entry: { target: { label: "Laptop" } }, serverConfig: { providers: [withLimits] } },
+      ],
       [
         "env-b",
         { entry: { target: { label: "Desktop" } }, serverConfig: { providers: [provider({})] } },
@@ -145,8 +148,14 @@ describe("collectLimitsGroups", () => {
     ]);
 
     const two = new Map([
-      ["env-a", { entry: { target: { label: "Laptop" } }, serverConfig: { providers: [codex] } }],
-      ["env-b", { entry: { target: { label: "Desktop" } }, serverConfig: { providers: [codex] } }],
+      [
+        "env-a",
+        { entry: { target: { label: "Laptop" } }, serverConfig: { providers: [withLimits] } },
+      ],
+      [
+        "env-b",
+        { entry: { target: { label: "Desktop" } }, serverConfig: { providers: [withLimits] } },
+      ],
     ] as const);
     expect(collectLimitsGroups(two as never).map((group) => group.environmentLabel)).toEqual([
       "Laptop",
@@ -165,8 +174,8 @@ describe("collectLimitSources", () => {
   };
   const limits = { checkedAt: source.checkedAt, windows: [window] };
   const account: UsageLimitSourceAccount = {
-    id: "codex-personal",
-    driver: ProviderDriverKind.make("codex"),
+    id: "opencode-personal",
+    driver: ProviderDriverKind.make("opencode"),
     email: "person@example.com",
     plan: "ChatGPT Pro Subscription",
     usageLimits: limits,
@@ -192,7 +201,7 @@ describe("collectLimitSources", () => {
     ]);
   }
 
-  it.each(["codex", "claudeAgent"])(
+  it.each(["opencode", "claudeAgent"])(
     "prefers native %s limits by email without changing provider rows or source snapshots",
     (kind) => {
       const driver = ProviderDriverKind.make(kind);
@@ -434,7 +443,7 @@ describe("pools", () => {
     expect(account?.environments).toEqual([{ environmentId: "env-a", label: "Laptop" }]);
   });
 
-  it("redeems through the hub when it holds a credit, even with a fresher native read", () => {
+  it("redeems against the instance even when a hub also reports the account", () => {
     const native = provider({
       driver: claude,
       instanceId: ProviderInstanceId.make("claude"),
@@ -474,10 +483,11 @@ describe("pools", () => {
       ],
     ]);
     const [account] = collectLimitAccounts(input);
-    // Only the hub path clears the routing cooldown it holds for this account.
+    // Reset credits are redeemed on the instance that owns the account; a hub
+    // only reports the balance it sees for it.
     expect(account?.redeem).toEqual({
       environmentId: "env-a",
-      input: { sourceId: "hub", accountId: "claude-same@example.com.json", creditId: "hub-credit" },
+      input: { instanceId: "claude" },
     });
     // The fresher native balance is still the one shown.
     expect(account?.limits.resetCredits?.availableCount).toBe(3);
@@ -509,16 +519,16 @@ describe("pools", () => {
     ]);
     const [account] = collectLimitAccounts(input);
     expect(account?.limits.resetCredits?.availableCount).toBe(2);
-    expect(account?.redeem).toEqual({ environmentId: "env-b", input: { instanceId: "codex" } });
+    expect(account?.redeem).toEqual({ environmentId: "env-b", input: { instanceId: "opencode" } });
   });
 
-  it("uses the freshest hub credit and its environment even when the account is also native", () => {
+  it("shows the freshest hub credit read and still redeems on the account's own instance", () => {
     const native = provider({
       auth: { status: "authenticated", email: "same@example.com" },
       usageLimits: { checkedAt, windows: [window], resetCredits: { availableCount: 1 } },
     });
     const hubAccount = {
-      id: "codex-same.json",
+      id: "opencode-same.json",
       driver: native.driver,
       email: "same@example.com",
       usageLimits: {
@@ -543,17 +553,17 @@ describe("pools", () => {
     const [account] = collectLimitAccounts(input);
     expect(account?.limits.resetCredits?.availableCount).toBe(2);
     expect(account?.redeem).toEqual({
-      environmentId: "env-b",
-      input: { sourceId: "hub", accountId: "codex-same.json", creditId: "credit-2" },
+      environmentId: "env-a",
+      input: { instanceId: "opencode" },
     });
     hubAccount.usageLimits.resetCredits.availableCount = 0;
     expect(collectLimitAccounts(input)[0]?.limits.resetCredits?.availableCount).toBe(0);
   });
 
-  it("keeps distinct hub accounts redeemable through their own source", () => {
+  it("lists hub-only accounts with no redemption target", () => {
     const hubAccounts = ["first", "second"].map((id) => ({
       id,
-      driver: ProviderDriverKind.make("codex"),
+      driver: ProviderDriverKind.make("opencode"),
       email: `${id}@example.com`,
       usageLimits: {
         checkedAt,
@@ -573,12 +583,14 @@ describe("pools", () => {
         },
       ],
     ]);
-    expect(collectLimitAccounts(input).map((account) => account.redeem)).toEqual(
-      hubAccounts.map((account) => ({
-        environmentId: "env-a",
-        input: { sourceId: "hub", accountId: account.id, creditId: `${account.id}-credit` },
-      })),
-    );
+    const accounts = collectLimitAccounts(input);
+    expect(accounts.map((account) => account.email)).toEqual([
+      "first@example.com",
+      "second@example.com",
+    ]);
+    // Reset credits are redeemed against an instance, so a hub-only account
+    // has nothing to redeem through.
+    expect(accounts.map((account) => account.redeem)).toEqual([null, null]);
   });
 
   it("does not give old credits the timestamp of a newer window-only read", () => {
@@ -686,7 +698,7 @@ describe("pools", () => {
                   },
                   {
                     id: "c",
-                    driver: ProviderDriverKind.make("codex"),
+                    driver: ProviderDriverKind.make("opencode"),
                     usageLimits: { checkedAt, windows: [{ ...weekly, usedPercent: 50 }] },
                   },
                   {
@@ -708,7 +720,7 @@ describe("pools", () => {
     const pools = collectLimitPools(collectLimitAccounts(input), now);
     expect(pools.map((pool) => [pool.driver, pool.accounts.length])).toEqual([
       ["claudeAgent", 2],
-      ["codex", 1],
+      ["opencode", 1],
     ]);
     const [session, week] = pools[0]!.windows;
     // A member with no reset has no clock, so it does not vote on pace.
@@ -742,7 +754,7 @@ describe("pools", () => {
       ["hub:b", 20],
     ]);
     expect(week).toMatchObject({ id: "seven_day", remainingPercent: 80, members: [{}] });
-    // Codex reports `primary` for both its five-hour and (on Go) monthly window.
+    // A provider can report the same window id for two different durations.
     const mixed = collectLimitPools(
       [
         ...collectLimitAccounts(input),
@@ -917,7 +929,7 @@ describe("collectLimitNotices", () => {
     ]);
     expect(collectLimitNotices(one)).toEqual([
       "Claude Max: Could not read limits.",
-      "codex: No limits reported.",
+      "opencode: No limits reported.",
       "hub: No accounts reported.",
       "down: ECONNREFUSED",
     ]);
@@ -949,13 +961,13 @@ describe("/usage-limits", () => {
           email: "SAME@example.com",
           usageLimits: limits,
         },
-        { id: "oss", driver: selected.driver, plan: "Codex OSS", usageLimits: limits },
+        { id: "oss", driver: selected.driver, plan: "Opencode OSS", usageLimits: limits },
         { id: "other-provider", driver: ProviderDriverKind.make("claude"), usageLimits: limits },
       ],
     },
   ];
 
-  it("uses hub credit balances and redemption targets in the composer, including native duplicates", () => {
+  it("redeems a native duplicate on its own instance and leaves hub-only accounts without a target", () => {
     const hubs = sources.map((source) => ({
       ...source,
       accounts: source.accounts.map((account) => ({
@@ -967,20 +979,14 @@ describe("/usage-limits", () => {
       })),
     }));
     const report = collectProviderUsageLimits(selected.instanceId, [selected], hubs, now);
-    expect(report?.accounts[0]?.limits.resetCredits?.availableCount).toBe(2);
-    expect(report?.accounts[0]?.resetCreditInput).toEqual({
-      sourceId: "hub",
-      accountId: "duplicate",
-      creditId: "duplicate-credit",
-    });
-    expect(report?.accounts.find((account) => account.id === "hub:oss")?.resetCreditInput).toEqual({
-      sourceId: "hub",
-      accountId: "oss",
-      creditId: "oss-credit",
-    });
+    expect(report?.accounts[0]?.limits).toEqual(limits);
+    expect(report?.accounts[0]?.resetCreditInput).toEqual({ instanceId: selected.instanceId });
+    const hubOnly = report?.accounts.find((account) => account.id === "hub:oss");
+    expect(hubOnly?.sourceLabel).toBe("CLI Proxy");
+    expect(hubOnly?.resetCreditInput).toBeUndefined();
   });
 
-  it("redeems a native duplicate through the hub even when the native snapshot is fresher", () => {
+  it("redeems a native duplicate on its instance even when a hub reports fresher credits", () => {
     const fresher = provider({
       usageLimits: {
         checkedAt: "2026-09-03T11:30:00.000Z",
@@ -1009,12 +1015,10 @@ describe("/usage-limits", () => {
       },
     ];
     const report = collectProviderUsageLimits(fresher.instanceId, [fresher], stale, now);
-    // Only redeeming through the hub clears the routing cooldown it holds for
-    // this account, so the hub wins the path even with a staler balance.
+    // A hub's balance is still shown when it is the fresher read, but the
+    // redemption always targets the instance that owns the account.
     expect(report?.accounts[0]?.resetCreditInput).toEqual({
-      sourceId: "hub",
-      accountId: "duplicate",
-      creditId: "hub-credit",
+      instanceId: fresher.instanceId,
     });
     // The fresher native balance is still the one shown.
     expect(report?.accounts[0]?.limits.resetCredits?.availableCount).toBe(3);
@@ -1026,7 +1030,7 @@ describe("/usage-limits", () => {
       [
         selected,
         provider({
-          instanceId: ProviderInstanceId.make("codex-work"),
+          instanceId: ProviderInstanceId.make("opencode-work"),
           displayName: "Work",
           usageLimits: { ...limits, resetCredits: { availableCount: 2 } },
         }),
@@ -1041,8 +1045,8 @@ describe("/usage-limits", () => {
     );
     expect(report?.createdAt).toBe("2026-09-03T12:00:00.000Z");
     expect(report?.accounts.map((account) => account.id)).toEqual([
-      "codex",
-      "codex-work",
+      "opencode",
+      "opencode-work",
       "hub:oss",
     ]);
     expect(report?.accounts[0]).toMatchObject({
@@ -1056,7 +1060,7 @@ describe("/usage-limits", () => {
     expect(report?.accounts[2]).toMatchObject({
       label: "Accounts · oss",
       sourceLabel: "CLI Proxy",
-      plan: "Codex OSS",
+      plan: "Opencode OSS",
     });
     expect(report?.notices).toEqual([]);
   });
@@ -1072,7 +1076,7 @@ describe("/usage-limits", () => {
       collectProviderUsageLimits(selected.instanceId, [failed], sources, now)?.accounts.map(
         (account) => account.id,
       ),
-    ).toEqual(["codex", "hub:duplicate", "hub:oss"]);
+    ).toEqual(["opencode", "hub:duplicate", "hub:oss"]);
     expect(collectProviderUsageLimits(selected.instanceId, [provider({})], [], now)).toBeNull();
     expect(
       collectProviderUsageLimits(
@@ -1141,9 +1145,9 @@ describe("/usage-limits", () => {
 });
 
 describe("sameUsageLimitCommandCoverage", () => {
-  const codexAccount = {
+  const opencodeAccount = {
     id: "a",
-    driver: ProviderDriverKind.make("codex"),
+    driver: ProviderDriverKind.make("opencode"),
     usageLimits: { checkedAt: "2026-09-03T11:00:00.000Z", windows: [] },
   };
   const base = {
@@ -1153,20 +1157,20 @@ describe("sameUsageLimitCommandCoverage", () => {
     checkedAt: "2026-09-03T11:00:00.000Z",
   };
   it("ignores quota movement but not the drivers offered the command", () => {
-    const withCodex = [{ ...base, accounts: [codexAccount] }];
-    const withCodexLater = [
+    const withOpencode = [{ ...base, accounts: [opencodeAccount] }];
+    const withOpencodeLater = [
       {
         ...base,
         accounts: [
           {
-            ...codexAccount,
-            usageLimits: { ...codexAccount.usageLimits, checkedAt: "2026-09-03T12:00:00.000Z" },
+            ...opencodeAccount,
+            usageLimits: { ...opencodeAccount.usageLimits, checkedAt: "2026-09-03T12:00:00.000Z" },
           },
         ],
       },
     ];
-    expect(sameUsageLimitCommandCoverage(withCodex, withCodexLater)).toBe(true);
-    expect(sameUsageLimitCommandCoverage(withCodex, [{ ...base, accounts: [] }])).toBe(false);
+    expect(sameUsageLimitCommandCoverage(withOpencode, withOpencodeLater)).toBe(true);
+    expect(sameUsageLimitCommandCoverage(withOpencode, [{ ...base, accounts: [] }])).toBe(false);
   });
   it("treats a failed read as a change in coverage, in both directions", () => {
     const empty = [{ ...base, accounts: [] }];

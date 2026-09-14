@@ -192,10 +192,10 @@ describe("UsageAggregator", () => {
     expect(aggregator.add(record({ timestampMs: Date.parse("2026-07-01T12:00:00Z") }))).toBe(false);
   });
 
-  it("separates providers and models into their own buckets", () => {
+  it("separates models into their own buckets", () => {
     const result = aggregate([
       record(),
-      record({ provider: "codex", model: "gpt-5.6-sol" }),
+      record({ model: "claude-sonnet-5" }),
       record({ model: "claude-opus-5" }),
     ]);
 

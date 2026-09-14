@@ -10,11 +10,11 @@ describe("thread activity row presentation", () => {
   it("shows the provider and model as compact metadata", () => {
     expect(
       resolveThreadActivityMetadata({
-        providerDriver: ProviderDriverKind.make("codex"),
-        providerInstanceId: ProviderInstanceId.make("codex"),
-        model: "gpt-5.4",
+        providerDriver: ProviderDriverKind.make("claudeAgent"),
+        providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+        model: "claude-fable-5-1",
       }),
-    ).toBe("Codex · gpt-5.4");
+    ).toBe("Claude · claude-fable-5-1");
   });
 
   it("falls back to the provider instance and removes duplicate metadata", () => {

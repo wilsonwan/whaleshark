@@ -403,8 +403,8 @@ it.layer(NodeServices.layer)("decider project scripts", (it) => {
           projectId: asProjectId("project-1"),
           title: "Thread",
           modelSelection: {
-            instanceId: ProviderInstanceId.make("codex"),
-            model: "gpt-5-codex",
+            instanceId: ProviderInstanceId.make("claudeAgent"),
+            model: "gpt-5",
           },
           interactionMode: DEFAULT_PROVIDER_INTERACTION_MODE,
           runtimeMode: "approval-required",
@@ -426,7 +426,7 @@ it.layer(NodeServices.layer)("decider project scripts", (it) => {
             text: "hello",
             attachments: [],
           },
-          modelSelection: createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.3-codex", [
+          modelSelection: createModelSelection(ProviderInstanceId.make("claudeAgent"), "gpt-5.3", [
             { id: "reasoningEffort", value: "high" },
             { id: "fastMode", value: true },
           ]),
@@ -450,7 +450,7 @@ it.layer(NodeServices.layer)("decider project scripts", (it) => {
       expect(turnStartEvent.payload).toMatchObject({
         threadId: ThreadId.make("thread-1"),
         messageId: asMessageId("message-user-1"),
-        modelSelection: createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.3-codex", [
+        modelSelection: createModelSelection(ProviderInstanceId.make("claudeAgent"), "gpt-5.3", [
           { id: "reasoningEffort", value: "high" },
           { id: "fastMode", value: true },
         ]),
@@ -500,8 +500,8 @@ it.layer(NodeServices.layer)("decider project scripts", (it) => {
           projectId: asProjectId("project-1"),
           title: "Thread",
           modelSelection: {
-            instanceId: ProviderInstanceId.make("codex"),
-            model: "gpt-5-codex",
+            instanceId: ProviderInstanceId.make("claudeAgent"),
+            model: "gpt-5",
           },
           interactionMode: DEFAULT_PROVIDER_INTERACTION_MODE,
           runtimeMode: "full-access",
@@ -578,8 +578,8 @@ it.layer(NodeServices.layer)("decider project scripts", (it) => {
           projectId: asProjectId("project-1"),
           title: "Thread",
           modelSelection: {
-            instanceId: ProviderInstanceId.make("codex"),
-            model: "gpt-5-codex",
+            instanceId: ProviderInstanceId.make("claudeAgent"),
+            model: "gpt-5",
           },
           interactionMode: DEFAULT_PROVIDER_INTERACTION_MODE,
           runtimeMode: "approval-required",

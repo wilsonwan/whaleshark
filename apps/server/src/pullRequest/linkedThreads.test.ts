@@ -74,7 +74,7 @@ it.effect(
         INSERT INTO projection_threads (
           thread_id, project_id, title, model_selection_json, created_at, updated_at, archived_at, deleted_at
         ) VALUES (
-          ${fixture.id}, 'project-1', ${fixture.id}, '{"instanceId":"codex","model":"gpt-5.4"}',
+          ${fixture.id}, 'project-1', ${fixture.id}, '{"instanceId":"claudeAgent","model":"gpt-5.4"}',
           ${createdAt}, ${fixture.id === "archived" ? archivedAt : createdAt},
           ${fixture.id === "archived" ? archivedAt : null},
           ${fixture.id === "deleted" ? archivedAt : null}

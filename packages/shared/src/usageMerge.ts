@@ -222,7 +222,7 @@ const EMPTY_MERGED: MergedUsage = {
  * code: rather than blocking the page, incompatible data is excluded and its
  * id is reported so the UI can say coverage is partial. Versions in
  * [{@link USAGE_MERGE_COMPATIBLE_SINCE}, expected] still merge, so an additive
- * provider expansion does not drop Claude/Codex totals from older servers.
+ * provider expansion does not drop totals reported by older servers.
  */
 export function mergeUsage(
   environments: readonly EnvironmentUsage[],

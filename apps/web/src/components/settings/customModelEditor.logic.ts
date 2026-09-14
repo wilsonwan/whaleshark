@@ -53,18 +53,6 @@ const EFFORT_CHOICES = [
 export const DESCRIPTOR_PRESETS_BY_KIND: Partial<
   Record<ProviderDriverKind, ReadonlyArray<DescriptorPreset>>
 > = {
-  [ProviderDriverKind.make("codex")]: [
-    { id: "reasoningEffort", label: "Reasoning", type: "select", choices: EFFORT_CHOICES },
-    {
-      id: "serviceTier",
-      label: "Speed",
-      type: "select",
-      choices: [
-        { id: "default", label: "Standard", isDefault: true },
-        { id: "fast", label: "Fast" },
-      ],
-    },
-  ],
   [ProviderDriverKind.make("claudeAgent")]: [
     {
       id: "effort",

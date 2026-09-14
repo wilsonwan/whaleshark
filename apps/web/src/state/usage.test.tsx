@@ -33,7 +33,7 @@ function environment(id: string, cost: number | null, hostId = id): EnvironmentU
             buckets: [
               {
                 day: input.sinceDay,
-                provider: "codex",
+                provider: "claude",
                 model: id,
                 totals: {
                   uncachedInputTokens: 100,
@@ -54,7 +54,7 @@ function environment(id: string, cost: number | null, hostId = id): EnvironmentU
               {
                 fingerprint: {
                   hostId,
-                  provider: "codex",
+                  provider: "claude",
                   resolvedHomePath: "/sessions",
                   volumeId: hostId,
                 },

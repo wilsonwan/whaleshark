@@ -11,8 +11,8 @@ function runtime(
   return {
     status,
     activeRunId,
-    providerInstanceId: ProviderInstanceId.make("codex"),
-    providerName: "codex",
+    providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+    providerName: "Claude",
     lastError: null,
     updatedAt: "2026-07-28T10:00:00.000Z",
   };

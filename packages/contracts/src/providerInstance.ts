@@ -3,14 +3,14 @@
  *
  * Splits the historical "provider kind" concept into two:
  *
- *   - `ProviderDriverKind` is the implementation kind selector (e.g. codex,
+ *   - `ProviderDriverKind` is the implementation kind selector (e.g. pi,
  *     claudeAgent, a fork's `ollama`, …). It picks which driver package
  *     handles the protocol, the probe, the adapter, and text generation.
  *
  *   - `ProviderInstanceId` is the routing key (a user-defined slug).
  *     Threads, sessions, runtime events, and persisted bindings reference
  *     instance ids — never driver kinds — so a user can configure multiple
- *     instances of the same driver (e.g. `codex_personal` + `codex_work`),
+ *     instances of the same driver (e.g. `pi_personal` + `pi_work`),
  *     each with independent driver-specific configuration.
  *
  * Forward/backward compatibility invariant

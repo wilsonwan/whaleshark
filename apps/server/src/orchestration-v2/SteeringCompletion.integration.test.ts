@@ -18,7 +18,7 @@ import * as Effect from "effect/Effect";
 import * as Fiber from "effect/Fiber";
 import * as Queue from "effect/Queue";
 import * as Stream from "effect/Stream";
-import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
+import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
 import { OrchestrationEffectWorkerV2 } from "./EffectWorker.ts";
 import { EventSinkV2 } from "./EventSink.ts";
 import { OrchestratorV2 } from "./Orchestrator.ts";
@@ -32,8 +32,8 @@ import { makeSingleLayer } from "./ProviderAdapterRegistry.ts";
 import { makeOrchestratorV2ReplayLayerWithRegistry } from "./testkit/ProviderReplayHarness.ts";
 import { checkpointWorkspace } from "./testkit/ReplayFixtureWorkspace.ts";
 
-const driver = ProviderDriverKind.make("codex");
-const instanceId = ProviderInstanceId.make("codex");
+const driver = ProviderDriverKind.make("claudeAgent");
+const instanceId = ProviderInstanceId.make("claudeAgent");
 const modelSelection = { instanceId, model: "test-model" };
 
 for (const mailbox of [false, true]) {
@@ -60,9 +60,9 @@ for (const mailbox of [false, true]) {
             const rejectSteer = yield* Deferred.make<void>();
             let steerCalls = 0;
             const capabilities = {
-              ...CodexProviderCapabilitiesV2,
+              ...ClaudeProviderCapabilitiesV2,
               turns: {
-                ...CodexProviderCapabilitiesV2.turns,
+                ...ClaudeProviderCapabilitiesV2.turns,
                 supportsActiveSteering: timing !== "without native steering",
               },
             };

@@ -11,7 +11,7 @@ import { UsageLimitSourceId } from "./usageLimitSourceId.ts";
 
 /**
  * One rolling quota window a subscription provider reports for the signed-in
- * account, e.g. Claude's five-hour session or Codex's weekly allowance.
+ * account, e.g. Claude's five-hour session window.
  *
  * `id` is stable per provider (`five_hour`, `seven_day_opus`, `primary`) so a
  * sparse turn-driven update lands on the same row a full probe produced.
@@ -28,7 +28,7 @@ export const ServerProviderUsageWindow = Schema.Struct({
 export type ServerProviderUsageWindow = typeof ServerProviderUsageWindow.Type;
 
 /**
- * Reset credits a provider banks on the account. Codex grants these when it
+ * Reset credits a provider banks on the account. A provider grants these when it
  * has rate-limited the user unfairly; redeeming one clears the current
  * windows. Only present when the provider reports them at all.
  */
@@ -63,7 +63,7 @@ export type ServerProviderUsageLimits = typeof ServerProviderUsageLimits.Type;
 /**
  * What an adapter reports when its runtime pushes a rate-limit update during
  * a turn. Sparse by contract: Claude's `rate_limit_event` names one window at
- * a time and Codex documents its notification as a partial. Windows merge by
+ * a time and a provider may report its notification as a partial. Windows merge by
  * `id` onto the instance's published snapshot; omitted windows are unchanged.
  */
 export const ProviderUsageLimitsUpdate = Schema.Struct({
@@ -105,18 +105,9 @@ export type UsageLimitSourceSnapshot = typeof UsageLimitSourceSnapshot.Type;
 export const UsageLimitSourceSnapshots = ForwardCompatibleArray(UsageLimitSourceSnapshot);
 export type UsageLimitSourceSnapshots = typeof UsageLimitSourceSnapshots.Type;
 
-export const UsageLimitSourceConsumeResetCreditInput = Schema.Struct({
-  sourceId: UsageLimitSourceId,
-  accountId: TrimmedNonEmptyString,
-  creditId: TrimmedNonEmptyString,
+export const ProviderConsumeResetCreditInput = Schema.Struct({
+  instanceId: ProviderInstanceId,
 });
-export type UsageLimitSourceConsumeResetCreditInput =
-  typeof UsageLimitSourceConsumeResetCreditInput.Type;
-
-export const ProviderConsumeResetCreditInput = Schema.Union([
-  Schema.Struct({ instanceId: ProviderInstanceId }),
-  UsageLimitSourceConsumeResetCreditInput,
-]);
 export type ProviderConsumeResetCreditInput = typeof ProviderConsumeResetCreditInput.Type;
 
 export class UsageLimitSourceError extends Schema.TaggedError<UsageLimitSourceError>()(
@@ -128,7 +119,7 @@ export class UsageLimitSourceError extends Schema.TaggedError<UsageLimitSourceEr
   }
 }
 
-/** Mirrors Codex's own outcome set; other providers map onto it. */
+/** The canonical outcome set every provider maps onto. */
 export const ProviderConsumeResetCreditOutcome = Schema.Literals([
   "reset",
   "nothingToReset",

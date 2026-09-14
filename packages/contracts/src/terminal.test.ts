@@ -37,7 +37,7 @@ describe("TerminalProviderEnvironmentError", () => {
   it("round-trips its required cause without exposing it in the message", () => {
     const cause = { operation: "read-secret", detail: "secret backend unavailable" };
     const error = new TerminalProviderEnvironmentError({
-      providerInstanceId: ProviderInstanceId.make("codex_work"),
+      providerInstanceId: ProviderInstanceId.make("claude_work"),
       cause,
     });
     const encoded = encodeTerminalError(error);
@@ -45,11 +45,11 @@ describe("TerminalProviderEnvironmentError", () => {
 
     expect(decoded).toMatchObject({
       _tag: "TerminalProviderEnvironmentError",
-      providerInstanceId: "codex_work",
+      providerInstanceId: "claude_work",
       cause,
     });
     expect(decoded.message).toBe(
-      "Could not prepare the terminal environment for provider instance: codex_work",
+      "Could not prepare the terminal environment for provider instance: claude_work",
     );
     expect(decoded.message).not.toContain("secret backend unavailable");
   });
@@ -115,14 +115,14 @@ describe("TerminalOpenInput", () => {
         T3CODE_PROJECT_ROOT: "/tmp/project",
         CUSTOM_FLAG: "1",
       },
-      providerInstanceId: "codex_work",
+      providerInstanceId: "claude_work",
     });
     expect(parsed.env).toMatchObject({
       T3CODE_PROJECT_ROOT: "/tmp/project",
       CUSTOM_FLAG: "1",
     });
     expect(parsed.worktreePath).toBe("/tmp/project/.t3/worktrees/feature-a");
-    expect(parsed.providerInstanceId).toBe("codex_work");
+    expect(parsed.providerInstanceId).toBe("claude_work");
   });
 
   it("rejects invalid env keys", () => {

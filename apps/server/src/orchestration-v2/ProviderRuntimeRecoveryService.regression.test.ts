@@ -21,7 +21,7 @@ it("uses the thread provider for stale background work without provider threads"
   const threadId = ThreadId.make("thread_recovery_background_no_provider_threads");
   const runId = RunId.make("run_recovery_background_no_provider_threads");
   const itemId = TurnItemId.make("turn_item_recovery_background_no_provider_threads");
-  const providerInstanceId = ProviderInstanceId.make("codex");
+  const providerInstanceId = ProviderInstanceId.make("claudeAgent");
   let committedInput: Parameters<EventSink.EventSinkV2["Service"]["commitCommand"]>[0] | null =
     null;
   const projection = {

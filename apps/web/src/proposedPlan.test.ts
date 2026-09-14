@@ -21,7 +21,7 @@ describe("proposedPlanTitle", () => {
 });
 
 describe("buildPlanImplementationPrompt", () => {
-  it("formats the plan exactly like the Codex follow-up handoff prompt", () => {
+  it("formats the plan exactly like the Claude follow-up handoff prompt", () => {
     expect(buildPlanImplementationPrompt("## Ship it\n\n- step 1\n")).toBe(
       "PLEASE IMPLEMENT THIS PLAN:\n## Ship it\n\n- step 1",
     );

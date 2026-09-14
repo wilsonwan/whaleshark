@@ -66,10 +66,10 @@ const TestLayer = Layer.mergeAll(
   ),
 );
 const modelSelection = {
-  instanceId: ProviderInstanceId.make("codex"),
+  instanceId: ProviderInstanceId.make("claudeAgent"),
   model: "gpt-5.4",
 } satisfies ModelSelection;
-const CODEX_DRIVER = ProviderDriverKind.make("codex");
+const CLAUDE_DRIVER = ProviderDriverKind.make("claudeAgent");
 
 function threadCreatedEvent(
   now: DateTime.Utc,
@@ -84,7 +84,7 @@ function threadCreatedEvent(
       projectId,
     });
     const providerThreadId = idAllocator.derive.providerThread({
-      driver: CODEX_DRIVER,
+      driver: CLAUDE_DRIVER,
       nativeThreadId: "native-thread",
     });
     const thread: OrchestrationV2AppThread = {
@@ -145,16 +145,16 @@ layer("ProviderEventIngestorV2", (it) => {
       });
       const providerThread: OrchestrationV2ProviderThread = {
         id: idAllocator.derive.providerThread({
-          driver: CODEX_DRIVER,
+          driver: CLAUDE_DRIVER,
           nativeThreadId: "native-thread",
         }),
-        driver: CODEX_DRIVER,
+        driver: CLAUDE_DRIVER,
         providerInstanceId: modelSelection.instanceId,
         providerSessionId,
         appThreadId: threadEvent.threadId,
         ownerNodeId: null,
         nativeThreadRef: {
-          driver: CODEX_DRIVER,
+          driver: CLAUDE_DRIVER,
           nativeId: "native-thread",
           strength: "strong",
         },
@@ -175,7 +175,7 @@ layer("ProviderEventIngestorV2", (it) => {
         threadId: threadEvent.threadId,
         event: {
           type: "provider_thread.updated",
-          driver: CODEX_DRIVER,
+          driver: CLAUDE_DRIVER,
           providerThread,
         },
       });
@@ -241,7 +241,7 @@ layer("ProviderEventIngestorV2", (it) => {
           providerSessionId,
           providerInstanceId: modelSelection.instanceId,
           threadId: threadEvent.threadId,
-          event: { type: "plan.updated", driver: CODEX_DRIVER, plan: plan(steps) },
+          event: { type: "plan.updated", driver: CLAUDE_DRIVER, plan: plan(steps) },
         });
 
       yield* eventSink.write({ events: [threadEvent] });
@@ -347,13 +347,13 @@ layer("ProviderEventIngestorV2", (it) => {
           threadId,
           event: {
             type: "turn.terminal",
-            driver: CODEX_DRIVER,
+            driver: CLAUDE_DRIVER,
             providerThreadId: idAllocator.derive.providerThread({
-              driver: CODEX_DRIVER,
+              driver: CLAUDE_DRIVER,
               nativeThreadId: "native-thread",
             }),
             providerTurnId: idAllocator.derive.providerTurn({
-              driver: CODEX_DRIVER,
+              driver: CLAUDE_DRIVER,
               nativeTurnId: "native-turn",
             }),
             runOrdinal: 1,
@@ -383,11 +383,11 @@ layer("ProviderEventIngestorV2", (it) => {
         threadId: threadEvent.threadId,
       });
       const providerThreadId = idAllocator.derive.providerThread({
-        driver: CODEX_DRIVER,
+        driver: CLAUDE_DRIVER,
         nativeThreadId: "native-thread-inherited",
       });
       const providerTurnId = idAllocator.derive.providerTurn({
-        driver: CODEX_DRIVER,
+        driver: CLAUDE_DRIVER,
         nativeTurnId: "native-turn-inherited",
       });
       const runningItem = {
@@ -421,7 +421,7 @@ layer("ProviderEventIngestorV2", (it) => {
         providerInstanceId: modelSelection.instanceId,
         threadId: threadEvent.threadId,
         runId: priorRunId,
-        event: { type: "turn_item.updated", driver: CODEX_DRIVER, turnItem: runningItem },
+        event: { type: "turn_item.updated", driver: CLAUDE_DRIVER, turnItem: runningItem },
       });
 
       const identity: ProviderEventRouteIdentity = {
@@ -457,7 +457,7 @@ layer("ProviderEventIngestorV2", (it) => {
       });
       const terminalEvent = {
         type: "turn_item.updated",
-        driver: CODEX_DRIVER,
+        driver: CLAUDE_DRIVER,
         turnItem: terminalItem,
       } as const;
       const [accepted] = routeProviderEvent(terminalEvent, identity, routeState);
@@ -497,11 +497,11 @@ layer("ProviderEventIngestorV2", (it) => {
         threadId: threadEvent.threadId,
       });
       const providerThreadId = idAllocator.derive.providerThread({
-        driver: CODEX_DRIVER,
+        driver: CLAUDE_DRIVER,
         nativeThreadId: "native-thread-completed",
       });
       const providerTurnId = idAllocator.derive.providerTurn({
-        driver: CODEX_DRIVER,
+        driver: CLAUDE_DRIVER,
         nativeTurnId: "native-turn-completed",
       });
       const runningItem = {
@@ -524,7 +524,7 @@ layer("ProviderEventIngestorV2", (it) => {
       } satisfies OrchestrationV2TurnItem;
       const terminalEvent = {
         type: "turn_item.updated",
-        driver: CODEX_DRIVER,
+        driver: CLAUDE_DRIVER,
         turnItem: {
           ...runningItem,
           status: "completed" as const,
@@ -539,7 +539,7 @@ layer("ProviderEventIngestorV2", (it) => {
         providerInstanceId: modelSelection.instanceId,
         threadId: threadEvent.threadId,
         runId: priorRunId,
-        event: { type: "turn_item.updated", driver: CODEX_DRIVER, turnItem: runningItem },
+        event: { type: "turn_item.updated", driver: CLAUDE_DRIVER, turnItem: runningItem },
       });
 
       const priorIdentity: ProviderEventRouteIdentity = {
@@ -640,15 +640,15 @@ layer("ProviderEventIngestorV2", (it) => {
           threadId,
         });
         const providerThreadId = idAllocator.derive.providerThread({
-          driver: CODEX_DRIVER,
+          driver: CLAUDE_DRIVER,
           nativeThreadId: `${threadId}:questions`,
         });
         const providerTurnId = idAllocator.derive.providerTurn({
-          driver: CODEX_DRIVER,
+          driver: CLAUDE_DRIVER,
           nativeTurnId: `${threadId}:questions`,
         });
         const otherTurnId = idAllocator.derive.providerTurn({
-          driver: CODEX_DRIVER,
+          driver: CLAUDE_DRIVER,
           nativeTurnId: `${threadId}:other-turn`,
         });
         const specs = [
@@ -743,7 +743,7 @@ layer("ProviderEventIngestorV2", (it) => {
             terminal === "control"
               ? {
                   type: "turn.terminal" as const,
-                  driver: CODEX_DRIVER,
+                  driver: CLAUDE_DRIVER,
                   providerThreadId,
                   providerTurnId,
                   runOrdinal: 1,
@@ -753,7 +753,7 @@ layer("ProviderEventIngestorV2", (it) => {
                 }
               : {
                   type: "provider_turn.updated" as const,
-                  driver: CODEX_DRIVER,
+                  driver: CLAUDE_DRIVER,
                   providerTurn: {
                     id: providerTurnId,
                     providerThreadId,
@@ -829,11 +829,11 @@ layer("ProviderEventIngestorV2", (it) => {
             threadId,
           });
           const providerThreadId = idAllocator.derive.providerThread({
-            driver: CODEX_DRIVER,
+            driver: CLAUDE_DRIVER,
             nativeThreadId: `${threadId}:race`,
           });
           const providerTurnId = idAllocator.derive.providerTurn({
-            driver: CODEX_DRIVER,
+            driver: CLAUDE_DRIVER,
             nativeTurnId: `${threadId}:race`,
           });
           const nodeId = NodeId.make(`${threadId}:question`);
@@ -918,7 +918,7 @@ layer("ProviderEventIngestorV2", (it) => {
               threadId,
               event: {
                 type: "provider_turn.updated",
-                driver: CODEX_DRIVER,
+                driver: CLAUDE_DRIVER,
                 providerTurn: {
                   id: providerTurnId,
                   providerThreadId,
@@ -998,11 +998,11 @@ layer("ProviderEventIngestorV2", (it) => {
         threadId: threadEvent.threadId,
       });
       const providerThreadId = idAllocator.derive.providerThread({
-        driver: CODEX_DRIVER,
+        driver: CLAUDE_DRIVER,
         nativeThreadId: "native-thread-failed",
       });
       const providerTurnId = idAllocator.derive.providerTurn({
-        driver: CODEX_DRIVER,
+        driver: CLAUDE_DRIVER,
         nativeTurnId: "native-turn-failed",
       });
 
@@ -1013,7 +1013,7 @@ layer("ProviderEventIngestorV2", (it) => {
         threadId: threadEvent.threadId,
         event: {
           type: "turn.terminal",
-          driver: CODEX_DRIVER,
+          driver: CLAUDE_DRIVER,
           providerThreadId,
           providerTurnId,
           runOrdinal: 1,
@@ -1070,7 +1070,7 @@ layer("ProviderEventIngestorV2", (it) => {
         throw new Error("Expected a thread.created fixture event");
       }
       const childThreadId = idAllocator.derive.threadFromProviderThread({
-        driver: CODEX_DRIVER,
+        driver: CLAUDE_DRIVER,
         nativeThreadId: "native-subagent-thread",
       });
       const childRootNodeId = NodeId.make("node:subagent-root");
@@ -1100,7 +1100,7 @@ layer("ProviderEventIngestorV2", (it) => {
         threadId: rootEvent.threadId,
         event: {
           type: "app_thread.created",
-          driver: CODEX_DRIVER,
+          driver: CLAUDE_DRIVER,
           appThread: childThread,
         },
       });
@@ -1110,7 +1110,7 @@ layer("ProviderEventIngestorV2", (it) => {
         threadId: rootEvent.threadId,
         event: {
           type: "message.updated",
-          driver: CODEX_DRIVER,
+          driver: CLAUDE_DRIVER,
           message: {
             createdBy: "agent",
             creationSource: "provider",

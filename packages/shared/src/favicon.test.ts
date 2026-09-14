@@ -52,10 +52,10 @@ describe("toolActivityFaviconUrl", () => {
   });
 
   it("selects site-owned light and dark variants without filtering full-color icons", () => {
-    expect(toolActivityFaviconUrl({ pageUrl: "https://github.com/openai/codex" }, "light")).toBe(
-      "https://github.githubassets.com/favicons/favicon.svg",
-    );
-    expect(toolActivityFaviconUrl({ pageUrl: "https://github.com/openai/codex" }, "dark")).toBe(
+    expect(
+      toolActivityFaviconUrl({ pageUrl: "https://github.com/pingdotgg/t3code" }, "light"),
+    ).toBe("https://github.githubassets.com/favicons/favicon.svg");
+    expect(toolActivityFaviconUrl({ pageUrl: "https://github.com/pingdotgg/t3code" }, "dark")).toBe(
       "https://github.githubassets.com/favicons/favicon-dark.svg",
     );
 

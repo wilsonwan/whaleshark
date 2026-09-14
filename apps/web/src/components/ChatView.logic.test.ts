@@ -17,7 +17,6 @@ import {
   TurnItemId,
   type OrchestrationV2ProjectedTurnItem,
 } from "@t3tools/contracts";
-import type { CodexArtifactTemplate } from "@t3tools/client-runtime/codex-artifact-templates";
 import * as DateTime from "effect/DateTime";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Atom, AsyncResult } from "effect/unstable/reactivity";
@@ -44,7 +43,6 @@ import {
   threadKeysShareEnvironment,
   timelineHasEphemeralPreviewUrls,
   scheduleEnvironmentReconnectWarning,
-  codexArtifactTemplatePromptToAppend,
   shouldDockDraftHeroForSubmission,
   shouldReleaseTimelineAnchorForToolActivity,
   shouldRefocusComposerOnWindowFocus,
@@ -212,12 +210,6 @@ const environmentId = EnvironmentId.make("environment-local");
 const projectId = ProjectId.make("project-1");
 const threadId = ThreadId.make("thread-1");
 const now = "2026-03-29T00:00:00.000Z";
-const helloWorldTemplate: CodexArtifactTemplate = {
-  artifactKind: "document",
-  displayName: "Hello World",
-  skillDirectory: "/Users/test/.codex/skills/artifact-template-hello-world",
-  skillName: "artifact-template-hello-world",
-};
 
 function makeThread(overrides: Partial<Thread> = {}): Thread {
   return makeThreadFixture({
@@ -226,7 +218,7 @@ function makeThread(overrides: Partial<Thread> = {}): Thread {
     projectId,
     title: "Thread",
     modelSelection: {
-      instanceId: ProviderInstanceId.make("codex"),
+      instanceId: ProviderInstanceId.make("claudeAgent"),
       model: "gpt-5.4",
     },
     runtimeMode: "full-access",
@@ -256,8 +248,8 @@ const completedTurn = {
 
 const readySession = {
   status: "completed" as const,
-  providerName: "codex",
-  providerInstanceId: ProviderInstanceId.make("codex"),
+  providerName: "claudeAgent",
+  providerInstanceId: ProviderInstanceId.make("claudeAgent"),
   activeRunId: null,
   lastError: null,
   updatedAt: "2026-03-29T00:00:10.000Z",
@@ -343,7 +335,7 @@ describe("resolveEffectiveInteractionMode", () => {
 
 describe("resolveThreadMetadataUpdateForNextTurn", () => {
   const modelSelection = {
-    instanceId: ProviderInstanceId.make("codex"),
+    instanceId: ProviderInstanceId.make("claudeAgent"),
     model: "gpt-5.4",
   };
 
@@ -458,7 +450,7 @@ describe("buildExpiredTerminalContextToastCopy", () => {
 describe("getStartedThreadModelChangeBlockReason", () => {
   const providers = [
     {
-      instanceId: ProviderInstanceId.make("codex"),
+      instanceId: ProviderInstanceId.make("claudeAgent"),
     },
     {
       instanceId: ProviderInstanceId.make("pi"),
@@ -1081,14 +1073,6 @@ describe("proactive panels", () => {
   });
 });
 
-describe("artifact template composer insertion", () => {
-  it("does not insert an already-present prompt", () => {
-    const prompt = "Create a document using this $artifact-template-hello-world about…";
-
-    expect(codexArtifactTemplatePromptToAppend(prompt, helloWorldTemplate)).toBeNull();
-  });
-});
-
 describe("draft hero submission transition", () => {
   it("does not dock the composer before a background submission", () => {
     expect(
@@ -1469,11 +1453,10 @@ describe("resolveComposerProviderSelection", () => {
 
   it.each([
     ["claudeAgent", "claude_work"],
-    ["codex", "codex_work"],
     ["ollama", "local_models"],
   ])("keeps imported %s history selectable through its custom instance", (driver, instanceId) => {
     const importedEntry = entry(driver, instanceId);
-    const entries = [entry(driver === "codex" ? "claudeAgent" : "codex"), importedEntry];
+    const entries = [entry("claudeAgent"), importedEntry];
     const thread = importedThread(importedEntry.instanceId);
     const lockedProvider = deriveLockedProvider({
       thread,
@@ -1519,8 +1502,8 @@ describe("resolveComposerProviderSelection", () => {
   it.each(["missing", "disabled"] as const)(
     "does not move imported history to another driver when its instance is %s",
     (state) => {
-      const imported = entry("claudeAgent", "claude_work", { enabled: false });
-      const other = entry("codex");
+      const imported = entry("opencode", "opencode_work", { enabled: false });
+      const other = entry("claudeAgent");
       const entries = state === "missing" ? [other] : [other, imported];
       const thread = importedThread(imported.instanceId);
       const lockedProvider = deriveLockedProvider({
@@ -1544,7 +1527,7 @@ describe("resolveComposerProviderSelection", () => {
 
   it("leaves a new draft free to select a different driver", () => {
     const original = entry("claudeAgent", "claude_work");
-    const selected = entry("codex", "codex_work");
+    const selected = entry("claudeAgent", "claude_work");
     expect(
       deriveLockedProvider({
         thread: makeThread({
@@ -1558,10 +1541,10 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it("uses the custom instance's capability instead of the default instance", () => {
-    const defaultEntry = entry("codex", "codex", {
+    const defaultEntry = entry("claudeAgent", "claudeAgent", {
       showInteractionModeToggle: true,
     });
-    const customEntry = entry("codex", "codex_work", {
+    const customEntry = entry("claudeAgent", "claude_work", {
       showInteractionModeToggle: false,
     });
     const selection = resolveComposerProviderSelection({
@@ -1586,7 +1569,7 @@ describe("resolveComposerProviderSelection", () => {
       enabled: false,
       showInteractionModeToggle: false,
     });
-    const fallbackEntry = entry("codex");
+    const fallbackEntry = entry("claudeAgent");
     const selection = resolveComposerProviderSelection({
       entries: [disabledEntry, fallbackEntry],
       candidateInstanceIds: [disabledEntry.instanceId],
@@ -1611,7 +1594,7 @@ describe("resolveComposerProviderSelection", () => {
       models: [],
     });
     const selection = resolveComposerProviderSelection({
-      entries: [entry("codex"), signedOutEntry],
+      entries: [entry("claudeAgent"), signedOutEntry],
       candidateInstanceIds: [signedOutEntry.instanceId],
       lockedProvider: null,
       lockedInstanceId: null,
@@ -1624,12 +1607,12 @@ describe("resolveComposerProviderSelection", () => {
   // continuation metadata, deleting the locked profile falls back to another
   // instance of that driver instead of stranding the thread.
   it("continues a locked thread on another instance of the same driver once its own profile is gone", () => {
-    const missingInstanceId = ProviderInstanceId.make("codex_work");
-    const fallbackEntry = entry("codex");
+    const missingInstanceId = ProviderInstanceId.make("claude_work");
+    const fallbackEntry = entry("claudeAgent");
     const selection = resolveComposerProviderSelection({
       entries: [fallbackEntry],
       candidateInstanceIds: [missingInstanceId],
-      lockedProvider: ProviderDriverKind.make("codex"),
+      lockedProvider: ProviderDriverKind.make("claudeAgent"),
       lockedInstanceId: missingInstanceId,
     });
 
@@ -1639,7 +1622,7 @@ describe("resolveComposerProviderSelection", () => {
 
   it("does not treat the empty draft placeholder as a provider setup target", () => {
     const selection = resolveComposerProviderSelection({
-      entries: [entry("codex", "codex", { enabled: false })],
+      entries: [entry("claudeAgent", "claudeAgent", { enabled: false })],
       candidateInstanceIds: [NO_PROVIDER_MODEL_SELECTION.instanceId],
       lockedProvider: null,
       lockedInstanceId: null,
@@ -1650,17 +1633,17 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it("keeps the session's continuation group when another instance was selected", () => {
-    const sessionEntry = entry("codex", "codex_work", {
+    const sessionEntry = entry("claudeAgent", "claude_work", {
       enabled: false,
       continuation: { groupKey: "work-profile" },
     });
-    const anotherEntry = entry("codex", "codex_personal", {
+    const anotherEntry = entry("claudeAgent", "claude_personal", {
       continuation: { groupKey: "personal-profile" },
     });
     const selection = resolveComposerProviderSelection({
       entries: [sessionEntry, anotherEntry],
       candidateInstanceIds: [anotherEntry.instanceId, sessionEntry.instanceId],
-      lockedProvider: ProviderDriverKind.make("codex"),
+      lockedProvider: ProviderDriverKind.make("claudeAgent"),
       lockedInstanceId: sessionEntry.instanceId,
     });
 
@@ -1884,9 +1867,9 @@ describe("threadShellHasStarted", () => {
         latestRun: null,
         latestUserMessageAt: null,
         runtime: {
-          providerInstanceId: ProviderInstanceId.make("codex"),
+          providerInstanceId: ProviderInstanceId.make("claudeAgent"),
           status: "starting",
-          providerName: "codex",
+          providerName: "claudeAgent",
           activeRunId: null,
           lastError: null,
           updatedAt: now,

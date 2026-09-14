@@ -24,7 +24,7 @@ describe("resolveProviderInstanceAcpRegistryIconUrl", () => {
   it("does not resolve registry icons for other provider drivers", () => {
     expect(
       resolveProviderInstanceAcpRegistryIconUrl({
-        driverKind: ProviderDriverKind.make("codex"),
+        driverKind: ProviderDriverKind.make("claudeAgent"),
         agentId: "kilo",
       }),
     ).toBeNull();

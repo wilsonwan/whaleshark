@@ -4,17 +4,10 @@ import {
   ClaudeAgentSdkQueryRunner,
   claudeAgentSdkQueryRunnerLiveLayer,
 } from "../../orchestration-v2/Adapters/ClaudeAdapterV2.ts";
-import {
-  CodexAppServerClientFactory,
-  codexAppServerClientFactoryFromSettingsLayer,
-} from "../../orchestration-v2/Adapters/CodexAdapterV2.ts";
 import { IdAllocatorV2, layer as idAllocatorLayer } from "../../orchestration-v2/IdAllocator.ts";
 import { layer as providerContinuationRequestsLayer } from "../../orchestration-v2/ProviderContinuationRequests.ts";
 
-export type ProviderOrchestrationAdapterInfrastructure =
-  | ClaudeAgentSdkQueryRunner
-  | CodexAppServerClientFactory
-  | IdAllocatorV2;
+export type ProviderOrchestrationAdapterInfrastructure = ClaudeAgentSdkQueryRunner | IdAllocatorV2;
 
 /**
  * Infrastructure shared by the V2 adapters materialized inside provider
@@ -24,7 +17,6 @@ export type ProviderOrchestrationAdapterInfrastructure =
  */
 export const ProviderOrchestrationAdapterInfrastructureLive = Layer.mergeAll(
   claudeAgentSdkQueryRunnerLiveLayer,
-  codexAppServerClientFactoryFromSettingsLayer,
   idAllocatorLayer,
   providerContinuationRequestsLayer,
 );

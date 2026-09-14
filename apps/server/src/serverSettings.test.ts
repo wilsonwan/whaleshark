@@ -1,5 +1,6 @@
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import {
+  DEFAULT_MODEL_BY_PROVIDER,
   DEFAULT_SERVER_SETTINGS,
   ModelSelection,
   ProjectId,
@@ -109,7 +110,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providerInstances":{"codex_personal":{"driver":"codex","environment":[{"name":"OPENROUTER_API_KEY","value":"","sensitive":true,"valueRedacted":true}],"config":{}}}}',
+        '{"providerInstances":{"claude_personal":{"driver":"claudeAgent","environment":[{"name":"OPENROUTER_API_KEY","value":"","sensitive":true,"valueRedacted":true}],"config":{}}}}',
       );
 
       const error = yield* Effect.flip(serverSettings.getSettings);
@@ -117,7 +118,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       assert.deepInclude(error, {
         _tag: "ServerSettingsError",
         operation: "read-secret",
-        providerInstanceId: "codex_personal",
+        providerInstanceId: "claude_personal",
         environmentVariable: "OPENROUTER_API_KEY",
       });
       assert.strictEqual(error.cause, cause);
@@ -145,9 +146,9 @@ it.layer(NodeServices.layer)("server settings", (it) => {
   it.effect("decodes nested settings patches", () =>
     Effect.gen(function* () {
       assert.deepEqual(
-        yield* decodeSettingsPatch({ providers: { codex: { binaryPath: "/tmp/codex" } } }),
+        yield* decodeSettingsPatch({ providers: { pi: { binaryPath: "/tmp/pi" } } }),
         {
-          providers: { codex: { binaryPath: "/tmp/codex" } },
+          providers: { pi: { binaryPath: "/tmp/pi" } },
         },
       );
 
@@ -172,14 +173,14 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       Effect.gen(function* () {
         const decoded = yield* decodeServerSettings({
           textGenerationModelSelection: {
-            provider: ProviderDriverKind.make("codex"),
+            provider: ProviderDriverKind.make("claudeAgent"),
             model: "gpt-5.4-mini",
             options: { reasoningEffort: "low" },
           },
         });
 
         assert.deepEqual(decoded.textGenerationModelSelection, {
-          instanceId: ProviderInstanceId.make("codex"),
+          instanceId: ProviderInstanceId.make("claudeAgent"),
           model: "gpt-5.4-mini",
           options: [{ id: "reasoningEffort", value: "low" }],
         });
@@ -192,9 +193,9 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       yield* serverSettings.updateSettings({
         providers: {
-          codex: {
-            binaryPath: "/usr/local/bin/codex",
-            homePath: "/Users/julius/.codex",
+          opencode: {
+            binaryPath: "/usr/local/bin/opencode",
+            serverUrl: "http://127.0.0.1:4096",
           },
           claudeAgent: {
             binaryPath: "/usr/local/bin/claude",
@@ -202,10 +203,10 @@ it.layer(NodeServices.layer)("server settings", (it) => {
           },
         },
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("codex"),
+          instanceId: ProviderInstanceId.make("claudeAgent"),
           model: DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
           options: createModelSelection(
-            ProviderInstanceId.make("codex"),
+            ProviderInstanceId.make("claudeAgent"),
             DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
             [
               { id: "reasoningEffort", value: "high" },
@@ -217,8 +218,8 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       const next = yield* serverSettings.updateSettings({
         providers: {
-          codex: {
-            binaryPath: "/opt/homebrew/bin/codex",
+          opencode: {
+            binaryPath: "/opt/homebrew/bin/opencode",
           },
         },
         textGenerationModelSelection: {
@@ -226,12 +227,12 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         },
       });
 
-      assert.deepEqual(next.providers.codex, {
-        enabled: true,
-        binaryPath: "/opt/homebrew/bin/codex",
-        homePath: "/Users/julius/.codex",
-        shadowHomePath: "",
-        launchArgs: "",
+      assert.deepEqual(next.providers.opencode, {
+        // OpenCode is disabled by default; this update only touches paths.
+        enabled: false,
+        binaryPath: "/opt/homebrew/bin/opencode",
+        serverUrl: "http://127.0.0.1:4096",
+        serverPassword: "",
         customModels: [],
       });
       assert.deepEqual(next.providers.claudeAgent, {
@@ -245,7 +246,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       assert.deepEqual(
         next.textGenerationModelSelection,
         createModelSelection(
-          ProviderInstanceId.make("codex"),
+          ProviderInstanceId.make("claudeAgent"),
           DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
           [
             { id: "reasoningEffort", value: "high" },
@@ -339,16 +340,16 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
         yield* serverSettings.updateSettings({
           providers: {
-            codex: {
-              binaryPath: "/usr/local/bin/codex-next",
+            pi: {
+              binaryPath: "/usr/local/bin/pi-next",
             },
           },
         });
 
         const firstChange = yield* changes.pipe(Stream.runHead, Effect.timeout("1 second"));
         assert.equal(
-          Option.getOrUndefined(firstChange)?.providers.codex.binaryPath,
-          "/usr/local/bin/codex-next",
+          Option.getOrUndefined(firstChange)?.providers.pi.binaryPath,
+          "/usr/local/bin/pi-next",
         );
       }),
     ).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -425,13 +426,13 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         },
       });
 
-      // Switch to Codex — the stale Claude "effort" in options must not
+      // Switch to Claude — the stale Claude "effort" in options must not
       // cause the update to lose the selected model.
       const next = yield* serverSettings.updateSettings({
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("codex"),
+          instanceId: ProviderInstanceId.make("claudeAgent"),
           model: "gpt-5.4",
-          options: createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+          options: createModelSelection(ProviderInstanceId.make("claudeAgent"), "gpt-5.4", [
             { id: "reasoningEffort", value: "high" },
           ]).options!,
         },
@@ -439,7 +440,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       assert.deepEqual(
         next.textGenerationModelSelection,
-        createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+        createModelSelection(ProviderInstanceId.make("claudeAgent"), "gpt-5.4", [
           { id: "reasoningEffort", value: "high" },
         ]),
       );
@@ -537,7 +538,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
         const serverConfig = yield* ServerConfig.ServerConfig;
         const fileSystem = yield* FileSystem.FileSystem;
-        const instanceId = ProviderInstanceId.make("codex_writer");
+        const instanceId = ProviderInstanceId.make("claude_writer");
         const sourceControlWriterModelSelection = {
           instanceId,
           model: "gpt-5.4-mini",
@@ -546,7 +547,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         yield* serverSettings.updateSettings({
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("codex"),
+              driver: ProviderDriverKind.make("claudeAgent"),
               enabled: true,
               config: {},
             },
@@ -557,7 +558,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         const next = yield* serverSettings.updateSettings({
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("codex"),
+              driver: ProviderDriverKind.make("claudeAgent"),
               enabled: false,
               config: {},
             },
@@ -584,7 +585,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         const restored = yield* serverSettings.updateSettings({
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("codex"),
+              driver: ProviderDriverKind.make("claudeAgent"),
               enabled: true,
               config: {},
             },
@@ -603,10 +604,10 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       yield* serverSettings.updateSettings({
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("codex"),
+          instanceId: ProviderInstanceId.make("claudeAgent"),
           model: DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
           options: createModelSelection(
-            ProviderInstanceId.make("codex"),
+            ProviderInstanceId.make("claudeAgent"),
             DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
             [
               { id: "reasoningEffort", value: "high" },
@@ -618,14 +619,16 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       const next = yield* serverSettings.updateSettings({
         textGenerationModelSelection: {
-          instanceId: DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.instanceId,
-          model: DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
+          instanceId: ProviderInstanceId.make("claudeAgent"),
+          model: "claude-haiku-4-5",
         },
       });
 
+      // Reset drops the stale options. The selection resolves to Claude: the
+      // environment default points at Pi, which is an opt-in provider.
       assert.deepEqual(next.textGenerationModelSelection, {
-        instanceId: DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.instanceId,
-        model: DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
+        instanceId: ProviderInstanceId.make("claudeAgent"),
+        model: "claude-haiku-4-5",
       });
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
@@ -633,36 +636,36 @@ it.layer(NodeServices.layer)("server settings", (it) => {
   it.effect("replaces provider instance maps when clearing optional fields", () =>
     Effect.gen(function* () {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
-      const codexId = ProviderInstanceId.make("codex");
+      const claudeId = ProviderInstanceId.make("claudeAgent");
 
       yield* serverSettings.updateSettings({
         providerInstances: {
-          [codexId]: {
-            driver: ProviderDriverKind.make("codex"),
-            displayName: "Codex Work",
+          [claudeId]: {
+            driver: ProviderDriverKind.make("claudeAgent"),
+            displayName: "Claude Work",
             accentColor: "#7c3aed",
             enabled: true,
-            config: { homePath: "~/.codex" },
+            config: { homePath: "~/.claude" },
           },
         },
       });
 
       const next = yield* serverSettings.updateSettings({
         providerInstances: {
-          [codexId]: {
-            driver: ProviderDriverKind.make("codex"),
-            displayName: "Codex Work",
+          [claudeId]: {
+            driver: ProviderDriverKind.make("claudeAgent"),
+            displayName: "Claude Work",
             enabled: true,
-            config: { homePath: "~/.codex" },
+            config: { homePath: "~/.claude" },
           },
         },
       });
 
-      assert.deepEqual(next.providerInstances[codexId], {
-        driver: ProviderDriverKind.make("codex"),
-        displayName: "Codex Work",
+      assert.deepEqual(next.providerInstances[claudeId], {
+        driver: ProviderDriverKind.make("claudeAgent"),
+        displayName: "Claude Work",
         enabled: true,
-        config: { homePath: "~/.codex" },
+        config: { homePath: "~/.claude" },
       });
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
@@ -742,16 +745,20 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverConfig = yield* ServerConfig.ServerConfig;
       const fileSystem = yield* FileSystem.FileSystem;
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
-      // The Providers UI writes providerInstances only, so the legacy providers
-      // map decodes to defaults where codex is enabled and listed first.
+      // The saved selection points at a disabled instance, so the fallback has
+      // to skip it and use the next enabled provider (Pi, opted in here).
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providerInstances":{"codex":{"driver":"codex","enabled":false,"config":{}}}}',
+        '{"textGenerationModelSelection":{"instanceId":"claudeAgent","model":"claude-haiku-4-5"},"providerInstances":{"claudeAgent":{"driver":"claudeAgent","enabled":false,"config":{}},"pi":{"driver":"pi","enabled":true,"config":{}}}}',
       );
 
       const settings = yield* serverSettings.getSettings;
 
-      assert.equal(settings.textGenerationModelSelection.instanceId, "claudeAgent");
+      assert.equal(settings.textGenerationModelSelection.instanceId, "pi");
+      assert.equal(
+        settings.textGenerationModelSelection.model,
+        DEFAULT_MODEL_BY_PROVIDER[ProviderDriverKind.make("pi")],
+      );
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
 
@@ -932,23 +939,23 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       // The explicit false must win so a user's disable sticks.
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providerInstances":{"pi":{"driver":"pi","enabled":true,"config":{"enabled":false}},"codex_work":{"driver":"codex","config":{"enabled":true,"homePath":"~/.codex"}},"example":{"driver":"example","config":{"enabled":"nope"}}}}',
+        '{"providerInstances":{"pi":{"driver":"pi","enabled":true,"config":{"enabled":false}},"claude_work":{"driver":"claudeAgent","config":{"enabled":true,"homePath":"~/.claude"}},"example":{"driver":"example","config":{"enabled":"nope"}}}}',
       );
 
       const settings = yield* serverSettings.getSettings;
 
       const piId = ProviderInstanceId.make("pi");
-      const codexWorkId = ProviderInstanceId.make("codex_work");
+      const claudeWorkId = ProviderInstanceId.make("claude_work");
       assert.deepEqual(settings.providerInstances[piId], {
         driver: ProviderDriverKind.make("pi"),
         enabled: false,
         config: {},
       });
       // A lone in-config flag is lifted to the envelope and stripped.
-      assert.deepEqual(settings.providerInstances[codexWorkId], {
-        driver: ProviderDriverKind.make("codex"),
+      assert.deepEqual(settings.providerInstances[claudeWorkId], {
+        driver: ProviderDriverKind.make("claudeAgent"),
         enabled: true,
-        config: { homePath: "~/.codex" },
+        config: { homePath: "~/.claude" },
       });
       // A malformed flag is left alone so driver schema validation can
       // surface it instead of the fold silently repairing the config.
@@ -988,9 +995,8 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       const next = yield* serverSettings.updateSettings({
         providers: {
-          codex: {
-            binaryPath: "  /opt/homebrew/bin/codex  ",
-            homePath: "   ",
+          pi: {
+            binaryPath: "  /opt/homebrew/bin/pi  ",
           },
           claudeAgent: {
             binaryPath: "  /opt/homebrew/bin/claude  ",
@@ -1003,11 +1009,10 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         },
       });
 
-      assert.deepEqual(next.providers.codex, {
-        enabled: true,
-        binaryPath: "/opt/homebrew/bin/codex",
-        homePath: "",
-        shadowHomePath: "",
+      assert.deepEqual(next.providers.pi, {
+        // Pi is disabled by default; this update only touches paths.
+        enabled: false,
+        binaryPath: "/opt/homebrew/bin/pi",
         launchArgs: "",
         customModels: [],
       });
@@ -1056,7 +1061,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       const next = yield* serverSettings.updateSettings({
         providers: {
-          codex: {
+          pi: {
             binaryPath: "   ",
           },
           claudeAgent: {
@@ -1065,7 +1070,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         },
       });
 
-      assert.equal(next.providers.codex.binaryPath, "codex");
+      assert.equal(next.providers.pi.binaryPath, "pi");
       assert.equal(next.providers.claudeAgent.binaryPath, "claude");
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
@@ -1082,8 +1087,8 @@ it.layer(NodeServices.layer)("server settings", (it) => {
           otlpMetricsUrl: "http://localhost:4318/v1/metrics",
         },
         providers: {
-          codex: {
-            binaryPath: "/opt/homebrew/bin/codex",
+          pi: {
+            binaryPath: "/opt/homebrew/bin/pi",
           },
           opencode: {
             serverUrl: "http://127.0.0.1:4096",
@@ -1093,7 +1098,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         automaticGitFetchInterval: Duration.seconds(10),
       });
 
-      assert.equal(next.providers.codex.binaryPath, "/opt/homebrew/bin/codex");
+      assert.equal(next.providers.pi.binaryPath, "/opt/homebrew/bin/pi");
 
       const raw = yield* fileSystem.readFileString(serverConfig.settingsPath);
       // @effect-diagnostics-next-line preferSchemaOverJson:off
@@ -1109,8 +1114,8 @@ it.layer(NodeServices.layer)("server settings", (it) => {
           otlpMetricsUrl: "http://localhost:4318/v1/metrics",
         },
         providers: {
-          codex: {
-            binaryPath: "/opt/homebrew/bin/codex",
+          pi: {
+            binaryPath: "/opt/homebrew/bin/pi",
           },
           opencode: {
             enabled: false,
@@ -1155,18 +1160,18 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       ),
     );
     return Effect.gen(function* () {
-      const instanceId = ProviderInstanceId.make("codex_personal");
+      const instanceId = ProviderInstanceId.make("claude_personal");
       const service = yield* ServerSettingsModule.ServerSettingsService;
       const config = yield* ServerConfig.ServerConfig;
       const fs = yield* FileSystem.FileSystem;
       const original =
-        '{"providerInstances":{"codex_personal":{"driver":"codex","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true}],"config":{}}}}';
+        '{"providerInstances":{"claude_personal":{"driver":"claudeAgent","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true}],"config":{}}}}';
       yield* fs.writeFileString(config.settingsPath, original);
       const error = yield* Effect.flip(
         service.updateSettings({
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("codex"),
+              driver: ProviderDriverKind.make("claudeAgent"),
               environment: [{ name: "API_TOKEN", value: "", sensitive: true, valueRedacted: true }],
               config: {},
             },
@@ -1209,15 +1214,15 @@ it.layer(NodeServices.layer)("server settings", (it) => {
   ]) {
     it.effect(label, () =>
       Effect.gen(function* () {
-        const instanceId = ProviderInstanceId.make("codex_personal");
+        const instanceId = ProviderInstanceId.make("claude_personal");
         const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
         const serverConfig = yield* ServerConfig.ServerConfig;
         const fileSystem = yield* FileSystem.FileSystem;
         yield* fileSystem.writeFileString(
           serverConfig.settingsPath,
           duplicate
-            ? '{"providerInstances":{"codex_personal":{"driver":"codex","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true},{"name":"API_TOKEN","value":"last-inline-test-token","sensitive":true}],"config":{}}}}'
-            : '{"providerInstances":{"codex_personal":{"driver":"codex","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true}],"config":{}}}}',
+            ? '{"providerInstances":{"claude_personal":{"driver":"claudeAgent","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true},{"name":"API_TOKEN","value":"last-inline-test-token","sensitive":true}],"config":{}}}}'
+            : '{"providerInstances":{"claude_personal":{"driver":"claudeAgent","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true}],"config":{}}}}',
         );
         const initial = yield* serverSettings.getSettings;
         assert.equal(
@@ -1228,7 +1233,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         const next = yield* serverSettings.updateSettings({
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("codex"),
+              driver: ProviderDriverKind.make("claudeAgent"),
               displayName: "Renamed provider",
               environment: duplicate ? [variable, variable] : [variable],
               config: {},
@@ -1258,12 +1263,12 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
       const serverConfig = yield* ServerConfig.ServerConfig;
       const fileSystem = yield* FileSystem.FileSystem;
-      const instanceId = ProviderInstanceId.make("codex_personal");
+      const instanceId = ProviderInstanceId.make("claude_personal");
 
       const next = yield* serverSettings.updateSettings({
         providerInstances: {
           [instanceId]: {
-            driver: ProviderDriverKind.make("codex"),
+            driver: ProviderDriverKind.make("claudeAgent"),
             environment: [
               { name: "OPENROUTER_API_KEY", value: "sk-or-secret", sensitive: true },
               { name: "ANTHROPIC_BASE_URL", value: "https://openrouter.ai/api", sensitive: false },
@@ -1286,7 +1291,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const raw = yield* fileSystem.readFileString(serverConfig.settingsPath);
       assert.notInclude(raw, "sk-or-secret");
       // @effect-diagnostics-next-line preferSchemaOverJson:off
-      assert.deepEqual(JSON.parse(raw).providerInstances.codex_personal.environment, [
+      assert.deepEqual(JSON.parse(raw).providerInstances.claude_personal.environment, [
         {
           name: "OPENROUTER_API_KEY",
           value: "",
@@ -1299,8 +1304,8 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const roundTripped = yield* serverSettings.updateSettings({
         providerInstances: {
           [instanceId]: {
-            driver: ProviderDriverKind.make("codex"),
-            displayName: "Codex Personal",
+            driver: ProviderDriverKind.make("claudeAgent"),
+            displayName: "Claude Personal",
             environment: [
               { name: "OPENROUTER_API_KEY", value: "", sensitive: true, valueRedacted: true },
               { name: "ANTHROPIC_BASE_URL", value: "https://openrouter.ai/api", sensitive: false },
@@ -1323,16 +1328,16 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverConfig = yield* ServerConfig.ServerConfig;
       const fileSystem = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
-      const instanceId = ProviderInstanceId.make("codex_terminal");
+      const instanceId = ProviderInstanceId.make("claude_terminal");
 
       yield* serverSettings.updateSettings({
         providerInstances: {
           [instanceId]: {
-            driver: ProviderDriverKind.make("codex"),
+            driver: ProviderDriverKind.make("claudeAgent"),
             environment: [
               { name: "OPENROUTER_API_KEY", value: "sk-terminal-secret", sensitive: true },
             ],
-            config: { homePath: "~/.codex-terminal" },
+            config: { homePath: "~/.claude-terminal" },
           },
         },
       });
@@ -1346,7 +1351,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const persisted = yield* fileSystem.readFileString(serverConfig.settingsPath);
 
       assert.equal(environment.OPENROUTER_API_KEY, "sk-terminal-secret");
-      assert.match(environment.CODEX_HOME ?? "", /[\\/][.]codex-terminal$/);
+      assert.match(environment.CLAUDE_CONFIG_DIR ?? "", /[\\/][.]claude-terminal$/);
       assert.notInclude(persisted, "sk-terminal-secret");
       assert.include(persisted, '"valueRedacted": true');
     }).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -1369,7 +1374,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
             ? Effect.fail(writeFailure)
             : fileSystem.rename(fromPath, toPath),
       });
-      const instanceId = ProviderInstanceId.make("codex_write_failure");
+      const instanceId = ProviderInstanceId.make("claude_write_failure");
       const settingsLayer = makeServerSettingsLayer().pipe(
         Layer.provideMerge(Layer.succeed(FileSystem.FileSystem, failingFileSystem)),
       );
@@ -1381,7 +1386,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
           operation: "upsert",
           instanceId,
           instance: {
-            driver: ProviderDriverKind.make("codex"),
+            driver: ProviderDriverKind.make("claudeAgent"),
             environment: [{ name: "OPENROUTER_API_KEY", value: "sk-kept", sensitive: true }],
             config: {},
           },
@@ -1393,7 +1398,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
             operation: "upsert",
             instanceId,
             instance: {
-              driver: ProviderDriverKind.make("codex"),
+              driver: ProviderDriverKind.make("claudeAgent"),
               environment: [{ name: "OPENROUTER_API_KEY", value: "sk-new", sensitive: true }],
               config: {},
             },
@@ -1472,7 +1477,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         ),
       ),
     );
-    const instanceId = ProviderInstanceId.make("codex_materialization_failure");
+    const instanceId = ProviderInstanceId.make("claude_materialization_failure");
 
     return Effect.gen(function* () {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
@@ -1480,7 +1485,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         operation: "upsert",
         instanceId,
         instance: {
-          driver: ProviderDriverKind.make("codex"),
+          driver: ProviderDriverKind.make("claudeAgent"),
           environment: [{ name: "OPENROUTER_API_KEY", value: "sk-kept", sensitive: true }],
           config: {},
         },
@@ -1492,7 +1497,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
           operation: "upsert",
           instanceId,
           instance: {
-            driver: ProviderDriverKind.make("codex"),
+            driver: ProviderDriverKind.make("claudeAgent"),
             environment: [{ name: "OPENROUTER_API_KEY", value: "sk-new", sensitive: true }],
             config: {},
           },
@@ -1523,7 +1528,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         icon: "play",
         runOnWorktreeCreate: false,
       };
-      const model = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.5");
+      const model = createModelSelection(ProviderInstanceId.make("claudeAgent"), "gpt-5.5");
       const modelJson = yield* Schema.encodeEffect(Schema.fromJsonString(ModelSelection))(model);
       const scriptsJson = yield* Schema.encodeEffect(
         Schema.fromJsonString(Schema.Array(ProjectScript)),

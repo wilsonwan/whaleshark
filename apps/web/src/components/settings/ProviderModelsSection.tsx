@@ -24,7 +24,6 @@ import { CustomModelEditor } from "./CustomModelEditor";
  * UX is unchanged — only the owning component has moved.
  */
 const CUSTOM_MODEL_PLACEHOLDER_BY_KIND: Partial<Record<ProviderDriverKind, string>> = {
-  [ProviderDriverKind.make("codex")]: "gpt-6.7-codex-ultra-preview",
   [ProviderDriverKind.make("claudeAgent")]: "claude-sonnet-5",
   [ProviderDriverKind.make("opencode")]: "openai/gpt-5",
   [ProviderDriverKind.make("pi")]: "anthropic/claude-sonnet-5",
@@ -35,9 +34,8 @@ const FILTER_THRESHOLD = 8;
 
 /**
  * Short capability words shown after a model's slug. Claude reports fast mode
- * as a boolean `fastMode` option; Codex reports it as a `serviceTier` select
- * whose fast tier is labelled "Fast" (catalog id `priority`, or `fast` from
- * the speed-tier fallback), matching the composer.
+ * as a boolean `fastMode` option; OpenCode reports its speed tiers as a select
+ * whose fast tier is labelled "Fast", matching the composer.
  */
 function describeModelCapabilities(model: ServerProviderModel): string[] {
   const descriptors = model.capabilities?.optionDescriptors ?? [];

@@ -21,7 +21,7 @@ function renderStepButtons(
 ): ReactElement<StepButtonProps>[] {
   const header = AddProviderInstanceWizardSteps({
     currentStep,
-    summaries: ["Codex", "Codex Workspace", null],
+    summaries: ["Claude", "Claude Workspace", null],
     instanceIdError,
     onNavigation,
   });
