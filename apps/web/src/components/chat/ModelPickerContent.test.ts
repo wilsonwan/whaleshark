@@ -27,7 +27,7 @@ function entry(status: ServerProvider["status"], driver = "opencode") {
 }
 
 describe("shouldIncludeModelPickerOption", () => {
-  it.each(["codex", "claudeAgent", "pi", "acpRegistry"] as const)(
+  it.each(["pi", "pi", "acpRegistry"] as const)(
     "never offers an unavailable saved model while the %s instance is not ready",
     (driver) => {
       const providerEntry = entry("error", driver);
@@ -43,12 +43,12 @@ describe("shouldIncludeModelPickerOption", () => {
   );
 
   it("offers every catalog model while the provider instance is ready", () => {
-    const providerEntry = entry("ready", "codex");
+    const providerEntry = entry("ready", "pi");
     expect(
       shouldIncludeModelPickerOption({
         entry: providerEntry,
         option: { slug: "gpt-5", name: "GPT 5", isUnavailable: true },
-        activeInstanceId: ProviderInstanceId.make("codex_personal"),
+        activeInstanceId: ProviderInstanceId.make("claude_personal"),
         activeModel: "gpt-5",
       }),
     ).toBe(true);
@@ -114,14 +114,14 @@ describe("resolveModelPickerSelectedModel", () => {
 
     expect(
       resolveModelPickerSelectedModel({
-        driverKind: ProviderDriverKind.make("codex"),
+        driverKind: ProviderDriverKind.make("pi"),
         model: "gpt-5-mini",
         options,
       })?.slug,
     ).toBe("gpt-5-mini");
     expect(
       resolveModelPickerSelectedModel({
-        driverKind: ProviderDriverKind.make("codex"),
+        driverKind: ProviderDriverKind.make("pi"),
         model: "gpt-5",
         options,
       })?.slug,
@@ -131,8 +131,8 @@ describe("resolveModelPickerSelectedModel", () => {
   it("does not guess the default from the first model in a catalog", () => {
     expect(
       resolveModelPickerSelectedModel({
-        driverKind: ProviderDriverKind.make("codex"),
-        model: "gpt-5-codex",
+        driverKind: ProviderDriverKind.make("pi"),
+        model: "claude-opus-4-6",
         options: [{ slug: "gpt-5", name: "GPT 5" }],
       }),
     ).toBeUndefined();
@@ -225,7 +225,7 @@ describe("shouldOfferModelPickerSetup", () => {
   });
 
   it("keeps providers without integrated setup on their existing path", () => {
-    expect(shouldOfferModelPickerSetup(entry("error", "codex"), [])).toBe(false);
+    expect(shouldOfferModelPickerSetup(entry("error", "pi"), [])).toBe(false);
   });
 
   it("uses the environment's setup capability for other drivers", () => {

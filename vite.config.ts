@@ -11,7 +11,6 @@ export default defineConfig({
   test: {
     environment: "node",
     exclude: [
-      "**/.repos/**",
       "**/.t3/**",
       "**/node_modules/**",
       "**/dist/**",
@@ -32,7 +31,6 @@ export default defineConfig({
   },
   fmt: {
     ignorePatterns: [
-      ".repos/**",
       ".alchemy",
       "dist",
       "dist-electron",
@@ -57,8 +55,6 @@ export default defineConfig({
   },
   lint: {
     ignorePatterns: [
-      ".repos",
-      ".repos/**",
       "dist",
       "dist-electron",
       "node_modules",
@@ -131,46 +127,6 @@ export default defineConfig({
         // The one place that reads the host platform to seed the injected references.
         files: ["packages/shared/src/hostProcess.ts"],
         rules: { "t3code/no-global-process-runtime": "off" },
-      },
-      {
-        files: ["apps/mobile/src/**"],
-        rules: { "t3code/no-mobile-uniwind-theme-escape-hatches": "error" },
-      },
-      {
-        // Reviewed native and third-party interop boundaries that cannot consume a className.
-        files: [
-          "apps/mobile/src/features/archive/ArchivedThreadsScreen.tsx",
-          "apps/mobile/src/features/connection/ConnectionsNewRouteScreen.tsx",
-          "apps/mobile/src/features/files/FileMarkdownPreview.tsx",
-          "apps/mobile/src/features/files/SourceFileSurface.tsx",
-          "apps/mobile/src/features/files/AttachmentFileScreen.tsx",
-          "apps/mobile/src/features/files/ThreadFilesRouteScreen.tsx",
-          "apps/mobile/src/features/files/thread-file-navigator-pane.tsx",
-          "apps/mobile/src/features/home/HomeHeader.tsx",
-          "apps/mobile/src/features/review/ReviewSheet.tsx",
-          "apps/mobile/src/features/review/useNativeReviewDiffBridge.ts",
-          "apps/mobile/src/features/settings/SettingsEnvironmentsRouteScreen.tsx",
-          "apps/mobile/src/features/settings/appearance/components/AppearancePreviews.tsx",
-          "apps/mobile/src/features/threads/GitActionProgressOverlay.tsx",
-          "apps/mobile/src/features/threads/NewTaskDraftScreen.tsx",
-          "apps/mobile/src/features/threads/ThreadComposer.tsx",
-          "apps/mobile/src/features/threads/ThreadFeed.tsx",
-          "apps/mobile/src/features/settings/appearance/components/FontSizeSliderRow.tsx",
-          "apps/mobile/src/features/threads/NewTaskContextPickerScreens.tsx",
-          "apps/mobile/src/features/threads/ThreadQueueControl.tsx",
-          "apps/mobile/src/features/threads/ThreadRelationshipsBanner.tsx",
-          "apps/mobile/src/features/review/ReviewCommentCard.tsx",
-          "apps/mobile/src/features/threads/ThreadSettingsSheet.tsx",
-          "apps/mobile/src/features/threads/git/GitOverviewSheet.tsx",
-          "apps/mobile/src/features/threads/thread-list-items.tsx",
-          "apps/mobile/src/features/threads/thread-list-v2-items.tsx",
-          "apps/mobile/src/lib/useMobileNavigationTheme.ts",
-          "apps/mobile/src/native/T3ComposerEditor.ios.tsx",
-          "apps/mobile/src/native/T3ComposerEditor.native.tsx",
-        ],
-        rules: {
-          "t3code/no-mobile-uniwind-theme-escape-hatches": ["error", { allowUniwindTheme: true }],
-        },
       },
       // Legacy manual Effect runners tracked as debt: no net-new occurrences.
       // Lower a ceiling when you migrate a file, and delete its entry at zero.

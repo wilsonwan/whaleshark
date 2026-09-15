@@ -11,11 +11,9 @@ implementation checklist for `apps/server/src/orchestration-v2`.
   interrupt, and provider switch command shapes.
 - Checkpoint rollback is currently a full revert: filesystem checkpoint restore, provider thread
   rollback, stale checkpoint marking, and later run/node `rolled_back` projection state.
-- Codex same-provider fork is lazy: `thread.fork` records lineage and pending transfer, and first
-  dispatch resolves native Codex fork. Earlier source-point forks use native `thread/fork` followed
-  by fork-local `thread/rollback`.
-- Native Codex fork-from-earlier-run has a real replay-backed test fixture:
-  `testkit/fixtures/thread_fork_native_prior_turn`.
+- Same-provider fork is lazy: `thread.fork` records lineage and pending transfer, and first
+  dispatch resolves the native provider fork. Earlier source-point forks use native `thread/fork`
+  followed by fork-local `thread/rollback`.
 - Merge-back from a fork into its source thread records a `merge_back` context transfer, materializes
   a `fork_delta_summary` context handoff, and injects that handoff into the next source-thread run.
 
@@ -119,16 +117,9 @@ Target docs:
 
 TODO:
 
-- [x] Add Claude replay fixture definitions for recorded fixtures, with TODO fixture slots that
-      reference the corresponding Codex transcripts and V2 docs.
-- [ ] Promote Claude `simple` from the replay adapter to a real `ClaudeAdapterV2` replay test:
-      live and replay both consume an injected Agent SDK `query()` async iterable.
-- [ ] Record Claude `multi_turn` from real usage and prove native session/thread continuation.
-- [ ] Record Claude `tool_call_read_only` from real usage and prove read-only tool projection without
-      approvals.
-- [ ] Keep unrecorded Claude fixtures out of `testkit/fixtures/index.ts` until each has a real
+- [ ] Keep unrecorded fixtures out of `testkit/fixtures/index.ts` until each has a real
       transcript and real adapter assertions.
-- [ ] Add the second adapter once these vv0 Claude slices are stable enough to validate
+- [ ] Add the second adapter once these vv0 replay slices are stable enough to validate
       cross-provider behavior.
 - [ ] Use the second adapter to test:
       cross-provider fork, same-thread provider switch, returning to a previous provider thread with
@@ -143,7 +134,6 @@ Target docs:
 
 TODO:
 
-- [x] Add provider-native subagent observation for Codex and Claude replay-backed fixtures.
 - [ ] Model native subagents and app-owned cross-provider subagents as related thread/subthread graph
       entries with different creator/lifecycle policy.
 - [ ] Preserve native provider subagent refs where available, but do not make the app graph depend on

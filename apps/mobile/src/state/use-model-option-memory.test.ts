@@ -24,29 +24,29 @@ afterEach(() => {
 
 describe("model option memory state", () => {
   it("records and looks up options per instance and model", () => {
-    rememberModelOptions("codex", "gpt-5.3-codex", [...XHIGH]);
-    rememberModelOptions("codex", "gpt-5.4", [...HIGH]);
-    expect(rememberedModelOptions("codex", "gpt-5.3-codex")).toEqual(XHIGH);
-    expect(rememberedModelOptions("codex", "gpt-5.4")).toEqual(HIGH);
-    expect(rememberedModelOptions("pi", "gpt-5.3-codex")).toBeUndefined();
+    rememberModelOptions("pi", "claude-fable-5-1", [...XHIGH]);
+    rememberModelOptions("pi", "claude-haiku-4-5", [...HIGH]);
+    expect(rememberedModelOptions("pi", "claude-fable-5-1")).toEqual(XHIGH);
+    expect(rememberedModelOptions("pi", "claude-haiku-4-5")).toEqual(HIGH);
+    expect(rememberedModelOptions("opencode", "claude-fable-5-1")).toBeUndefined();
   });
 
   it("ignores empty option sets when recording", () => {
-    rememberModelOptions("codex", "gpt-5.4", []);
-    expect(rememberedModelOptions("codex", "gpt-5.4")).toBeUndefined();
+    rememberModelOptions("pi", "claude-haiku-4-5", []);
+    expect(rememberedModelOptions("pi", "claude-haiku-4-5")).toBeUndefined();
   });
 });
 
 describe("withRememberedModelOptions", () => {
   it("restores the remembered options over descriptor defaults", () => {
-    rememberModelOptions("codex", "gpt-5.3-codex", [...XHIGH]);
+    rememberModelOptions("pi", "claude-fable-5-1", [...XHIGH]);
     expect(
       withRememberedModelOptions({
-        instanceId: "codex",
-        model: "gpt-5.3-codex",
+        instanceId: "pi",
+        model: "claude-fable-5-1",
         options: [{ id: "reasoningEffort", value: "low" }],
       }),
-    ).toEqual({ instanceId: "codex", model: "gpt-5.3-codex", options: XHIGH });
+    ).toEqual({ instanceId: "pi", model: "claude-fable-5-1", options: XHIGH });
   });
 
   it("keeps incoming selections that already match memory", () => {
@@ -56,7 +56,7 @@ describe("withRememberedModelOptions", () => {
   });
 
   it("keeps incoming selections when nothing is remembered", () => {
-    const selection = { instanceId: "pi", model: "openai-codex/gpt-5.6-sol" };
+    const selection = { instanceId: "pi", model: "openai/gpt-5.6-sol" };
     expect(withRememberedModelOptions(selection)).toBe(selection);
   });
 });

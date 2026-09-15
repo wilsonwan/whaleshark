@@ -1,7 +1,7 @@
 // @effect-diagnostics nodeBuiltinImport:off globalTimers:off globalDate:off globalFetch:off globalConsole:off preferSchemaOverJson:off - Host-side process verifier retains raw wire evidence and owns deadline timers.
 /**
  * Real server/provider conformance check. Run from the repository root:
- * node apps/server/scripts/verify-background-live.ts --model claude-sonnet-4-6
+ * node apps/server/scripts/verify-background-live.ts --provider pi --model default
  * Uses existing provider CLI authentication, a fresh T3 home and a disposable Git
  * project. Evidence is retained in the printed directory, including on failure.
  */
@@ -33,8 +33,8 @@ import {
 
 const { values } = NodeUtil.parseArgs({
   options: {
-    model: { type: "string", default: "claude-sonnet-4-6" },
-    provider: { type: "string", default: "claudeAgent" },
+    model: { type: "string", default: "default" },
+    provider: { type: "string", default: "pi" },
     timeout: { type: "string", default: "240" },
     scenario: { type: "string", default: "all" },
     repeat: { type: "string", default: "1" },

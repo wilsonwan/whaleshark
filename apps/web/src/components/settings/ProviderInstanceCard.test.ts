@@ -89,8 +89,8 @@ describe("deriveProviderModelsForDisplay", () => {
   });
 
   it("shows a redacted provider email in the editor header status line", () => {
-    const instanceId = ProviderInstanceId.make("codex");
-    const driver = ProviderDriverKind.make("codex");
+    const instanceId = ProviderInstanceId.make("pi");
+    const driver = ProviderDriverKind.make("pi");
     const liveProvider: ServerProvider = {
       instanceId,
       driver,
@@ -108,7 +108,7 @@ describe("deriveProviderModelsForDisplay", () => {
     const markup = renderToStaticMarkup(
       createElement(ProviderInstanceCard, {
         instanceId,
-        instance: { driver },
+        instance: { driver, enabled: true },
         driverOption: undefined,
         liveProvider,
         mode: "editor",
@@ -128,10 +128,10 @@ describe("deriveProviderModelsForDisplay", () => {
     expect(markup).not.toContain("developer@example.com");
   });
   it("surfaces a failed probe message in both the list row and the editor", () => {
-    const instanceId = ProviderInstanceId.make("codex_work");
-    const driver = ProviderDriverKind.make("codex");
+    const instanceId = ProviderInstanceId.make("claude_work");
+    const driver = ProviderDriverKind.make("pi");
     const message =
-      "Codex app-server provider probe failed: Cannot create Codex shadow home entry 'auth.json' because '/home/me/.codex-t3/work/auth.json' already exists and is not a symlink.";
+      "Claude app-server provider probe failed: Cannot create Claude shadow home entry 'auth.json' because '/home/me/.claude-t3/work/auth.json' already exists and is not a symlink.";
     const liveProvider: ServerProvider = {
       instanceId,
       driver,
@@ -148,7 +148,7 @@ describe("deriveProviderModelsForDisplay", () => {
     };
     const props = {
       instanceId,
-      instance: { driver },
+      instance: { driver, enabled: true },
       driverOption: undefined,
       liveProvider,
       onUpdate: () => undefined,

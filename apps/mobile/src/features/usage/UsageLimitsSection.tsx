@@ -33,8 +33,7 @@ type Driver = ServerProvider["driver"];
 /** The series colour the usage chart uses for this driver, so the two views read as one. */
 function useBarColor(driver: Driver): string | null {
   const colors = useProviderColors();
-  const kind: UsageProviderKind | null =
-    driver === "codex" ? "codex" : driver === "claudeAgent" ? "claude" : null;
+  const kind: UsageProviderKind | null = driver === "pi" ? "claude" : null;
   return kind ? colors[kind] : null;
 }
 

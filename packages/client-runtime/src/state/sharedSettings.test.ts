@@ -57,32 +57,40 @@ describe("splitSharedServerPatch", () => {
 
   it.each([
     {
-      instanceId: ProviderInstanceId.make("codex"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5.6-sol",
       options: [{ id: "reasoningEffort", value: "low" }],
     },
     {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
-      model: "claude-sonnet-4-6",
-      options: [{ id: "effort", value: "high" }],
+      instanceId: ProviderInstanceId.make("opencode_work"),
+      model: "gpt-5.6-sol-mini",
+      options: [{ id: "serviceTier", value: "fast" }],
     },
     DEFAULT_SERVER_SETTINGS.textGenerationModelSelection,
   ])("shares the text generation model and options, including reset (%j)", (selection) => {
     const patch = { textGenerationModelSelection: selection };
     expect(splitSharedServerPatch(patch)).toEqual({ sharedPatch: patch, localPatch: {} });
-    expect(pickSharedServerSettings({ ...DEFAULT_SERVER_SETTINGS, ...patch })).toMatchObject(patch);
+    // A custom instance only syncs while its envelope is registered and enabled.
+    const providerInstances = {
+      pi: { driver: ProviderDriverKind.make("pi"), enabled: true, config: {} },
+      opencode_work: { driver: ProviderDriverKind.make("opencode"), enabled: true, config: {} },
+    };
+    expect(
+      pickSharedServerSettings({ ...DEFAULT_SERVER_SETTINGS, ...patch, providerInstances }),
+    ).toMatchObject(patch);
     const environment = {
       environmentId: boxId,
       label: "Remote Box",
       syncEligible: true,
       settings: {
         ...DEFAULT_SERVER_SETTINGS,
+        providerInstances,
         textGenerationModelSelection: { ...selection, model: "different-model" },
       },
     };
     const input = {
       primaryEnvironmentId: primaryId,
-      primarySettings: { ...DEFAULT_SERVER_SETTINGS, ...patch },
+      primarySettings: { ...DEFAULT_SERVER_SETTINGS, ...patch, providerInstances },
       environments: [environment],
     };
     expect(findSharedSettingsMismatches(input)).toEqual([
@@ -120,9 +128,15 @@ describe("splitSharedServerPatch", () => {
 
 describe("pickSharedServerSettings", () => {
   it("returns only the shared keys", () => {
-    expect(
-      Object.keys(pickSharedServerSettings(DEFAULT_SERVER_SETTINGS, restartCapabilities)).sort(),
-    ).toEqual([
+    // The text generation selection only counts as shared while its target
+    // instance is enabled, so register the default one.
+    const settings = {
+      ...DEFAULT_SERVER_SETTINGS,
+      providerInstances: {
+        pi: { driver: ProviderDriverKind.make("pi"), enabled: true, config: {} },
+      },
+    };
+    expect(Object.keys(pickSharedServerSettings(settings, restartCapabilities)).sort()).toEqual([
       "continueThreadsAfterServerUpdate",
       "newWorktreesStartFromOrigin",
       "sidebarAutoSettleAfterDays",
@@ -140,15 +154,15 @@ describe("filterSharedServerPatch", () => {
       const settings = {
         ...DEFAULT_SERVER_SETTINGS,
         providerInstances: {
-          codex: { driver: ProviderDriverKind.make("codex"), enabled: false, config: {} },
-          claudeAgent: {
-            driver: ProviderDriverKind.make("claudeAgent"),
-            enabled: true,
+          pi: {
+            driver: ProviderDriverKind.make("pi"),
+            enabled: false,
             config: {},
           },
+          opencode: { driver: ProviderDriverKind.make("opencode"), enabled: true, config: {} },
         },
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "claude-opus-4-6",
         },
       };
@@ -171,16 +185,14 @@ describe("filterSharedServerPatch", () => {
   it.each(["missing", "disabled", "different-driver", "enabled"] as const)(
     "shares a custom model only when its target provider is enabled (%s)",
     (availability) => {
-      const instanceId = ProviderInstanceId.make("codex_personal");
+      const instanceId = ProviderInstanceId.make("claude_personal");
       const selection = {
         instanceId,
         model: "gpt-5.6-luna",
         options: [{ id: "reasoningEffort", value: "low" }],
       };
       const instance = {
-        driver: ProviderDriverKind.make(
-          availability === "different-driver" ? "claudeAgent" : "codex",
-        ),
+        driver: ProviderDriverKind.make(availability === "different-driver" ? "opencode" : "pi"),
         enabled: availability !== "disabled",
         config: {},
       };
@@ -192,7 +204,7 @@ describe("filterSharedServerPatch", () => {
       const sourceSettings = {
         ...settings,
         providerInstances: {
-          [instanceId]: { ...instance, driver: ProviderDriverKind.make("codex"), enabled: true },
+          [instanceId]: { ...instance, driver: ProviderDriverKind.make("pi"), enabled: true },
         },
       };
       expect(filterSharedServerPatch(patch, restartCapabilities, settings, sourceSettings)).toEqual(

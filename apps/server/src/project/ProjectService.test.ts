@@ -79,8 +79,8 @@ it.layer(TestLayer)("ProjectService", (it) => {
       const service = yield* ProjectService.ProjectService;
       const projectId = ProjectId.make("project:service-test");
       const modelSelection = {
-        instanceId: ProviderInstanceId.make("codex_custom"),
-        model: "gpt-5.1-codex",
+        instanceId: ProviderInstanceId.make("claude_custom"),
+        model: "claude-opus-5",
       } as const;
       yield* TestClock.setTime(Date.parse("2026-06-20T10:00:00.000Z"));
 

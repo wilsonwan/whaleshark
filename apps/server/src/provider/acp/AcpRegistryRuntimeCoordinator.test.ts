@@ -94,18 +94,18 @@ describe("AcpRegistryRuntimeCoordinator", () => {
   it.effect("replays and replaces late command advertisements per provider instance", () =>
     Effect.gen(function* () {
       const coordinator = yield* AcpRegistryRuntimeCoordinator;
-      const codex = ProviderInstanceId.make("acpRegistry_codex");
+      const primary = ProviderInstanceId.make("acpRegistry_primary");
       const kilo = ProviderInstanceId.make("acpRegistry_kilo");
       const firstSeen = yield* Deferred.make<void>();
       const replacementSeen = yield* Deferred.make<void>();
       const received: Array<AcpRegistryAvailableCommands> = [];
 
-      yield* coordinator.publishAvailableCommands(codex, {
+      yield* coordinator.publishAvailableCommands(primary, {
         slashCommands: [{ name: "status" }],
         skills: [{ name: "workspace-skill", path: "acp://skill/workspace-skill", enabled: true }],
       });
       const consumer = yield* coordinator
-        .watchAvailableCommands(codex, (commands) =>
+        .watchAvailableCommands(primary, (commands) =>
           Effect.gen(function* () {
             received.push(commands);
             yield* received.length === 1
@@ -120,7 +120,7 @@ describe("AcpRegistryRuntimeCoordinator", () => {
         slashCommands: [{ name: "review" }],
         skills: [],
       });
-      yield* coordinator.publishAvailableCommands(codex, { slashCommands: [], skills: [] });
+      yield* coordinator.publishAvailableCommands(primary, { slashCommands: [], skills: [] });
       yield* Deferred.await(replacementSeen);
       yield* Fiber.interrupt(consumer);
 
@@ -134,8 +134,8 @@ describe("AcpRegistryRuntimeCoordinator", () => {
       expect(yield* coordinator.getAvailableCommands(kilo)).toEqual(
         Option.some({ slashCommands: [{ name: "review" }], skills: [] }),
       );
-      yield* coordinator.clearAvailableCommands(codex);
-      expect(Option.isNone(yield* coordinator.getAvailableCommands(codex))).toBe(true);
+      yield* coordinator.clearAvailableCommands(primary);
+      expect(Option.isNone(yield* coordinator.getAvailableCommands(primary))).toBe(true);
     }).pipe(Effect.provide(AcpRegistryRuntimeCoordinator.layer), Effect.scoped),
   );
 

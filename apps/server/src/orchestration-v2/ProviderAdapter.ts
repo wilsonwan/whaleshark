@@ -487,7 +487,7 @@ export interface ProviderAdapterV2SessionRuntime {
   readonly subscribeEvents?: Effect.Effect<ProviderAdapterV2EventSubscription>;
   /**
    * Adapters whose native runtime can hold pending work outside an active
-   * turn (for example Claude background tasks and their wake turns) report it
+   * turn (for example provider background tasks and their wake turns) report it
    * here so the session manager defers idle release while it is pending.
    */
   readonly hasPendingBackgroundWork?: Effect.Effect<boolean>;
@@ -528,7 +528,7 @@ export interface ProviderAdapterV2SessionRuntime {
     input: ProviderAdapterV2ReadThreadSnapshotInput,
   ) => Effect.Effect<ProviderAdapterV2ThreadSnapshot, ProviderAdapterV2Error>;
   /**
-   * Providers that accept product feedback for a thread (#7949, Codex → OpenAI)
+   * Providers that accept product feedback for a thread (#7949)
    * expose it here; absent means the driver has no feedback channel.
    */
   readonly uploadFeedback?: (input: {

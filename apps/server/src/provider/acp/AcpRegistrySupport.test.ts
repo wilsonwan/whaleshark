@@ -550,19 +550,19 @@ describe("AcpRegistrySupport", () => {
   it.effect("searches compatible agents with deterministic ranking and bounded metadata", () => {
     const exact = {
       ...makeAgent({ npx: { package: "@example/acp@1.2.3" } }),
-      id: "codex-acp",
-      name: "Codex",
+      id: "sample-acp",
+      name: "Sample Agent",
       authors: ["OpenAI", "Zed Industries"],
       license: "Apache-2.0",
-      website: "https://example.test/codex",
-      repository: "https://example.test/codex/source",
-      icon: "https://example.test/codex.svg",
+      website: "https://example.test/sample",
+      repository: "https://example.test/sample/source",
+      icon: "https://example.test/sample.svg",
     } satisfies AcpRegistryAgent;
     const descriptionMatch = {
       ...makeAgent({ npx: { package: "other-agent@1.2.3" } }),
       id: "other-agent",
       name: "Other Agent",
-      description: "An adapter for Codex workflows",
+      description: "An adapter for sample workflows",
     } satisfies AcpRegistryAgent;
     const incompatible = {
       ...makeAgent({
@@ -571,7 +571,7 @@ describe("AcpRegistrySupport", () => {
         },
       }),
       id: "darwin-only",
-      name: "Codex Darwin",
+      name: "Sample Darwin",
     } satisfies AcpRegistryAgent;
 
     return Effect.gen(function* () {
@@ -580,9 +580,9 @@ describe("AcpRegistrySupport", () => {
         prefix: "t3-acp-registry-search-",
       });
       const resolver = yield* makeAcpRegistryCatalog({ cacheDir, registryUrl });
-      const result = yield* resolver.search({ query: "codex" });
+      const result = yield* resolver.search({ query: "sample" });
 
-      expect(result.agents.map((agent) => agent.id)).toEqual(["codex-acp", "other-agent"]);
+      expect(result.agents.map((agent) => agent.id)).toEqual(["sample-acp", "other-agent"]);
       expect(result.agents[0]).toMatchObject({
         authors: ["OpenAI", "Zed Industries"],
         distribution: "npx",

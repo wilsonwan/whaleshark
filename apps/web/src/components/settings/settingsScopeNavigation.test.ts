@@ -159,13 +159,13 @@ describe("settings scope navigation", () => {
       to: "/settings/providers",
       search: {
         environmentId: EnvironmentId.make("provider-server"),
-        instanceId: ProviderInstanceId.make("codex-work"),
+        instanceId: ProviderInstanceId.make("claude-work"),
       },
     });
     expect(router.state.location.search).toEqual({
       machine: "provider-server",
       environmentId: "provider-server",
-      instanceId: "codex-work",
+      instanceId: "claude-work",
     });
     await router.navigate({ to: "/settings/general", hash: "" });
     expect(router.state.location.search).toEqual({ machine: "provider-server" });
@@ -173,7 +173,7 @@ describe("settings scope navigation", () => {
 
   it("preserves the environment from an initially loaded legacy provider URL", async () => {
     const router = createSettingsRouter(
-      "/settings/providers?environmentId=provider-server&instanceId=codex-work",
+      "/settings/providers?environmentId=provider-server&instanceId=pi-work",
     );
     await router.load();
     await router.navigate({ to: "/settings/general" });

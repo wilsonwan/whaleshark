@@ -22,7 +22,7 @@ import * as Queue from "effect/Queue";
 import * as Ref from "effect/Ref";
 import * as Stream from "effect/Stream";
 
-import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import { OrchestrationEffectWorkerV2 } from "./EffectWorker.ts";
 import { OrchestratorV2 } from "./Orchestrator.ts";
 import {
@@ -39,8 +39,8 @@ import {
 import { makeOrchestratorV2ReplayLayerWithRegistry } from "./testkit/ProviderReplayHarness.ts";
 import { checkpointWorkspace } from "./testkit/ReplayFixtureWorkspace.ts";
 
-const driver = ProviderDriverKind.make("codex");
-const providerInstanceId = ProviderInstanceId.make("codex-restart-test");
+const driver = ProviderDriverKind.make("opencode");
+const providerInstanceId = ProviderInstanceId.make("opencode-restart-test");
 const initialSelection = {
   instanceId: providerInstanceId,
   model: "restart-model-a",
@@ -49,17 +49,17 @@ const replacementSelection = {
   instanceId: providerInstanceId,
   model: "restart-model-b",
 } satisfies ModelSelection;
-const handoffDriver = ProviderDriverKind.make("claudeAgent");
-const handoffProviderInstanceId = ProviderInstanceId.make("claude-handoff-test");
+const handoffDriver = ProviderDriverKind.make("pi");
+const handoffProviderInstanceId = ProviderInstanceId.make("pi-handoff-test");
 const handoffSelection = {
   instanceId: handoffProviderInstanceId,
   model: "handoff-model",
 } satisfies ModelSelection;
-const pooledCapabilities: OrchestrationV2ProviderCapabilities = CodexProviderCapabilitiesV2;
+const pooledCapabilities: OrchestrationV2ProviderCapabilities = TestProviderCapabilitiesV2;
 const exclusiveCapabilities: OrchestrationV2ProviderCapabilities = {
-  ...CodexProviderCapabilitiesV2,
+  ...TestProviderCapabilitiesV2,
   sessions: {
-    ...CodexProviderCapabilitiesV2.sessions,
+    ...TestProviderCapabilitiesV2.sessions,
     supportsMultipleProviderThreadsPerSession: false,
     supportsModelSwitchInSession: false,
   },
@@ -655,7 +655,7 @@ for (const mode of ["active", "idle", "selection-command", "pooled", "separate-h
         const name = `shared-home-${mode}`;
         const cwd = yield* checkpointWorkspace(name);
         const threadId = ThreadId.make(`thread:${name}`);
-        const targetId = ProviderInstanceId.make("codex-shadow-account");
+        const targetId = ProviderInstanceId.make("opencode-shadow-account");
         const state = yield* Ref.make<RestartAdapterState>({
           activeTurn: null,
           opened: [],
@@ -702,7 +702,7 @@ for (const mode of ["active", "idle", "selection-command", "pooled", "separate-h
             Effect.succeed({
               driver,
               continuationKey:
-                mode === "separate-home" ? `codex:home:/${instanceId}` : "codex:home:/shared",
+                mode === "separate-home" ? `opencode:home:/${instanceId}` : "opencode:home:/shared",
               enabled: true,
               capabilities,
             }),

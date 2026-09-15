@@ -192,7 +192,7 @@ export const makeManagedServerProvider = Effect.fn("makeManagedServerProvider")(
           checkedAt: update.checkedAt,
         });
         // `applyUsageLimitsUpdate` hands back the same object when nothing
-        // moved, which is the common case for Codex's per-tick notification.
+        // moved, which is the common case for a per-tick notification.
         if (usageLimits === state.snapshot.usageLimits) {
           return [null, state] as const;
         }

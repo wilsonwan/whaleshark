@@ -75,7 +75,7 @@ const makeHarness = Effect.fn("ServerUsageTest.makeHarness")(function* (
           buckets: [
             {
               day: input.sinceDay,
-              provider: "codex",
+              provider: "claude",
               model: "custom-model",
               totals: {
                 uncachedInputTokens: 1_000_000,

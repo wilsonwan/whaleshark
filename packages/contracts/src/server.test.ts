@@ -17,8 +17,8 @@ const decodeUpsertKeybindingResult = Schema.decodeUnknownSync(ServerUpsertKeybin
 const decodeAvailableEditors = Schema.decodeUnknownSync(ServerConfig.fields.availableEditors);
 
 const baseProviderSnapshot = {
-  instanceId: "codex",
-  driver: "codex",
+  instanceId: "pi",
+  driver: "pi",
   enabled: true,
   installed: true,
   version: "1.0.0",
@@ -31,8 +31,8 @@ const baseProviderSnapshot = {
 describe("ServerProvider", () => {
   it("defaults capability arrays when decoding provider snapshots", () => {
     const parsed = decodeServerProvider({
-      instanceId: "codex",
-      driver: "codex",
+      instanceId: "pi",
+      driver: "pi",
       enabled: true,
       installed: true,
       version: "1.0.0",
@@ -54,8 +54,8 @@ describe("ServerProvider", () => {
 
   it("defaults one-click update support when decoding older advisory snapshots", () => {
     const parsed = decodeServerProvider({
-      instanceId: "codex",
-      driver: "codex",
+      instanceId: "pi",
+      driver: "pi",
       enabled: true,
       installed: true,
       version: "1.0.0",
@@ -69,7 +69,7 @@ describe("ServerProvider", () => {
         status: "behind_latest",
         currentVersion: "1.0.0",
         latestVersion: "1.0.1",
-        updateCommand: "npm install -g @openai/codex@latest",
+        updateCommand: "npm install -g @anthropic-ai/claude-code@latest",
         checkedAt: "2026-04-10T00:00:00.000Z",
         message: "Update available.",
       },
@@ -80,9 +80,9 @@ describe("ServerProvider", () => {
 
   it("decodes continuation group metadata", () => {
     const parsed = decodeServerProvider({
-      instanceId: "codex_personal",
-      driver: "codex",
-      continuation: { groupKey: "codex:home:/Users/julius/.codex" },
+      instanceId: "claude_personal",
+      driver: "pi",
+      continuation: { groupKey: "pi:home:/Users/julius/.claude" },
       enabled: true,
       installed: true,
       version: "1.0.0",
@@ -94,13 +94,13 @@ describe("ServerProvider", () => {
       models: [],
     });
 
-    expect(parsed.continuation?.groupKey).toBe("codex:home:/Users/julius/.codex");
+    expect(parsed.continuation?.groupKey).toBe("pi:home:/Users/julius/.claude");
   });
 
   it("decodes optional legacy model metadata", () => {
     const parsed = decodeServerProvider({
-      instanceId: "codex",
-      driver: "codex",
+      instanceId: "pi",
+      driver: "pi",
       enabled: true,
       installed: true,
       version: "1.0.0",

@@ -19,7 +19,7 @@ import {
 // optionDescriptors, so these tests use a single synthetic provider/model and
 // vary only the descriptor shape per scenario.
 
-const PROVIDER: ProviderDriverKind = ProviderDriverKind.make("codex");
+const PROVIDER: ProviderDriverKind = ProviderDriverKind.make("pi");
 const MODEL = "test-model";
 
 function selectDescriptor(
@@ -268,20 +268,17 @@ describe("getComposerProviderState", () => {
     );
   });
 
-  it.each(["codex", "claudeAgent", "pi"])(
-    "does not preserve unknown options for a missing %s model",
-    (provider) => {
-      const state = getComposerProviderState({
-        provider: ProviderDriverKind.make(provider),
-        model: "missing-model",
-        models: modelWith([]),
-        modelOptions: selections(["unknown", "value"]),
-        planModeEnabled: true,
-      });
+  it.each(["pi", "pi"])("does not preserve unknown options for a missing %s model", (provider) => {
+    const state = getComposerProviderState({
+      provider: ProviderDriverKind.make(provider),
+      model: "missing-model",
+      models: modelWith([]),
+      modelOptions: selections(["unknown", "value"]),
+      planModeEnabled: true,
+    });
 
-      expect(state.modelOptionsForDispatch).toBeUndefined();
-    },
-  );
+    expect(state.modelOptionsForDispatch).toBeUndefined();
+  });
 
   it("preserves explicit options while the catalog is empty", () => {
     const state = getComposerProviderState({
@@ -299,7 +296,7 @@ describe("getComposerProviderState", () => {
 
   it("validates options for a known model selected through a legacy alias", () => {
     const state = getComposerProviderState({
-      provider: ProviderDriverKind.make("claudeAgent"),
+      provider: ProviderDriverKind.make("pi"),
       model: "legacy-test-model",
       models: [
         {

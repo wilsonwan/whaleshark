@@ -48,7 +48,7 @@ const makeScope = (
   environmentId,
   threadId,
   providerSessionId: "provider-session-worktree-test",
-  providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+  providerInstanceId: ProviderInstanceId.make("pi"),
   capabilities,
   issuedAt: 1,
 });

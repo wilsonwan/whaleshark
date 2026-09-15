@@ -1923,14 +1923,12 @@ it.layer(
       yield* manager.open({
         ...openInput(),
         env: {
-          CODEX_HOME: "~/.codex-work",
           CLAUDE_CONFIG_DIR: "~/.claude-work",
           CUSTOM_ACCOUNT: "~/leave-this-value-alone",
         },
       });
 
       const environment = ptyAdapter.spawnInputs[0]?.env;
-      expect(environment?.CODEX_HOME).toMatch(/[\\/][.]codex-work$/);
       expect(environment?.CLAUDE_CONFIG_DIR).toMatch(/[\\/][.]claude-work$/);
       expect(environment?.CUSTOM_ACCOUNT).toBe("~/leave-this-value-alone");
     }),
@@ -2024,14 +2022,14 @@ it.layer(
 
   it.effect("resolves a provider instance environment before spawning", () =>
     Effect.gen(function* () {
-      const providerInstanceId = ProviderInstanceId.make("codex_work");
+      const providerInstanceId = ProviderInstanceId.make("claude_work");
       const { manager, ptyAdapter } = yield* createManager(5, {
         env: { T3CODE_SECRET: "server-only" },
         resolveProviderInstanceEnvironment: (requestedId, env) =>
           Effect.succeed({
             ...env,
             PROVIDER_SECRET: requestedId === providerInstanceId ? "secret-value" : "wrong",
-            CODEX_HOME: "/accounts/codex-work",
+            CLAUDE_CONFIG_DIR: "/accounts/claude-work",
           }),
       });
 
@@ -2040,7 +2038,7 @@ it.layer(
       );
 
       expect(ptyAdapter.spawnInputs[0]?.env.PROVIDER_SECRET).toBe("secret-value");
-      expect(ptyAdapter.spawnInputs[0]?.env.CODEX_HOME).toBe("/accounts/codex-work");
+      expect(ptyAdapter.spawnInputs[0]?.env.CLAUDE_CONFIG_DIR).toBe("/accounts/claude-work");
       expect(ptyAdapter.spawnInputs[0]?.env.CLIENT_FLAG).toBe("1");
       expect(ptyAdapter.spawnInputs[0]?.env.T3CODE_SECRET).toBeUndefined();
       expect(snapshot).not.toHaveProperty("env");
@@ -2073,7 +2071,7 @@ it.layer(
   it.effect("preserves the settings failure when provider environment resolution fails", () =>
     Effect.gen(function* () {
       const path = yield* Path.Path;
-      const providerInstanceId = ProviderInstanceId.make("codex_work");
+      const providerInstanceId = ProviderInstanceId.make("claude_work");
       const settingsCause = new Error("secret store read failed");
       const settingsError = new ServerSettingsError({
         settingsPath: "/test/settings.json",
@@ -2110,126 +2108,6 @@ it.layer(
     }),
   );
 
-  it.effect.each([
-    {
-      name: "Codex home",
-      driver: "codex",
-      variable: "CODEX_HOME",
-      config: { homePath: "/configured/codex" },
-      expectedHome: "/configured/codex",
-    },
-    {
-      name: "Codex shadow home",
-      driver: "codex",
-      variable: "CODEX_HOME",
-      config: { homePath: "/configured/codex", shadowHomePath: "/configured/codex-shadow" },
-      expectedHome: "/configured/codex-shadow",
-    },
-    {
-      name: "Claude home",
-      driver: "claudeAgent",
-      variable: "CLAUDE_CONFIG_DIR",
-      config: { homePath: "/configured/claude" },
-      expectedHome: "/configured/claude",
-    },
-  ])("prefers $name over the instance environment", ({ driver, variable, config, expectedHome }) =>
-    Effect.gen(function* () {
-      const path = yield* Path.Path;
-      const serverSettings = yield* ServerSettings.ServerSettingsService;
-      const environment = yield* TerminalManager.resolveProviderInstanceTerminalEnvironment({
-        serverSettings,
-        path,
-        rawProviderInstanceId: "configured_home",
-        env: undefined,
-      });
-
-      expect(environment[variable]).toBe(path.resolve(expectedHome));
-    }).pipe(
-      Effect.provide(
-        ServerSettings.layerTest({
-          providerInstances: {
-            [ProviderInstanceId.make("configured_home")]: {
-              driver: ProviderDriverKind.make(driver),
-              environment: [{ name: variable, value: "~/.environment-account", sensitive: false }],
-              config,
-            },
-          },
-        }),
-      ),
-    ),
-  );
-
-  it.effect("resolves the legacy Codex default instance", () =>
-    Effect.gen(function* () {
-      const path = yield* Path.Path;
-      const serverSettings = yield* ServerSettings.ServerSettingsService;
-      const environment = yield* TerminalManager.resolveProviderInstanceTerminalEnvironment({
-        serverSettings,
-        path,
-        rawProviderInstanceId: "codex",
-        env: undefined,
-      });
-
-      expect(environment.CODEX_HOME).toMatch(/[\\/][.]codex-legacy$/);
-    }).pipe(
-      Effect.provide(
-        ServerSettings.ServerSettingsService.layerTest({
-          providerInstances: {},
-          providers: { codex: { homePath: "~/.codex-legacy" } },
-        }),
-      ),
-    ),
-  );
-
-  it.effect("resolves the legacy Claude default instance", () =>
-    Effect.gen(function* () {
-      const path = yield* Path.Path;
-      const serverSettings = yield* ServerSettings.ServerSettingsService;
-      const environment = yield* TerminalManager.resolveProviderInstanceTerminalEnvironment({
-        serverSettings,
-        path,
-        rawProviderInstanceId: "claudeAgent",
-        env: undefined,
-      });
-
-      expect(environment.CLAUDE_CONFIG_DIR).toMatch(/[\\/][.]claude-legacy$/);
-    }).pipe(
-      Effect.provide(
-        ServerSettings.ServerSettingsService.layerTest({
-          providerInstances: {},
-          providers: { claudeAgent: { homePath: "~/.claude-legacy" } },
-        }),
-      ),
-    ),
-  );
-
-  it.effect("prefers an explicit default instance over legacy provider settings", () =>
-    Effect.gen(function* () {
-      const path = yield* Path.Path;
-      const serverSettings = yield* ServerSettings.ServerSettingsService;
-      const environment = yield* TerminalManager.resolveProviderInstanceTerminalEnvironment({
-        serverSettings,
-        path,
-        rawProviderInstanceId: "codex",
-        env: undefined,
-      });
-
-      expect(environment.CODEX_HOME).toMatch(/[\\/][.]codex-explicit$/);
-    }).pipe(
-      Effect.provide(
-        ServerSettings.ServerSettingsService.layerTest({
-          providers: { codex: { homePath: "~/.codex-legacy" } },
-          providerInstances: {
-            [ProviderInstanceId.make("codex")]: {
-              driver: "codex",
-              config: { homePath: "~/.codex-explicit" },
-            },
-          },
-        }),
-      ),
-    ),
-  );
-
   it.effect("keeps unknown provider instance ids unavailable after legacy hydration", () =>
     Effect.gen(function* () {
       const path = yield* Path.Path;
@@ -2237,20 +2115,20 @@ it.layer(
       const error = yield* TerminalManager.resolveProviderInstanceTerminalEnvironment({
         serverSettings,
         path,
-        rawProviderInstanceId: "codex_unknown",
+        rawProviderInstanceId: "unknown_instance",
         env: undefined,
       }).pipe(Effect.flip);
 
       expect(error).toMatchObject({
         _tag: "TerminalProviderInstanceNotFoundError",
-        providerInstanceId: "codex_unknown",
+        providerInstanceId: "unknown_instance",
       });
     }).pipe(Effect.provide(ServerSettings.ServerSettingsService.layerTest())),
   );
 
   it.effect("restarts a running terminal when the resolved provider environment changes", () =>
     Effect.gen(function* () {
-      const providerInstanceId = ProviderInstanceId.make("codex_work");
+      const providerInstanceId = ProviderInstanceId.make("claude_work");
       let providerSecret = "first-secret";
       const { manager, ptyAdapter } = yield* createManager(5, {
         resolveProviderInstanceEnvironment: () =>
@@ -2271,7 +2149,7 @@ it.layer(
     Effect.gen(function* () {
       const serverSettings = yield* ServerSettings.ServerSettingsService;
       const path = yield* Path.Path;
-      const providerInstanceId = ProviderInstanceId.make("codex_restart");
+      const providerInstanceId = ProviderInstanceId.make("claude_restart");
       const { manager, ptyAdapter, logsDir } = yield* createManager(2, {
         historyByteLimit: 8,
         resolveProviderInstanceEnvironment: (rawProviderInstanceId, env) =>
@@ -2282,12 +2160,12 @@ it.layer(
             env,
           }),
       });
-      const homePath = path.join(logsDir, "codex");
+      const homePath = path.join(logsDir, "claude");
       const updateSecret = (value: string) =>
         serverSettings.updateSettings({
           providerInstances: {
             [providerInstanceId]: {
-              driver: ProviderDriverKind.make("codex"),
+              driver: ProviderDriverKind.make("pi"),
               config: { homePath },
               environment: [{ name: "PROVIDER_SECRET", value, sensitive: true }],
             },
@@ -2320,7 +2198,6 @@ it.layer(
       expect(ptyAdapter.spawnInputs).toHaveLength(2);
       expect(ptyAdapter.spawnInputs[1]?.env).toMatchObject({
         PROVIDER_SECRET: "second-secret",
-        CODEX_HOME: homePath,
         CLIENT_FLAG: "1",
       });
       expect(restarted.history).toBe("");
@@ -2348,7 +2225,7 @@ it.layer(
 
   it.effect("attaches to a running provider terminal without resolving the provider again", () =>
     Effect.gen(function* () {
-      const providerInstanceId = ProviderInstanceId.make("codex_work");
+      const providerInstanceId = ProviderInstanceId.make("claude_work");
       let providerAvailable = true;
       const { manager, ptyAdapter } = yield* createManager(5, {
         resolveProviderInstanceEnvironment: (requestedId) =>

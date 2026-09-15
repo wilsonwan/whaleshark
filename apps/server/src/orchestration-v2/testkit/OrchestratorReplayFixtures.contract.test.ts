@@ -9,7 +9,7 @@ import { IdAllocatorV2, layer as idAllocatorLayer } from "../IdAllocator.ts";
 import { provideDeterministicTestRuntime } from "./DeterministicRuntime.ts";
 import { ORCHESTRATOR_REPLAY_FIXTURES } from "./fixtures/index.ts";
 import {
-  CODEX_MODEL_SELECTION,
+  CLAUDE_MODEL_SELECTION,
   materializeFixtureInput,
   type OrchestratorFixtureInput,
 } from "./fixtures/shared.ts";
@@ -37,8 +37,8 @@ describe("orchestrator replay fixture contract", () => {
             { type: "queue_message", text: "queued run" },
           ],
         },
-        driver: ProviderDriverKind.make("codex"),
-        modelSelection: CODEX_MODEL_SELECTION,
+        driver: ProviderDriverKind.make("pi"),
+        modelSelection: CLAUDE_MODEL_SELECTION,
       });
       const queuedCommand = materialized.commands.find(
         (command) => command.type === "message.dispatch" && command.text === "queued run",
@@ -64,8 +64,8 @@ describe("orchestrator replay fixture contract", () => {
               { type: "queue_message", text: "queued run 2" },
             ],
           },
-          driver: ProviderDriverKind.make("codex"),
-          modelSelection: CODEX_MODEL_SELECTION,
+          driver: ProviderDriverKind.make("pi"),
+          modelSelection: CLAUDE_MODEL_SELECTION,
         });
         const queueCommands = materialized.commands.filter(
           (command) =>
@@ -149,8 +149,8 @@ describe("orchestrator replay fixture contract", () => {
                 },
               ],
             },
-            driver: ProviderDriverKind.make("codex"),
-            modelSelection: CODEX_MODEL_SELECTION,
+            driver: ProviderDriverKind.make("pi"),
+            modelSelection: CLAUDE_MODEL_SELECTION,
           });
 
           const steeringDispatchIndex = materialized.steps.findIndex(
@@ -193,8 +193,8 @@ describe("orchestrator replay fixture contract", () => {
             { type: "queue_message", text: "replacement queued run" },
           ],
         },
-        driver: ProviderDriverKind.make("codex"),
-        modelSelection: CODEX_MODEL_SELECTION,
+        driver: ProviderDriverKind.make("pi"),
+        modelSelection: CLAUDE_MODEL_SELECTION,
       });
       const replacementQueueDispatchIndex = materialized.steps.findIndex(
         (step) =>
@@ -221,8 +221,8 @@ describe("orchestrator replay fixture contract", () => {
         fixtureInput: {
           steps: [{ type: "await_run_status", targetRunIndex: 1, status: "running" }],
         },
-        driver: ProviderDriverKind.make("codex"),
-        modelSelection: CODEX_MODEL_SELECTION,
+        driver: ProviderDriverKind.make("pi"),
+        modelSelection: CLAUDE_MODEL_SELECTION,
       });
       const threadId = materialized.projectionThreadIds[0];
       assert.isDefined(threadId);
@@ -252,8 +252,8 @@ describe("orchestrator replay fixture contract", () => {
         const materialized = yield* materializeFixtureInput({
           scenario: `run-index-after-${steeringType}`,
           fixtureInput,
-          driver: ProviderDriverKind.make("codex"),
-          modelSelection: CODEX_MODEL_SELECTION,
+          driver: ProviderDriverKind.make("pi"),
+          modelSelection: CLAUDE_MODEL_SELECTION,
         });
         const secondRunCommand = materialized.commands.find(
           (command) => command.type === "message.dispatch" && command.text === "second run",
@@ -385,18 +385,21 @@ describe("orchestrator replay fixture contract", () => {
       }),
   );
 
-  it.effect("keeps Codex fixture transcripts at the codex app-server boundary", () =>
+  it.effect("keeps Claude fixture transcripts at the claude agent-sdk boundary", () =>
     Effect.gen(function* () {
       for (const fixture of ORCHESTRATOR_REPLAY_FIXTURES) {
-        for (const provider of fixture.providers.filter((entry) => entry.driver === "codex")) {
+        for (const provider of fixture.providers.filter((entry) => entry.driver === "pi")) {
           const transcript = yield* readTranscript(provider.transcriptFile);
           const first = transcript.entries[0];
           const last = transcript.entries.at(-1);
 
-          assert.equal(transcript.protocol, "codex.app-server");
+          assert.equal(transcript.protocol, "claude-agent-sdk.query");
           assert.equal(first?.type, "expect_outbound");
           if (first?.type === "expect_outbound") {
-            assert.equal(first.label, "initialize");
+            assert.isTrue(
+              first.label?.startsWith("query.open") === true,
+              `${fixture.name}/${provider.driver} must open with a query.open frame`,
+            );
           }
           assert.deepEqual(last, {
             type: "runtime_exit",

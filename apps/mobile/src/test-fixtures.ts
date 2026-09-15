@@ -17,7 +17,7 @@ export function makeRawThreadShell(
   input: Partial<OrchestrationV2ThreadShell> = {},
 ): OrchestrationV2ThreadShell {
   const id = input.id ?? ThreadId.make("thread-test");
-  const providerInstanceId = input.providerInstanceId ?? ProviderInstanceId.make("codex");
+  const providerInstanceId = input.providerInstanceId ?? ProviderInstanceId.make("pi");
   const now = DateTime.makeUnsafe(DEFAULT_TIMESTAMP);
   return {
     id,

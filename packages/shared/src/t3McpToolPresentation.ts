@@ -114,7 +114,7 @@ function normalizeT3McpToolLabel(value: string): string {
 
 /**
  * ACP agents disagree on how the injected T3 server prefixes its tools:
- * `mcp__t3-code__x` (Claude/Cursor), `t3-code.x` (Codex), plus single
+ * `mcp__t3-code__x` (Claude/Cursor), `t3-code.x`, plus single
  * underscore, colon, slash, dash, and space separators seen from registry
  * agents. The prefix match is deliberately loose because the display-name
  * table below is the real gate; unknown tools stay on the generic renderer.

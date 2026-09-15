@@ -485,7 +485,7 @@ export function applyServerWelcomeEvent(
   current: EnvironmentServerWelcomeState,
   session: RpcSession,
   event: {
-    readonly type: "welcome" | "ready" | "legacyThreadMigration";
+    readonly type: "welcome" | "ready";
     readonly payload: unknown;
   },
 ): EnvironmentServerWelcomeState {
@@ -1048,18 +1048,7 @@ export function createServerEnvironmentAtoms<R, E>(
     }),
     configProjection,
     welcome,
-    legacyThreadMigration: createEnvironmentRpcSubscriptionAtomFamily(runtime, {
-      label: "environment-data:server:legacy-thread-migration",
-      tag: WS_METHODS.subscribeServerLifecycle,
-      transform: (stream) =>
-        stream.pipe(
-          Stream.filterMap((event) =>
-            event.type === "legacyThreadMigration"
-              ? Result.succeed(event.payload)
-              : Result.failVoid,
-          ),
-        ),
-    }),
+
     consumeResetCredit: createEnvironmentRpcCommand(runtime, {
       label: "environment-data:server:consume-reset-credit",
       tag: WS_METHODS.providerConsumeResetCredit,

@@ -768,7 +768,7 @@ describe("V2 session presentation", () => {
     const activeRootNodeId = NodeId.make("node-attempt-2-root");
     const supersededAttemptId = RunAttemptId.make("attempt-1");
     const activeAttemptId = RunAttemptId.make("attempt-2");
-    const providerInstanceId = ProviderInstanceId.make("codex-default");
+    const providerInstanceId = ProviderInstanceId.make("claude-default");
     const providerThreadId = ProviderThreadId.make("provider-thread-attempts");
     const attempts: ReadonlyArray<OrchestrationV2RunAttempt> = [
       {

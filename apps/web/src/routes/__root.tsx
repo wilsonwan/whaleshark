@@ -21,7 +21,7 @@ import { SshPasswordPromptDialog } from "../components/desktop/SshPasswordPrompt
 import { SnapShotCoordinator } from "../components/desktop/SnapShotCoordinator";
 import { DesktopAppActivationCoordinator } from "../components/desktop/DesktopAppActivationCoordinator";
 import { ProviderUpdateLaunchNotification } from "../components/ProviderUpdateLaunchNotification";
-import { LegacyThreadMigrationToast } from "../components/LegacyThreadMigrationToast";
+
 import { SlowRpcRequestToastCoordinator } from "../components/SlowRpcRequestToastCoordinator";
 import { ThemeEditorHost } from "../components/settings/ThemeEditorHost";
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
@@ -164,7 +164,7 @@ function RootRouteView() {
           <SnapShotCoordinator />
           <ConfirmDialogHost />
           <SlowRpcRequestToastCoordinator />
-          {primaryEnvironmentAuthenticated ? <LegacyThreadMigrationToast /> : null}
+
           {primaryEnvironmentAuthenticated ? (
             <EventRouter skipInitialBootstrapNavigation={returningFromWelcomeRef.current} />
           ) : null}

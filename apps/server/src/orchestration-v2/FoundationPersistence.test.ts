@@ -42,7 +42,7 @@ import * as Statement from "effect/unstable/sql/Statement";
 
 import { LIVE_STREAM_MAX_ITEMS, LiveStreamBufferError } from "../orchestration/LiveStreamBudget.ts";
 import { SqlitePersistenceMemory } from "../persistence/Layers/Sqlite.ts";
-import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import { CommandReceiptStoreV2, layer as commandReceiptStoreLayer } from "./CommandReceiptStore.ts";
 import { EffectOutboxV2, layer as effectOutboxLayer } from "./EffectOutbox.ts";
 import {
@@ -84,8 +84,8 @@ const TestLayer = Layer.mergeAll(
   projectionMaintenanceProvided,
 );
 
-const providerInstanceId = ProviderInstanceId.make("codex");
-const providerDriver = ProviderDriverKind.make("codex");
+const providerInstanceId = ProviderInstanceId.make("opencode");
+const providerDriver = ProviderDriverKind.make("opencode");
 const modelSelection = {
   instanceId: providerInstanceId,
   model: "gpt-5.4",
@@ -277,21 +277,10 @@ it.effect("keeps other database work runnable while discovering compaction candi
           'provider-session.detached', ${now}, 'server', '{}', '{}', 2
         FROM history
       `;
-      yield* sql`
-        WITH RECURSIVE history(n) AS (
-          SELECT 1 UNION ALL SELECT n + 1 FROM history WHERE n < 2001
-        )
-        INSERT INTO orchestration_command_receipts (
-          command_id, aggregate_kind, aggregate_id, accepted_at, result_sequence, status, command_type
-        )
-        SELECT 'retained:' || n, 'thread', 'thread:retained', ${now}, n, 'accepted', 'thread.create'
-        FROM history
-      `;
       const discoveryStarted = {
         events: yield* Deferred.make<void>(),
-        receipts: yield* Deferred.make<void>(),
       };
-      const queries = { events: 0, receipts: 0 };
+      const queries = { events: 0 };
       let finished = false;
       const tracer = Tracer.make({
         span(options) {
@@ -302,11 +291,7 @@ it.effect("keeps other database work runnable while discovering compaction candi
             const query = span.attributes.get("db.query.text");
             if (typeof query !== "string" || !query.trimStart().startsWith("SELECT")) return;
             if (query.includes("MAX(")) return;
-            const table = query.includes("FROM orchestration_command_receipts")
-              ? "receipts"
-              : query.includes("FROM orchestration_events")
-                ? "events"
-                : undefined;
+            const table = query.includes("FROM orchestration_events") ? "events" : undefined;
             if (table === undefined) return;
             queries[table] += 1;
             Deferred.doneUnsafe(discoveryStarted[table], Effect.void);
@@ -314,7 +299,7 @@ it.effect("keeps other database work runnable while discovering compaction candi
           return span;
         },
       });
-      const probes = yield* Effect.forEach(["events", "receipts"] as const, (table) =>
+      const probes = yield* Effect.forEach(["events"] as const, (table) =>
         Effect.gen(function* () {
           yield* Deferred.await(discoveryStarted[table]);
           const result = yield* sql<{ readonly responsive: number }>`SELECT 1 AS responsive`;
@@ -639,7 +624,7 @@ it.layer(TestLayer)("orchestration V2 foundation persistence", (it) => {
         status: "ready" as const,
         cwd: "/workspace/first",
         model: modelSelection.model,
-        capabilities: CodexProviderCapabilitiesV2,
+        capabilities: TestProviderCapabilitiesV2,
         createdAt: now,
         updatedAt: now,
         lastError: null,
@@ -688,14 +673,14 @@ it.layer(TestLayer)("orchestration V2 foundation persistence", (it) => {
     }),
   );
 
-  it.effect("compacts superseded state events, imported v1 events, and legacy receipts", () =>
+  it.effect("compacts superseded state events", () =>
     Effect.gen(function* () {
       const eventSink = yield* EventSinkV2;
       const maintenance = yield* ProjectionMaintenanceV2;
       const sql = yield* SqlClient.SqlClient;
       const projections = yield* ProjectionStoreV2;
       const now = yield* DateTime.now;
-      const nowIso = DateTime.formatIso(now);
+
       const threadId = ThreadId.make("thread:foundation-compact");
       const thread = makeThread(threadId, now);
       const messageId = MessageId.make("message:foundation-compact");
@@ -803,47 +788,10 @@ it.layer(TestLayer)("orchestration V2 foundation persistence", (it) => {
       });
       const beforeCompaction = yield* projections.getThreadProjection(threadId);
 
-      // A fully imported legacy thread: its v1 events and pre-migration
-      // receipts are dead weight; a still-pending import keeps its rows.
-      const importedV1ThreadId = "thread:foundation-compact-v1-imported";
-      const pendingV1ThreadId = "thread:foundation-compact-v1-pending";
-      const insertV1Event = (threadIdValue: string, version: number) => sql`
-        INSERT INTO orchestration_events (
-          event_id, aggregate_kind, stream_id, stream_version, event_type,
-          occurred_at, actor_kind, payload_json, metadata_json, application_event_version
-        )
-        VALUES (
-          ${`event:v1:${threadIdValue}:${version}`}, 'thread', ${threadIdValue}, ${version},
-          'thread.message-appended', ${nowIso}, 'user', '{}', '{}', 1
-        )
-      `;
-      yield* insertV1Event(importedV1ThreadId, 1);
-      yield* insertV1Event(importedV1ThreadId, 2);
-      yield* insertV1Event(pendingV1ThreadId, 1);
-      yield* sql`
-        INSERT INTO orchestration_v2_legacy_imports (
-          thread_id, source_updated_at, shell_imported_at, transcript_imported_at,
-          imported_message_count, last_error
-        )
-        VALUES
-          (${importedV1ThreadId}, ${nowIso}, ${nowIso}, ${nowIso}, 2, NULL),
-          (${pendingV1ThreadId}, ${nowIso}, ${nowIso}, NULL, 0, NULL)
-        ON CONFLICT(thread_id) DO NOTHING
-      `;
-      yield* sql`
-        INSERT INTO orchestration_command_receipts (
-          command_id, aggregate_kind, aggregate_id, accepted_at, result_sequence, status, command_type
-        )
-        VALUES
-          ('command:foundation-compact:legacy', 'thread', ${importedV1ThreadId}, ${nowIso}, 1, 'accepted', 'legacy'),
-          ('command:foundation-compact:pending', 'thread', ${pendingV1ThreadId}, ${nowIso}, 1, 'accepted', 'legacy')
-        ON CONFLICT(command_id) DO NOTHING
-      `;
-
       const summary = yield* maintenance.compactEventStore;
       // Superseded state spans several discovery pages. Both turn-item updates stay.
-      assert.isAtLeast(summary.deletedEventCount, 507);
-      assert.isAtLeast(summary.deletedReceiptCount, 1);
+      assert.isAtLeast(summary.deletedEventCount, 506);
+      assert.equal(summary.deletedReceiptCount, 0);
 
       const remaining = yield* sql<{ readonly event_id: string }>`
         SELECT event_id
@@ -862,27 +810,6 @@ it.layer(TestLayer)("orchestration V2 foundation persistence", (it) => {
           "event:foundation-compact:node-2",
           "event:foundation-compact:item-2",
         ],
-      );
-
-      const remainingV1 = yield* sql<{ readonly stream_id: string }>`
-        SELECT stream_id
-        FROM orchestration_events
-        WHERE application_event_version = 1
-          AND stream_id IN (${importedV1ThreadId}, ${pendingV1ThreadId})
-      `;
-      assert.deepEqual(
-        remainingV1.map((row) => row.stream_id),
-        [pendingV1ThreadId],
-      );
-
-      const remainingReceipts = yield* sql<{ readonly command_id: string }>`
-        SELECT command_id
-        FROM orchestration_command_receipts
-        WHERE command_id IN ('command:foundation-compact:legacy', 'command:foundation-compact:pending')
-      `;
-      assert.deepEqual(
-        remainingReceipts.map((row) => row.command_id),
-        ["command:foundation-compact:pending"],
       );
 
       // Replay across the deletion gaps must still produce a valid projection.
@@ -2299,19 +2226,19 @@ it.layer(TestLayer)("orchestration V2 foundation persistence", (it) => {
               id: providerThreadId,
               appThreadId: threadId,
               ownerNodeId: null,
-              driver: "codex",
+              driver: "opencode",
               providerInstanceId,
               providerSessionId: sessionId,
               status: "active",
               nativeThreadRef: {
-                driver: "codex",
+                driver: "opencode",
                 nativeId: "saved-native-thread",
                 strength: "strong",
               },
             },
           ],
           providerSessions: [
-            { id: sessionId, driver: "codex", providerInstanceId, status: "running" },
+            { id: sessionId, driver: "opencode", providerInstanceId, status: "running" },
           ],
           providerTurns: [{ providerThreadId, runAttemptId: attemptId, status: "running" }],
         } as unknown as OrchestrationV2ThreadProjection;

@@ -8,7 +8,6 @@ import type {
   ThreadPullRequestLink,
 } from "@t3tools/contracts";
 import {
-  isImportedAgentSessionMessageId,
   OrchestrationCheckpointSummary,
   OrchestrationMessage,
   OrchestrationSession,
@@ -206,7 +205,7 @@ function retainThreadMessagesAfterRevert(
 ): ReadonlyArray<OrchestrationMessage> {
   const retainedMessageIds = new Set<string>();
   for (const message of messages) {
-    if (message.role === "system" || isImportedAgentSessionMessageId(message.id)) {
+    if (message.role === "system") {
       retainedMessageIds.add(message.id);
       continue;
     }
@@ -216,10 +215,7 @@ function retainThreadMessagesAfterRevert(
   }
 
   const retainedUserCount = messages.filter(
-    (message) =>
-      message.role === "user" &&
-      !isImportedAgentSessionMessageId(message.id) &&
-      retainedMessageIds.has(message.id),
+    (message) => message.role === "user" && retainedMessageIds.has(message.id),
   ).length;
   const missingUserCount = Math.max(0, turnCount - retainedUserCount);
   if (missingUserCount > 0) {
@@ -242,10 +238,7 @@ function retainThreadMessagesAfterRevert(
   }
 
   const retainedAssistantCount = messages.filter(
-    (message) =>
-      message.role === "assistant" &&
-      !isImportedAgentSessionMessageId(message.id) &&
-      retainedMessageIds.has(message.id),
+    (message) => message.role === "assistant" && retainedMessageIds.has(message.id),
   ).length;
   const missingAssistantCount = Math.max(0, turnCount - retainedAssistantCount);
   if (missingAssistantCount > 0) {

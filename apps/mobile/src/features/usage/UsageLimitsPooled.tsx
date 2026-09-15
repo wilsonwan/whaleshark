@@ -25,7 +25,7 @@ import { environmentPresentations } from "../../state/presentation";
 import { ResetCredits } from "./UsageLimitsSection";
 import { useProviderColors } from "./usageProviders";
 
-const DRIVER_LABEL: Partial<Record<string, string>> = { codex: "Codex", claudeAgent: "Claude" };
+const DRIVER_LABEL: Partial<Record<string, string>> = { pi: "Claude" };
 const PACE_LABEL = { ahead: "Ahead of pace", on: "On pace", under: "Under pace" } as const;
 
 function accountName(account: LimitAccount) {
@@ -236,7 +236,7 @@ export function UsageLimitsSection({
             <PoolWindowCard
               key={`${window.kind}:${window.id}`}
               pool={window}
-              color={pool.driver === "claudeAgent" ? colors.claude : colors.codex}
+              color={pool.driver === "pi" ? colors.claude : colors.neutral}
               now={now}
               environmentIds={selectedEnvironmentIds === null ? null : [...selectedEnvironmentIds]}
             />

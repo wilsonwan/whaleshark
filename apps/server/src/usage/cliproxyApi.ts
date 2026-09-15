@@ -1,21 +1,20 @@
-import * as NodeCrypto from "node:crypto";
-
 import {
   ProviderDriverKind,
   UsageLimitSourceError,
-  type ProviderConsumeResetCreditResult,
   type UsageLimitSourceAccount,
   type UsageLimitSourceConfig,
+  type ServerProviderUsageWindow,
 } from "@t3tools/contracts";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http";
 
-import { codexPlanLabel } from "../provider/Layers/CodexProvider.ts";
-import { codexRateLimitsToLimits } from "../provider/Layers/codexUsageLimits.ts";
-import { claudeUsageResponseToLimits } from "../provider/Layers/claudeUsageLimits.ts";
-import { makeUnavailableUsageLimits } from "../provider/providerUsageLimits.ts";
+import {
+  clampPercent,
+  makeUnavailableUsageLimits,
+  makeUsageLimits,
+} from "../provider/providerUsageLimits.ts";
 
 const AuthFile = Schema.Struct({
   id: Schema.String,
@@ -32,20 +31,6 @@ const AuthFile = Schema.Struct({
 });
 const AuthFiles = Schema.Struct({ files: Schema.Array(AuthFile) });
 const ApiResponse = Schema.Struct({ status_code: Schema.Number, body: Schema.String });
-const CodexWindow = Schema.Struct({
-  used_percent: Schema.Number,
-  reset_at: Schema.optional(Schema.NullOr(Schema.Number)),
-  limit_window_seconds: Schema.optional(Schema.Number),
-});
-const CodexUsage = Schema.Struct({
-  plan_type: Schema.optional(Schema.String),
-  rate_limit: Schema.NullOr(
-    Schema.Struct({
-      primary_window: Schema.optional(Schema.NullOr(CodexWindow)),
-      secondary_window: Schema.optional(Schema.NullOr(CodexWindow)),
-    }),
-  ),
-});
 const ClaudeWindow = Schema.Struct({
   utilization: Schema.Number,
   resets_at: Schema.NullOr(Schema.String),
@@ -70,46 +55,59 @@ const ClaudeUsage = Schema.Struct({
     ),
   ),
 });
-const CreditList = Schema.Struct({
-  credits: Schema.Array(
-    Schema.Struct({
-      id: Schema.String,
-      status: Schema.String,
-      reset_type: Schema.String,
-      expires_at: Schema.String,
-    }),
-  ),
-});
 
 const decodeAuthFiles = Schema.decodeUnknownEffect(AuthFiles);
 const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
 const decodeApiResponse = Schema.decodeUnknownEffect(ApiResponse);
-const decodeCreditList = Schema.decodeUnknownEffect(Schema.fromJsonString(CreditList));
 const decodeClaudeUsage = Schema.decodeUnknownEffect(Schema.fromJsonString(ClaudeUsage));
-const decodeCodexUsage = Schema.decodeUnknownEffect(Schema.fromJsonString(CodexUsage));
-const isUsageLimitSourceError = Schema.is(UsageLimitSourceError);
-const decodeConsumeResponse = Schema.decodeUnknownEffect(
-  Schema.fromJsonString(
-    Schema.Struct({
-      code: Schema.Literals(["reset", "nothing_to_reset", "no_credit", "already_redeemed"]),
-    }),
-  ),
-);
 
-const CODEX_BASE = "https://chatgpt.com/backend-api/wham";
-const CREDIT_URL = `${CODEX_BASE}/rate-limit-reset-credits`;
-
-// UUIDv5 per account and credit also deduplicates retries across T3 environments.
-export function creditRedeemRequestId(accountId: string, creditId: string): string {
-  const bytes = NodeCrypto.createHash("sha1")
-    .update(Buffer.from("6f1c2a9e2d4b4c1e9a7f3b8d5e0c1a42", "hex"))
-    .update(`${accountId}:${creditId}`)
-    .digest()
-    .subarray(0, 16);
-  bytes[6] = (bytes[6]! & 0x0f) | 0x50;
-  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
-  const hex = bytes.toString("hex");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+function makeCliproxyUsageLimits(
+  checkedAt: string,
+  usage: typeof ClaudeUsage.Type,
+): ReturnType<typeof makeUsageLimits> {
+  const windows: ServerProviderUsageWindow[] = [];
+  const fiveHour = usage.five_hour;
+  if (fiveHour?.utilization !== undefined) {
+    windows.push({
+      id: "five_hour",
+      kind: "session",
+      label: "Session",
+      windowDurationMins: 5 * 60,
+      usedPercent: clampPercent(fiveHour.utilization),
+      ...(fiveHour.resets_at ? { resetsAt: fiveHour.resets_at } : {}),
+    });
+  }
+  const sevenDay = usage.seven_day;
+  if (sevenDay?.utilization !== undefined) {
+    windows.push({
+      id: "seven_day",
+      kind: "weekly",
+      label: "Weekly",
+      windowDurationMins: 7 * 24 * 60,
+      usedPercent: clampPercent(sevenDay.utilization),
+      ...(sevenDay.resets_at ? { resetsAt: sevenDay.resets_at } : {}),
+    });
+  }
+  for (const limit of usage.limits ?? []) {
+    const model = limit.scope?.model?.display_name;
+    if (
+      limit.kind !== "weekly_scoped" ||
+      model === undefined ||
+      typeof limit.percent !== "number"
+    ) {
+      continue;
+    }
+    const id = `seven_day_${model.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`;
+    windows.push({
+      id,
+      kind: "weekly",
+      label: `Weekly · ${model}`,
+      windowDurationMins: 7 * 24 * 60,
+      usedPercent: clampPercent(limit.percent),
+      ...(limit.resets_at ? { resetsAt: limit.resets_at } : {}),
+    });
+  }
+  return makeUsageLimits({ checkedAt, windows });
 }
 
 export const makeCliproxyApi = Effect.gen(function* () {
@@ -151,18 +149,7 @@ export const makeCliproxyApi = Effect.gen(function* () {
     url: string,
     data?: unknown,
   ) {
-    const header =
-      account.provider === "codex"
-        ? {
-            Authorization: "Bearer $TOKEN$",
-            "Content-Type": "application/json",
-            "OpenAI-Beta": "codex-1",
-            Originator: "Codex Desktop",
-            ...(account.id_token?.chatgpt_account_id
-              ? { "Chatgpt-Account-Id": account.id_token.chatgpt_account_id }
-              : {}),
-          }
-        : { Authorization: "Bearer $TOKEN$", "anthropic-beta": "oauth-2025-04-20" };
+    const header = { Authorization: "Bearer $TOKEN$", "anthropic-beta": "oauth-2025-04-20" };
     const raw = yield* management(config, "api-call", {
       auth_index: account.auth_index,
       method: data === undefined ? "GET" : "POST",
@@ -179,23 +166,6 @@ export const makeCliproxyApi = Effect.gen(function* () {
     return response.body;
   });
 
-  const credits = Effect.fn("CliproxyApi.credits")(function* (
-    config: UsageLimitSourceConfig,
-    account: typeof AuthFile.Type,
-  ) {
-    const body = yield* apiCall(config, account, CREDIT_URL);
-    const response = yield* decodeCreditList(body);
-    const now = DateTime.toEpochMillis(yield* DateTime.now);
-    return response.credits
-      .filter(
-        (credit) =>
-          credit.reset_type === "codex_rate_limits" &&
-          credit.status === "available" &&
-          Date.parse(credit.expires_at) > now,
-      )
-      .toSorted((a, b) => Date.parse(a.expires_at) - Date.parse(b.expires_at));
-  });
-
   const readAccount = Effect.fn("CliproxyApi.readAccount")(function* (
     config: UsageLimitSourceConfig,
     account: typeof AuthFile.Type,
@@ -203,81 +173,16 @@ export const makeCliproxyApi = Effect.gen(function* () {
     const checkedAt = DateTime.formatIso(yield* DateTime.now);
     const base = {
       id: account.id,
-      driver: ProviderDriverKind.make(account.provider === "codex" ? "codex" : "claudeAgent"),
+      driver: ProviderDriverKind.make("pi"),
       ...(account.email ? { email: account.email } : {}),
     };
     const read = Effect.gen(function* () {
-      if (account.provider === "claude") {
-        const body = yield* apiCall(config, account, "https://api.anthropic.com/api/oauth/usage");
-        const usage = yield* decodeClaudeUsage(body);
-        const model_scoped = (usage.limits ?? []).flatMap((limit) =>
-          limit.kind === "weekly_scoped" && limit.scope?.model && typeof limit.percent === "number"
-            ? [
-                {
-                  display_name: limit.scope.model.display_name,
-                  utilization: limit.percent,
-                  resets_at: limit.resets_at ?? null,
-                },
-              ]
-            : [],
-        );
-        return {
-          ...base,
-          plan: "Claude Subscription",
-          usageLimits: claudeUsageResponseToLimits({
-            checkedAt,
-            response: {
-              rate_limits_available: true,
-              rate_limits: {
-                five_hour: usage.five_hour ?? null,
-                seven_day: usage.seven_day ?? null,
-                model_scoped,
-              },
-            },
-          }).limits,
-        };
-      }
-      const body = yield* apiCall(config, account, `${CODEX_BASE}/usage`);
-      const usage = yield* decodeCodexUsage(body);
-      const toWindow = (window: typeof CodexWindow.Type | null | undefined) =>
-        window
-          ? {
-              usedPercent: window.used_percent,
-              resetsAt: window.reset_at ?? null,
-              ...(window.limit_window_seconds === undefined
-                ? {}
-                : { windowDurationMins: window.limit_window_seconds / 60 }),
-            }
-          : null;
-      // A credits outage must not hide successfully fetched quota windows.
-      const available = yield* credits(config, account).pipe(Effect.orElseSucceed(() => undefined));
-      const next = available?.[0];
+      const body = yield* apiCall(config, account, "https://api.anthropic.com/api/oauth/usage");
+      const usage = yield* decodeClaudeUsage(body);
       return {
         ...base,
-        plan: codexPlanLabel(usage.plan_type ?? account.id_token?.chatgpt_plan_type),
-        usageLimits: {
-          ...codexRateLimitsToLimits({
-            checkedAt,
-            snapshot: {
-              planType: usage.plan_type ?? null,
-              primary: toWindow(usage.rate_limit?.primary_window),
-              secondary: toWindow(usage.rate_limit?.secondary_window),
-            },
-          }),
-          ...(available
-            ? {
-                resetCredits: {
-                  availableCount: available.length,
-                  ...(next
-                    ? {
-                        nextCreditId: next.id,
-                        nextExpiresAt: DateTime.formatIso(DateTime.makeUnsafe(next.expires_at)),
-                      }
-                    : {}),
-                },
-              }
-            : {}),
-        },
+        plan: "Claude Subscription",
+        usageLimits: makeCliproxyUsageLimits(checkedAt, usage),
       };
     });
     return yield* read.pipe(
@@ -301,66 +206,11 @@ export const makeCliproxyApi = Effect.gen(function* () {
       ),
     );
     return yield* Effect.forEach(
-      accounts.filter(
-        (account) =>
-          !account.disabled && (account.provider === "codex" || account.provider === "claude"),
-      ),
+      accounts.filter((account) => !account.disabled && account.provider === "claude"),
       (account) => readAccount(config, account),
       { concurrency: 4 },
     );
   });
 
-  const consume = Effect.fn("CliproxyApi.consume")(function* (
-    config: UsageLimitSourceConfig,
-    accountId: string,
-    creditId: string,
-  ): Effect.fn.Return<ProviderConsumeResetCreditResult, UsageLimitSourceError> {
-    const operation = Effect.gen(function* () {
-      const account = (yield* authFiles(config)).find((account) => account.id === accountId);
-      if (!account || account.disabled || account.provider !== "codex") {
-        return yield* new UsageLimitSourceError({
-          detail: "The Codex hub account is missing or disabled.",
-        });
-      }
-      const body = yield* apiCall(config, account, `${CREDIT_URL}/consume`, {
-        redeem_request_id: creditRedeemRequestId(
-          account.id_token?.chatgpt_account_id ?? account.id,
-          creditId,
-        ),
-        credit_id: creditId,
-      });
-      const response = yield* decodeConsumeResponse(body);
-      const outcome = (
-        {
-          reset: "reset",
-          nothing_to_reset: "nothingToReset",
-          no_credit: "noCredit",
-          already_redeemed: "alreadyRedeemed",
-        } as const
-      )[response.code];
-      if (outcome !== "reset" && outcome !== "alreadyRedeemed") return { outcome };
-      const cleared = yield* management(config, "reset-quota", {
-        auth_index: account.auth_index,
-      }).pipe(Effect.result);
-      return {
-        outcome,
-        ...(cleared._tag === "Failure"
-          ? {
-              warning:
-                "Credit redeemed, but the hub cooldown could not be cleared. Routing may resume after its cooldown expires.",
-            }
-          : {}),
-      } as const;
-    });
-    return yield* operation.pipe(
-      Effect.mapError((error) =>
-        isUsageLimitSourceError(error)
-          ? error
-          : new UsageLimitSourceError({
-              detail: "The hub returned an unexpected reset-credit response.",
-            }),
-      ),
-    );
-  });
-  return { readAccounts, consume };
+  return { readAccounts };
 });

@@ -289,7 +289,7 @@ describe("promptStashStore", () => {
     writePromptStashStorageForTest(
       JSON.stringify({
         version: 1,
-        state: { queuesByScopeKey: { "provider:claudeAgent": [] } },
+        state: { queuesByScopeKey: { "provider:pi": [] } },
       }),
     );
     expect(usePromptStashStore.getState().entries).toEqual([]);

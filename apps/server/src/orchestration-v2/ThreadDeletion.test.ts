@@ -19,14 +19,14 @@ import {
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 
-import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import { IdAllocatorV2, layer as idAllocatorLayer } from "./IdAllocator.ts";
 import { applyToProjection, emptyProjection } from "./ProjectionStore.ts";
 import { planThreadDeletion } from "./ThreadDeletion.ts";
 
 const threadId = ThreadId.make("thread:delete-plan");
-const providerInstanceId = ProviderInstanceId.make("codex");
-const driver = ProviderDriverKind.make("codex");
+const providerInstanceId = ProviderInstanceId.make("opencode");
+const driver = ProviderDriverKind.make("opencode");
 const providerThreadId = ProviderThreadId.make("provider-thread:delete-plan");
 const modelSelection = { instanceId: providerInstanceId, model: "gpt-5.4" };
 const createdAt = DateTime.makeUnsafe("2026-09-01T00:00:00.000Z");
@@ -237,7 +237,7 @@ it.effect("queues provider and resource cleanup and preserves an earlier deletio
         status: status === "running" ? "running" : status === "stopped" ? "stopped" : "error",
         cwd: "/workspace/feature",
         model: null,
-        capabilities: CodexProviderCapabilitiesV2,
+        capabilities: TestProviderCapabilitiesV2,
         createdAt,
         updatedAt: createdAt,
         lastError: null,

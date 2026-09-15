@@ -16,7 +16,6 @@ import * as Schema from "effect/Schema";
 import { OrchestrationEngineService } from "../orchestration/Services/OrchestrationEngine.ts";
 import { EventSinkV2 } from "../orchestration-v2/EventSink.ts";
 import { IdAllocatorV2 } from "../orchestration-v2/IdAllocator.ts";
-import { LegacyV1ThreadImporter } from "../orchestration-v2/LegacyV1ThreadImporter.ts";
 import { ProjectionStoreV2 } from "../orchestration-v2/ProjectionStore.ts";
 import {
   ThreadCommandExecutor,
@@ -135,7 +134,6 @@ export const make = Effect.gen(function* () {
   const threadProjections = yield* ProjectionStoreV2;
   const threadEvents = yield* EventSinkV2;
   const idAllocator = yield* IdAllocatorV2;
-  const legacyImporter = yield* LegacyV1ThreadImporter;
   const threadCommands = yield* ThreadCommandExecutor;
 
   const toProject = (
@@ -409,7 +407,6 @@ export const make = Effect.gen(function* () {
             .withLock(
               thread.id,
               Effect.gen(function* () {
-                yield* legacyImporter.ensureTranscript(thread.id);
                 const projection = yield* threadProjections.getThreadProjection(thread.id);
                 if (
                   projection.thread.deletedAt !== null ||

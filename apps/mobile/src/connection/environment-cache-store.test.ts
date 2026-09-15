@@ -20,7 +20,7 @@ import { make } from "./environment-cache-store";
 const ENVIRONMENT_ID = EnvironmentId.make("environment-1");
 const PROJECT_ID = ProjectId.make("project-1");
 const THREAD_ID = ThreadId.make("thread-1");
-const PROVIDER_INSTANCE_ID = ProviderInstanceId.make("codex");
+const PROVIDER_INSTANCE_ID = ProviderInstanceId.make("pi");
 const NOW = DateTime.makeUnsafe("2026-07-29T12:00:00.000Z");
 const SHELL_SNAPSHOT: OrchestrationV2ShellSnapshot = {
   schemaVersion: 1,

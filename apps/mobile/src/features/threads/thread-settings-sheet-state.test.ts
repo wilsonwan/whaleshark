@@ -14,17 +14,17 @@ function modelOption(
   options: ReadonlyArray<ProviderOptionSelection> = [],
 ): ModelOption {
   return {
-    key: `codex:${model}`,
+    key: `pi:${model}`,
     label: model,
     subtitle: "",
-    providerKey: "codex",
-    providerLabel: "Codex",
-    providerDriver: "codex",
+    providerKey: "pi",
+    providerLabel: "Claude",
+    providerDriver: "pi",
     isDefault: false,
     isLegacy: false,
     capabilities: null,
     selection: {
-      instanceId: ProviderInstanceId.make("codex"),
+      instanceId: ProviderInstanceId.make("pi"),
       model,
       options,
     },
@@ -35,9 +35,11 @@ describe("thread settings sheet state", () => {
   it("matches visible model and provider terms", () => {
     const model = modelOption("gpt-next");
 
-    expect(modelMatchesCatalogQuery({ model, providerLabel: "Codex", query: "NEXT" })).toBe(true);
-    expect(modelMatchesCatalogQuery({ model, providerLabel: "Codex", query: "codex" })).toBe(true);
-    expect(modelMatchesCatalogQuery({ model, providerLabel: "Codex", query: "claude" })).toBe(
+    expect(modelMatchesCatalogQuery({ model, providerLabel: "Claude", query: "NEXT" })).toBe(true);
+    expect(modelMatchesCatalogQuery({ model, providerLabel: "Claude", query: "claude" })).toBe(
+      true,
+    );
+    expect(modelMatchesCatalogQuery({ model, providerLabel: "Claude", query: "opencode" })).toBe(
       false,
     );
   });
@@ -46,7 +48,7 @@ describe("thread settings sheet state", () => {
     expect(
       modelMatchesCatalogQuery({
         model: modelOption("gpt-next"),
-        providerLabel: "Codex",
+        providerLabel: "Claude",
         query: "   ",
       }),
     ).toBe(true);
@@ -103,7 +105,7 @@ describe("thread settings sheet state", () => {
 
   it("cannot save a staged model after sign-out removes it from the catalog", () => {
     const pending = modelOption("gemini-native");
-    const group = { providerKey: "codex", providerLabel: "Codex", models: [pending] };
+    const group = { providerKey: "pi", providerLabel: "Claude", models: [pending] };
 
     expect(canCommitPendingModel(pending, [group])).toBe(true);
     expect(canCommitPendingModel(pending, [])).toBe(false);

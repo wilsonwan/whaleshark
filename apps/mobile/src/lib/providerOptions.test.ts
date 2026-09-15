@@ -4,7 +4,7 @@ import type { ModelCapabilities } from "@t3tools/contracts";
 
 import { applyProviderOptionSelection, resolveProviderOptionDescriptors } from "./providerOptions";
 
-const CODEX_CAPABILITIES: ModelCapabilities = {
+const SELECT_CAPABILITIES: ModelCapabilities = {
   optionDescriptors: [
     {
       id: "reasoningEffort",
@@ -32,7 +32,7 @@ const CODEX_CAPABILITIES: ModelCapabilities = {
 describe("mobile provider options", () => {
   it("updates generic select options without knowing provider-specific ids", () => {
     const descriptors = resolveProviderOptionDescriptors({
-      capabilities: CODEX_CAPABILITIES,
+      capabilities: SELECT_CAPABILITIES,
       selections: undefined,
     });
 

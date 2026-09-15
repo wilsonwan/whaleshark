@@ -33,7 +33,7 @@ const TestLayer = OrchestrationProjectionSnapshotQueryLive.pipe(
   Layer.provide(NodeServices.layer),
 );
 
-it.effect("search uses v2 visibility while legacy transcripts are still lazy", () =>
+it.effect("search uses current visibility and ignores orphaned messages", () =>
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient;
     const query = yield* ProjectionSnapshotQuery;
@@ -53,21 +53,21 @@ it.effect("search uses v2 visibility while legacy transcripts are still lazy", (
         interaction_mode, branch, worktree_path, latest_turn_id, created_at,
         updated_at, archived_at, settled_override, settled_at, deleted_at
       ) VALUES
-        ('thread:active', 'project:search', 'Active', '{"instanceId":"codex","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
-        ('thread:archived', 'project:search', 'Archived', '{"instanceId":"codex","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
-        ('thread:deleted', 'project:search', 'Deleted', '{"instanceId":"codex","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
-        ('thread:assistant', 'project:search', 'Assistant', '{"instanceId":"codex","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, 'turn:assistant', ${now}, ${now}, NULL, NULL, NULL, NULL)
+        ('thread:active', 'project:search', 'Active', '{"instanceId":"pi","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
+        ('thread:archived', 'project:search', 'Archived', '{"instanceId":"pi","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
+        ('thread:deleted', 'project:search', 'Deleted', '{"instanceId":"pi","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
+        ('thread:assistant', 'project:search', 'Assistant', '{"instanceId":"pi","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, 'turn:assistant', ${now}, ${now}, NULL, NULL, NULL, NULL)
     `;
     yield* sql`
       INSERT INTO projection_thread_messages (
         message_id, thread_id, turn_id, role, text, attachments_json,
         is_streaming, created_at, updated_at
       ) VALUES
-        ('message:active', 'thread:active', NULL, 'user', 'migration needle active', '[]', 0, ${now}, ${now}),
-        ('message:archived', 'thread:archived', NULL, 'user', 'migration needle archived', '[]', 0, ${now}, ${now}),
-        ('message:deleted', 'thread:deleted', NULL, 'user', 'migration needle deleted', '[]', 0, ${now}, ${now}),
-        ('message:orphan-assistant', 'thread:assistant', NULL, 'assistant', 'migration needle orphan', '[]', 0, ${now}, ${now}),
-        ('message:assistant', 'thread:assistant', 'turn:assistant', 'assistant', 'migration needle answer', '[]', 0, ${now}, ${now})
+        ('message:active', 'thread:active', NULL, 'user', 'visibility needle active', '[]', 0, ${now}, ${now}),
+        ('message:archived', 'thread:archived', NULL, 'user', 'visibility needle archived', '[]', 0, ${now}, ${now}),
+        ('message:deleted', 'thread:deleted', NULL, 'user', 'visibility needle deleted', '[]', 0, ${now}, ${now}),
+        ('message:orphan-assistant', 'thread:assistant', NULL, 'assistant', 'visibility needle orphan', '[]', 0, ${now}, ${now}),
+        ('message:assistant', 'thread:assistant', 'turn:assistant', 'assistant', 'visibility needle answer', '[]', 0, ${now}, ${now})
     `;
     yield* sql`
       INSERT INTO projection_turns (
@@ -85,17 +85,17 @@ it.effect("search uses v2 visibility while legacy transcripts are still lazy", (
         runtime_mode, interaction_mode, active_provider_thread_id, created_at,
         updated_at, archived_at, deleted_at, payload_json
       ) VALUES
-        ('thread:active', 'project:search', 'Active', 'codex', 'codex', 'full-access', 'default', NULL, ${now}, ${now}, NULL, NULL, '{}'),
-        ('thread:archived', 'project:search', 'Archived', 'codex', 'codex', 'full-access', 'default', NULL, ${now}, ${now}, ${now}, NULL, '{}'),
-        ('thread:deleted', 'project:search', 'Deleted', 'codex', 'codex', 'full-access', 'default', NULL, ${now}, ${now}, NULL, ${now}, '{}')
+        ('thread:active', 'project:search', 'Active', 'pi', 'pi', 'full-access', 'default', NULL, ${now}, ${now}, NULL, NULL, '{}'),
+        ('thread:archived', 'project:search', 'Archived', 'pi', 'pi', 'full-access', 'default', NULL, ${now}, ${now}, ${now}, NULL, '{}'),
+        ('thread:deleted', 'project:search', 'Deleted', 'pi', 'pi', 'full-access', 'default', NULL, ${now}, ${now}, NULL, ${now}, '{}')
     `;
 
-    const result = yield* query.searchThreads({ query: "migration needle", limit: 20 });
+    const result = yield* query.searchThreads({ query: "visibility needle", limit: 20 });
     assert.deepEqual(
       result.matches.map((match) => [match.threadId, match.source, match.snippet]),
       [
-        ["thread:active", "user", "migration needle active"],
-        ["thread:assistant", "assistant", "migration needle answer"],
+        ["thread:active", "user", "visibility needle active"],
+        ["thread:assistant", "assistant", "visibility needle answer"],
       ],
     );
   }).pipe(Effect.provide(TestLayer)),

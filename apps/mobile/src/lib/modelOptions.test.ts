@@ -17,22 +17,22 @@ describe("mobile model options", () => {
     const config = {
       providers: [
         {
-          instanceId: "codex",
-          driver: "codex",
-          displayName: "Codex",
+          instanceId: "pi",
+          driver: "pi",
+          displayName: "Claude",
           enabled: true,
           installed: true,
           auth: { status: "authenticated" },
           models: [
             {
-              slug: "gpt-5.6-sol",
-              name: "GPT-5.6 Sol",
+              slug: "claude-fable-5-1",
+              name: "Claude Fable 5.1",
               isCustom: false,
               capabilities: null,
             },
             {
-              slug: "gpt-5.4",
-              name: "GPT-5.4",
+              slug: "claude-opus-4-1",
+              name: "Claude Opus 4.1",
               isCustom: false,
               isLegacy: true,
               capabilities: null,
@@ -44,11 +44,16 @@ describe("mobile model options", () => {
 
     expect(groupByProvider(buildModelOptions(config, null))).toMatchObject([
       {
-        providerKey: "codex",
-        providerLabel: "Codex",
+        providerKey: "pi",
+        providerLabel: "Claude",
         models: [
-          { key: "codex:gpt-5.6-sol", label: "GPT-5.6 Sol", subtitle: "", isLegacy: false },
-          { key: "codex:gpt-5.4", label: "GPT-5.4", isLegacy: true },
+          {
+            key: "pi:claude-fable-5-1",
+            label: "Claude Fable 5.1",
+            subtitle: "",
+            isLegacy: false,
+          },
+          { key: "pi:claude-opus-4-1", label: "Claude Opus 4.1", isLegacy: true },
         ],
       },
     ]);
@@ -145,16 +150,16 @@ describe("mobile model options", () => {
     const config = {
       providers: [
         {
-          instanceId: "codex",
-          driver: "codex",
-          displayName: "Codex",
+          instanceId: "pi",
+          driver: "pi",
+          displayName: "Claude",
           enabled: true,
           installed: true,
           auth: { status: "authenticated" },
           models: [
             {
-              slug: "gpt-test",
-              name: "GPT Test",
+              slug: "claude-test",
+              name: "Claude Test",
               isCustom: false,
               capabilities: {
                 optionDescriptors: [
@@ -177,16 +182,16 @@ describe("mobile model options", () => {
     } as unknown as ServerConfig;
 
     const [option] = buildModelOptions(config, {
-      instanceId: ProviderInstanceId.make("codex"),
-      model: "gpt-test",
+      instanceId: ProviderInstanceId.make("pi"),
+      model: "claude-test",
     });
 
     expect(option?.capabilities?.optionDescriptors?.[0]?.id).toBe("serviceTier");
     expect(option?.selection.options).toBeUndefined();
 
     const [explicitOption] = buildModelOptions(config, {
-      instanceId: ProviderInstanceId.make("codex"),
-      model: "gpt-test",
+      instanceId: ProviderInstanceId.make("pi"),
+      model: "claude-test",
       options: [{ id: "serviceTier", value: "priority" }],
     });
     expect(explicitOption?.selection.options).toEqual([{ id: "serviceTier", value: "priority" }]);
@@ -196,16 +201,16 @@ describe("mobile model options", () => {
     const config = {
       providers: [
         {
-          instanceId: "codex",
-          driver: "codex",
+          instanceId: "pi",
+          driver: "pi",
           enabled: true,
           installed: true,
           auth: { status: "authenticated" },
           models: [],
         },
         {
-          instanceId: "claudeAgent",
-          driver: "claudeAgent",
+          instanceId: "opencode",
+          driver: "opencode",
           enabled: false,
           installed: true,
           auth: { status: "authenticated" },
@@ -215,16 +220,16 @@ describe("mobile model options", () => {
     } as unknown as ServerConfig;
 
     const usable = {
-      instanceId: ProviderInstanceId.make("codex"),
-      model: "gpt-5.6-sol",
+      instanceId: ProviderInstanceId.make("pi"),
+      model: "xai/grok-4.6",
     };
     const disabled = {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("opencode"),
       model: "claude-sonnet-5",
     };
     const removed = {
-      instanceId: ProviderInstanceId.make("codex_personal"),
-      model: "gpt-5.6-sol",
+      instanceId: ProviderInstanceId.make("pi_personal"),
+      model: "xai/grok-4.6",
     };
 
     expect(resolveSelectableModelSelection(config, usable)).toBe(usable);
@@ -275,17 +280,22 @@ describe("mobile model options", () => {
     const config = {
       providers: [
         {
-          instanceId: "codex",
-          driver: "codex",
-          displayName: "Codex",
+          instanceId: "pi",
+          driver: "pi",
+          displayName: "Claude",
           enabled: true,
           installed: true,
           auth: { status: "authenticated" },
           models: [
-            { slug: "gpt-5.6-sol", name: "GPT-5.6 Sol", isCustom: false, capabilities: null },
             {
-              slug: "gpt-5.4",
-              name: "GPT-5.4",
+              slug: "claude-fable-5-1",
+              name: "Claude Fable 5.1",
+              isCustom: false,
+              capabilities: null,
+            },
+            {
+              slug: "claude-opus-4-1",
+              name: "Claude Opus 4.1",
               isCustom: false,
               isLegacy: true,
               capabilities: null,
@@ -295,8 +305,14 @@ describe("mobile model options", () => {
       ],
     } as unknown as ServerConfig;
 
-    const current = { instanceId: ProviderInstanceId.make("codex"), model: "gpt-5.6-sol" };
-    const legacy = { instanceId: ProviderInstanceId.make("codex"), model: "gpt-5.4" };
+    const current = {
+      instanceId: ProviderInstanceId.make("pi"),
+      model: "claude-fable-5-1",
+    };
+    const legacy = {
+      instanceId: ProviderInstanceId.make("pi"),
+      model: "claude-opus-4-1",
+    };
 
     expect(resolveDefaultableModelSelection(config, current)).toBe(current);
     // A legacy last-used selection falls through to the provider default.
@@ -306,11 +322,11 @@ describe("mobile model options", () => {
   });
 
   it("resolves new tasks from draft, project, sticky, then provider defaults", () => {
-    const draft = { instanceId: ProviderInstanceId.make("codex"), model: "draft" };
-    const project = { instanceId: ProviderInstanceId.make("codex"), model: "project" };
-    const sticky = { instanceId: ProviderInstanceId.make("codex"), model: "sticky" };
+    const draft = { instanceId: ProviderInstanceId.make("pi"), model: "draft" };
+    const project = { instanceId: ProviderInstanceId.make("pi"), model: "project" };
+    const sticky = { instanceId: ProviderInstanceId.make("pi"), model: "sticky" };
     const providerDefault = {
-      selection: { instanceId: ProviderInstanceId.make("codex"), model: "default" },
+      selection: { instanceId: ProviderInstanceId.make("pi"), model: "default" },
       isDefault: true,
     } as ModelOption;
     const resolve = (

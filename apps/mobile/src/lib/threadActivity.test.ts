@@ -177,13 +177,13 @@ describe("buildThreadFeed", () => {
     });
   });
 
-  it("adds local feedback messages to an otherwise server-authored feed", () => {
+  it("adds local messages to an otherwise server-authored feed", () => {
     const feed = buildThreadFeed([], {
       localMessages: [
         {
           id: MessageId.make("feedback-local"),
           role: "assistant",
-          text: "Feedback sent to OpenAI.\n\nThread ID: `codex-thread-1`",
+          text: "Deploy finished.\n\nRun ID: `run-1`",
           turnId: null,
           streaming: false,
           createdAt: "2026-08-29T00:00:00.000Z",
@@ -198,7 +198,7 @@ describe("buildThreadFeed", () => {
       message: {
         id: "feedback-local",
         role: "assistant",
-        text: expect.stringContaining("codex-thread-1"),
+        text: expect.stringContaining("run-1"),
       },
     });
   });
@@ -749,8 +749,8 @@ describe("buildThreadFeed", () => {
         type: "subagent",
         subagentId: NodeId.make("child-agent"),
         origin: "app_owned",
-        driver: ProviderDriverKind.make("codex"),
-        providerInstanceId: ProviderInstanceId.make("codex"),
+        driver: ProviderDriverKind.make("pi"),
+        providerInstanceId: ProviderInstanceId.make("pi"),
         childThreadId: sourceThreadId,
         prompt: "Inspect the deployment configuration",
         result: "Configuration is valid",
@@ -766,7 +766,7 @@ describe("buildThreadFeed", () => {
         type: "thread_created",
         targetThreadId: sourceThreadId,
         targetRunId: null,
-        targetProviderInstanceId: ProviderInstanceId.make("codex"),
+        targetProviderInstanceId: ProviderInstanceId.make("pi"),
         targetModel: "gpt-5.4",
       },
     ] satisfies ReadonlyArray<OrchestrationV2TurnItem>;

@@ -108,8 +108,8 @@ const pendingExpiryMs = 6 * 60_000;
 
 function provider(updateStatus?: "succeeded"): ServerProvider {
   const result: ServerProvider = {
-    instanceId: ProviderInstanceId.make("codex-wsl"),
-    driver: ProviderDriverKind.make("codex"),
+    instanceId: ProviderInstanceId.make("claude-wsl"),
+    driver: ProviderDriverKind.make("pi"),
     enabled: true,
     installed: true,
     version: updateStatus ? "1.1.0" : "1.0.0",
@@ -123,7 +123,7 @@ function provider(updateStatus?: "succeeded"): ServerProvider {
       status: updateStatus ? "current" : "behind_latest",
       currentVersion: updateStatus ? "1.1.0" : "1.0.0",
       latestVersion: "1.1.0",
-      updateCommand: "npm install -g @openai/codex@latest",
+      updateCommand: "npm install -g @anthropic-ai/claude-code@latest",
       canUpdate: true,
       checkedAt: "2026-06-26T12:00:00.000Z",
       message: updateStatus ? "Up to date." : "Update available.",

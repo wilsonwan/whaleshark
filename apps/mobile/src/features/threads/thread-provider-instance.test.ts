@@ -51,15 +51,12 @@ describe("resolveThreadProviderInstance", () => {
     const environmentA = EnvironmentId.make("environment-a");
     const environmentB = EnvironmentId.make("environment-b");
     const serverConfigs = new Map<EnvironmentId, ServerConfig>([
-      [
-        environmentA,
-        makeConfig([{ instanceId: "codex", driver: "codex", accentColor: "#ff8800" }]),
-      ],
-      [environmentB, makeConfig([{ instanceId: "codex", driver: "codex" }])],
+      [environmentA, makeConfig([{ instanceId: "pi", driver: "pi", accentColor: "#ff8800" }])],
+      [environmentB, makeConfig([{ instanceId: "pi", driver: "pi" }])],
     ]);
 
-    const threadA = makeThread(environmentA, "codex");
-    const threadB = makeThread(environmentB, "codex");
+    const threadA = makeThread(environmentA, "pi");
+    const threadB = makeThread(environmentB, "pi");
 
     expect(resolveThreadProviderInstance(serverConfigs, threadA)?.accentColor).toBe("#ff8800");
     expect(resolveThreadProviderInstance(serverConfigs, threadB)?.accentColor).toBeUndefined();
@@ -71,19 +68,19 @@ describe("resolveThreadProviderInstance", () => {
       [
         environmentId,
         makeConfig([
-          { instanceId: "codex", driver: "codex", displayName: "Codex" },
-          { instanceId: "codex_personal", driver: "codex", displayName: "Codex" },
+          { instanceId: "pi", driver: "pi", displayName: "Pi" },
+          { instanceId: "pi_personal", driver: "pi", displayName: "Pi" },
         ]),
       ],
     ]);
 
     expect(
-      resolveThreadProviderInstance(serverConfigs, makeThread(environmentId, "codex"))?.displayName,
-    ).toBe("Codex");
+      resolveThreadProviderInstance(serverConfigs, makeThread(environmentId, "pi"))?.displayName,
+    ).toBe("Pi");
     expect(
-      resolveThreadProviderInstance(serverConfigs, makeThread(environmentId, "codex_personal"))
+      resolveThreadProviderInstance(serverConfigs, makeThread(environmentId, "pi_personal"))
         ?.displayName,
-    ).toBe("Codex Personal");
+    ).toBe("Pi Personal");
   });
 
   it("uses the current runtime owner after a provider handoff", () => {
@@ -92,27 +89,27 @@ describe("resolveThreadProviderInstance", () => {
       [
         environmentId,
         makeConfig([
-          { instanceId: "claudeAgent", driver: "claudeAgent" },
-          { instanceId: "codex", driver: "codex", displayName: "Codex" },
-          { instanceId: "codex_work", driver: "codex", displayName: "Codex" },
+          { instanceId: "pi", driver: "pi" },
+          { instanceId: "pi", driver: "pi", displayName: "Pi" },
+          { instanceId: "pi_work", driver: "pi", displayName: "Pi" },
         ]),
       ],
     ]);
     const thread = {
-      ...makeThread(environmentId, "claudeAgent"),
+      ...makeThread(environmentId, "pi"),
       runtime: {
         status: "running" as const,
         activeRunId: null,
-        providerInstanceId: ProviderInstanceId.make("codex_work"),
-        providerName: "Codex",
+        providerInstanceId: ProviderInstanceId.make("pi_work"),
+        providerName: "Pi",
         lastError: null,
         updatedAt: "2026-06-01T00:01:00.000Z",
       },
     };
 
     expect(resolveThreadProviderInstance(serverConfigs, thread)).toMatchObject({
-      driverKind: "codex",
-      displayName: "Codex Work",
+      driverKind: "pi",
+      displayName: "Pi Work",
       showBadge: true,
     });
   });
@@ -120,9 +117,9 @@ describe("resolveThreadProviderInstance", () => {
   it("hides the badge for a single instance with no accent color", () => {
     const environmentId = EnvironmentId.make("environment-a");
     const serverConfigs = new Map<EnvironmentId, ServerConfig>([
-      [environmentId, makeConfig([{ instanceId: "codex", driver: "codex" }])],
+      [environmentId, makeConfig([{ instanceId: "pi", driver: "pi" }])],
     ]);
-    const thread = makeThread(environmentId, "codex");
+    const thread = makeThread(environmentId, "pi");
 
     expect(resolveThreadProviderInstance(serverConfigs, thread)?.showBadge).toBe(false);
   });

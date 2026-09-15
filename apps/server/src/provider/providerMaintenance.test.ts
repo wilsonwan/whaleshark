@@ -285,53 +285,52 @@ it.layer(NodeServices.layer)("providerMaintenance", (it) => {
   it("derives the npm prefix only from the global lib/node_modules layout", () => {
     expect(
       npmGlobalPrefixFromCommandPath(
-        "/usr/local/lib/node_modules/@openai/codex/bin/codex.js",
-        "@openai/codex",
+        "/usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js",
+        "@anthropic-ai/claude-code",
       ),
     ).toBe("/usr/local");
     // A copy nested inside another package is not a global install.
     expect(
       npmGlobalPrefixFromCommandPath(
-        "/usr/local/lib/node_modules/other/node_modules/@openai/codex/bin/codex.js",
-        "@openai/codex",
+        "/usr/local/lib/node_modules/other/node_modules/@anthropic-ai/claude-code/cli.js",
+        "@anthropic-ai/claude-code",
       ),
     ).toBeNull();
     expect(
       npmGlobalPrefixFromCommandPath(
-        "/lib/node_modules/@openai/codex/bin/codex.js",
-        "@openai/codex",
+        "/lib/node_modules/@anthropic-ai/claude-code/cli.js",
+        "@anthropic-ai/claude-code",
       ),
     ).toBe("/");
     // Neither is a project-local dependency.
     expect(
       npmGlobalPrefixFromCommandPath(
-        "/work/app/node_modules/@openai/codex/bin/codex.js",
-        "@openai/codex",
+        "/work/app/node_modules/@anthropic-ai/claude-code/cli.js",
+        "@anthropic-ai/claude-code",
       ),
     ).toBeNull();
   });
 
-  // The Codex Windows installer exposes `%LOCALAPPDATA%\\Programs\\OpenAI\\Codex\\bin`
-  // as a junction into `%CODEX_HOME%\\packages\\standalone\\current\\bin`. Node's
+  // A Windows installer can expose `%LOCALAPPDATA%\\Programs\\Claude\\bin`
+  // as a junction into `%CLAUDE_CONFIG_DIR%\\packages\\standalone\\current\\bin`. Node's
   // realpath follows junctions, so the real path carries the standalone marker
   // even though the visible path does not.
   it.effect("recognizes a Windows standalone install through its junctioned bin dir", () =>
     Effect.gen(function* () {
-      const visiblePath =
-        "C:\\Users\\Theo\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.exe";
+      const visiblePath = "C:\\Users\\Theo\\AppData\\Local\\Programs\\Claude\\bin\\claude.exe";
       const realPath =
-        "C:\\Users\\Theo\\.codex\\packages\\standalone\\releases\\0.120.0-x86_64\\bin\\codex.exe";
+        "C:\\Users\\Theo\\.claude\\packages\\standalone\\releases\\2.1.0-x86_64\\bin\\claude.exe";
       const capabilities = yield* resolvePackageManagedProviderMaintenance(
         {
-          provider: driver("codex"),
-          npmPackageName: "@openai/codex",
+          provider: driver("pi"),
+          npmPackageName: "@anthropic-ai/claude-code",
           nativeUpdate: {
             args: ["update"],
             isCommandPath: isNativeTestCommandPath("/packages/standalone/"),
           },
         },
         {
-          binaryPath: "codex",
+          binaryPath: "claude",
           resolvedCommandPath: visiblePath,
           realCommandPath: realPath,
           env: {},
@@ -342,7 +341,7 @@ it.layer(NodeServices.layer)("providerMaintenance", (it) => {
       expect(capabilities.update).toMatchObject({
         executable: visiblePath,
         args: ["update"],
-        lockKey: "codex-native",
+        lockKey: "pi-native",
       });
     }),
   );
@@ -602,13 +601,15 @@ it.layer(NodeServices.layer)("providerMaintenance", (it) => {
     expect(
       homebrewOwnershipFromCommandPath("/opt/homebrew/Cellar/claude-code@latest/2.1.0/bin/claude"),
     ).toEqual({ kind: "formula", name: "claude-code@latest", prefix: "/opt/homebrew" });
-    expect(homebrewOwnershipFromCommandPath("/usr/local/Caskroom/codex/0.148.0/codex")).toEqual({
+    expect(
+      homebrewOwnershipFromCommandPath("/usr/local/Caskroom/claude-code/2.1.0/claude"),
+    ).toEqual({
       kind: "cask",
-      name: "codex",
+      name: "claude-code",
       prefix: "/usr/local",
     });
     // A plain /usr/local/bin binary is not evidence of Homebrew (#8832).
-    expect(homebrewOwnershipFromCommandPath("/usr/local/bin/codex")).toBeNull();
+    expect(homebrewOwnershipFromCommandPath("/usr/local/bin/claude")).toBeNull();
     // A keg elsewhere reports its prefix so the resolver can reject it against
     // `brew --prefix`.
     expect(homebrewOwnershipFromCommandPath("/srv/Cellar/claude/1.0.0/bin/claude")).toMatchObject({

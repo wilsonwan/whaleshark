@@ -7,12 +7,12 @@ import {
   type ServerProviderModel,
 } from "@t3tools/contracts";
 import {
-  applyClaudePromptEffortPrefix,
+  applyPromptEffortPrefix,
   buildProviderOptionSelectionsFromDescriptors,
   getProviderOptionCurrentLabel,
   getProviderOptionCurrentValue,
   getProviderOptionDescriptors,
-  isClaudeUltrathinkPrompt,
+  isUltrathinkPrompt,
   normalizeModelSlug,
 } from "@t3tools/shared/model";
 import { memo, useCallback } from "react";
@@ -177,11 +177,11 @@ function getSelectedTraits(
   const ultrathinkPromptControlled =
     allowPromptInjectedEffort &&
     (primarySelectDescriptor?.promptInjectedValues?.length ?? 0) > 0 &&
-    isClaudeUltrathinkPrompt(prompt);
+    isUltrathinkPrompt(prompt);
 
   // Check if "ultrathink" appears in the body text (not just our prefix)
   const ultrathinkInBodyText =
-    ultrathinkPromptControlled && isClaudeUltrathinkPrompt(prompt.replace(/^Ultrathink:\s*/i, ""));
+    ultrathinkPromptControlled && isUltrathinkPrompt(prompt.replace(/^Ultrathink:\s*/i, ""));
   const effort =
     (ultrathinkPromptControlled
       ? "ultrathink"
@@ -346,7 +346,7 @@ export const TraitsMenuContent = memo(function TraitsMenuContentImpl({
       const nextPrompt =
         prompt.trim().length === 0
           ? ULTRATHINK_PROMPT_PREFIX
-          : applyClaudePromptEffortPrefix(prompt, "ultrathink");
+          : applyPromptEffortPrefix(prompt, "ultrathink");
       onPromptChange(nextPrompt);
       return;
     }
@@ -480,11 +480,10 @@ export const TraitsMenuContent = memo(function TraitsMenuContentImpl({
 
 /**
  * Build the traits trigger's text label plus whether the fast-mode bolt should
- * render. Claude and Cursor expose fast mode as a boolean, while Codex exposes
- * it through the Standard/Fast service tiers. In either form, fast mode is a
- * lightning bolt when on and nothing at all when off. The one exception is when
- * fast mode is the only trait, where a bare bolt (or bare chevron) would leave
- * the trigger unreadable.
+ * render. Claude and Cursor expose fast mode as a boolean. In either form, fast
+ * mode is a lightning bolt when on and nothing at all when off. The one
+ * exception is when fast mode is the only trait, where a bare bolt (or bare
+ * chevron) would leave the trigger unreadable.
  */
 export function buildTraitsTriggerDisplay(input: {
   provider: ProviderDriverKind;
@@ -500,21 +499,6 @@ export function buildTraitsTriggerDisplay(input: {
       fastModeEnabled = descriptor.currentValue === true;
       fastModeFallbackLabel = fastModeEnabled ? "Fast" : "Normal";
       continue;
-    }
-    if (
-      input.provider === "codex" &&
-      descriptor.id === "serviceTier" &&
-      descriptor.type === "select"
-    ) {
-      const currentValue = getProviderOptionCurrentValue(descriptor);
-      const fastTier = descriptor.options.find(({ label }) => label === "Fast");
-      if (fastTier && (currentValue === "default" || currentValue === fastTier.id)) {
-        fastModeEnabled = currentValue === fastTier.id;
-        fastModeFallbackLabel =
-          descriptor.options.find(({ id }) => id === currentValue)?.label ??
-          (fastModeEnabled ? "Fast" : "Normal");
-        continue;
-      }
     }
     const label =
       input.ultrathinkPromptControlled && descriptor.id === input.primarySelectDescriptorId
@@ -595,18 +579,12 @@ export const TraitsPicker = memo(function TraitsPicker({
         size={size}
         className={cn(
           "fill-current opacity-80",
-          size === "xs"
-            ? "text-current"
-            : provider === "claudeAgent"
-              ? "text-[#d97757]"
-              : "text-foreground",
+          size === "xs" ? "text-current" : "text-foreground",
         )}
       />
       <span className="sr-only">Fast mode on</span>
     </>
   ) : null;
-
-  const isCodexStyle = provider === "codex";
 
   return (
     <Menu
@@ -620,32 +598,13 @@ export const TraitsPicker = memo(function TraitsPicker({
           <ComposerControl
             variant={triggerVariant ?? "ghost"}
             size={size}
-            className={cn(
-              isCodexStyle
-                ? "min-w-0 max-w-40 shrink justify-start overflow-hidden whitespace-nowrap sm:max-w-48"
-                : "shrink-0 whitespace-nowrap",
-              triggerClassName,
-            )}
+            className={cn("shrink-0 whitespace-nowrap", triggerClassName)}
           />
         }
       >
-        {isCodexStyle ? (
-          // The label truncates itself; clipping the wrapper too would cut off
-          // the chevron, whose negative end margin overhangs the wrapper edge.
-          <span
-            className={cn("flex min-w-0 w-full items-center", size === "xs" ? "gap-1" : "gap-1.5")}
-          >
-            {fastModeIcon}
-            <span className="min-w-0 truncate">{triggerLabel}</span>
-            <ComposerControlChevron size={size} />
-          </span>
-        ) : (
-          <>
-            {fastModeIcon}
-            <span>{triggerLabel}</span>
-            <ComposerControlChevron size={size} />
-          </>
-        )}
+        {fastModeIcon}
+        <span>{triggerLabel}</span>
+        <ComposerControlChevron size={size} />
       </MenuTrigger>
       <MenuPopup align="start" {...(isComposerOwned ? composerFloatingLayerProps : {})}>
         <TraitsMenuContent

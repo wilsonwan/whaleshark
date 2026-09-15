@@ -2,14 +2,14 @@
  * ProviderRegistryLive — aggregates per-instance snapshot streams into a
  * single materialized list.
  *
- * Historically this Layer composed four per-kind Live Layers
- * (`CodexProviderLive`, `ClaudeProviderLive`, …) that each exposed a
+ * Historically this Layer composed per-kind Live Layers
+ * (provider instances) that each exposed a
  * `ServerProviderShape`. Those Lives were deleted during the driver /
  * instance refactor — every driver now carries its `snapshot: ServerProviderShape`
  * bundled onto the `ProviderInstance` the registry produces.
  *
  * Each configured instance (including multi-instance setups like
- * `codex_personal` + `codex_work`) contributes one `ProviderSnapshotSource`,
+ * `provider_personal` + `provider_work`) contributes one `ProviderSnapshotSource`,
  * keyed by `instanceId`. Instances whose driver is unavailable or whose
  * config failed to decode are merged from `instanceRegistry.listUnavailable`
  * as shadow snapshots so the UI can render their exact unavailable reason.
@@ -114,13 +114,8 @@ const shouldRetainMissingProviderModels = (provider: ServerProvider): boolean =>
     );
   }
 
-  const isCodex = provider.driver === ProviderDriverKind.make("codex");
-  if (!isCodex && provider.driver !== ProviderDriverKind.make("opencode")) {
+  if (provider.driver !== ProviderDriverKind.make("opencode")) {
     return true;
-  }
-
-  if (isCodex && (!provider.enabled || provider.auth.status === "unauthenticated")) {
-    return false;
   }
 
   // Successful discovery replaces these inventories so cached retired models disappear.
@@ -373,7 +368,7 @@ export const ProviderRegistryLive = Layer.effect(
     const persistProvider = (provider: ServerProvider) =>
       Effect.gen(function* () {
         // Persist every instance — the file name is the instance id, so
-        // multi-instance setups (e.g. `codex_personal`, `codex_work`) each
+        // provider instances each
         // get their own cache. We resolve the path fresh so snapshots
         // produced by newly-added instances post-boot still land on disk
         // without the aggregator holding a stale `cachePathByInstance`
