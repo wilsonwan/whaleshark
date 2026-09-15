@@ -34,7 +34,30 @@ export interface UpdatesHarnessOptions {
   readonly env?: Record<string, string | undefined>;
 }
 
-export function makeHarness(options: UpdatesHarnessOptions = {}) {
+export interface UpdatesHarness {
+  readonly layer: Layer.Layer<
+    | DesktopAppSettings.DesktopAppSettings
+    | DesktopBackendPool.DesktopBackendPool
+    | DesktopEnvironment.DesktopEnvironment
+    | DesktopState.DesktopState
+    | DesktopUpdates.DesktopUpdates
+    | ElectronUpdater.ElectronUpdater
+    | ElectronWindow.ElectronWindow
+    | NodeServices.NodeServices,
+    unknown
+  >;
+  readonly checkCount: () => number;
+  readonly quitAndInstalls: () => number;
+  readonly installSteps: readonly string[];
+  readonly downloadCount: () => number;
+  readonly feedUrls: () => readonly ElectronUpdater.ElectronUpdaterFeedUrl[];
+  readonly fullChangelog: () => boolean;
+  readonly listenerCount: () => number;
+  readonly sentStates: readonly DesktopUpdateState[];
+  readonly emit: (eventName: string, payload?: unknown) => void;
+}
+
+export function makeHarness(options: UpdatesHarnessOptions = {}): UpdatesHarness {
   let checkCount = 0;
   let quitAndInstallCount = 0;
   let downloadCount = 0;
