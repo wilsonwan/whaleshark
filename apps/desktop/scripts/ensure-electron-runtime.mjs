@@ -49,10 +49,6 @@ function missingRuntimePaths(electronDir, platformPath) {
   });
 }
 
-function invalidRuntimePaths(electronDir, platformPath) {
-  return [];
-}
-
 function runChecked(command, args) {
   const result = NodeChildProcess.spawnSync(command, args, {
     encoding: "utf8",
@@ -97,9 +93,8 @@ export function ensureElectronRuntime() {
   const platformPath = getPlatformPath();
   const electronPath = NodePath.join(electronDir, "dist", platformPath);
   const missingBeforeInstall = missingRuntimePaths(electronDir, platformPath);
-  const invalidBeforeInstall = invalidRuntimePaths(electronDir, platformPath);
 
-  if (missingBeforeInstall.length > 0 || invalidBeforeInstall.length > 0) {
+  if (missingBeforeInstall.length > 0) {
     if (NodeFS.existsSync(NodePath.join(electronDir, "dist"))) {
       NodeFS.rmSync(NodePath.join(electronDir, "dist"), { recursive: true, force: true });
     }
@@ -108,12 +103,9 @@ export function ensureElectronRuntime() {
   }
 
   const missingAfterInstall = missingRuntimePaths(electronDir, platformPath);
-  const invalidAfterInstall = invalidRuntimePaths(electronDir, platformPath);
-  if (missingAfterInstall.length > 0 || invalidAfterInstall.length > 0) {
+  if (missingAfterInstall.length > 0) {
     throw new Error(
       `Electron runtime is incomplete after install.\nMissing:\n${missingAfterInstall
-        .map((runtimePath) => `- ${runtimePath}`)
-        .join("\n")}\nInvalid:\n${invalidAfterInstall
         .map((runtimePath) => `- ${runtimePath}`)
         .join("\n")}`,
     );
