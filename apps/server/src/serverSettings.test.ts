@@ -110,7 +110,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providerInstances":{"claude_personal":{"driver":"claudeAgent","environment":[{"name":"OPENROUTER_API_KEY","value":"","sensitive":true,"valueRedacted":true}],"config":{}}}}',
+        '{"providerInstances":{"claude_personal":{"driver":"pi","environment":[{"name":"OPENROUTER_API_KEY","value":"","sensitive":true,"valueRedacted":true}],"config":{}}}}',
       );
 
       const error = yield* Effect.flip(serverSettings.getSettings);
@@ -173,14 +173,14 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       Effect.gen(function* () {
         const decoded = yield* decodeServerSettings({
           textGenerationModelSelection: {
-            provider: ProviderDriverKind.make("claudeAgent"),
+            provider: ProviderDriverKind.make("pi"),
             model: "gpt-5.4-mini",
             options: { reasoningEffort: "low" },
           },
         });
 
         assert.deepEqual(decoded.textGenerationModelSelection, {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "gpt-5.4-mini",
           options: [{ id: "reasoningEffort", value: "low" }],
         });
@@ -199,10 +199,10 @@ it.layer(NodeServices.layer)("server settings", (it) => {
           },
         },
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
           options: createModelSelection(
-            ProviderInstanceId.make("claudeAgent"),
+            ProviderInstanceId.make("pi"),
             DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
             [
               { id: "reasoningEffort", value: "high" },
@@ -234,7 +234,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       assert.deepEqual(
         next.textGenerationModelSelection,
         createModelSelection(
-          ProviderInstanceId.make("claudeAgent"),
+          ProviderInstanceId.make("pi"),
           DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
           [
             { id: "reasoningEffort", value: "high" },
@@ -416,9 +416,9 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       // cause the update to lose the selected model.
       const next = yield* serverSettings.updateSettings({
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "gpt-5.4",
-          options: createModelSelection(ProviderInstanceId.make("claudeAgent"), "gpt-5.4", [
+          options: createModelSelection(ProviderInstanceId.make("pi"), "gpt-5.4", [
             { id: "reasoningEffort", value: "high" },
           ]).options!,
         },
@@ -426,7 +426,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       assert.deepEqual(
         next.textGenerationModelSelection,
-        createModelSelection(ProviderInstanceId.make("claudeAgent"), "gpt-5.4", [
+        createModelSelection(ProviderInstanceId.make("pi"), "gpt-5.4", [
           { id: "reasoningEffort", value: "high" },
         ]),
       );
@@ -529,7 +529,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         yield* serverSettings.updateSettings({
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("claudeAgent"),
+              driver: ProviderDriverKind.make("pi"),
               enabled: true,
               config: {},
             },
@@ -540,7 +540,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         const next = yield* serverSettings.updateSettings({
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("claudeAgent"),
+              driver: ProviderDriverKind.make("pi"),
               enabled: false,
               config: {},
             },
@@ -567,7 +567,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         const restored = yield* serverSettings.updateSettings({
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("claudeAgent"),
+              driver: ProviderDriverKind.make("pi"),
               enabled: true,
               config: {},
             },
@@ -586,10 +586,10 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       yield* serverSettings.updateSettings({
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
           options: createModelSelection(
-            ProviderInstanceId.make("claudeAgent"),
+            ProviderInstanceId.make("pi"),
             DEFAULT_SERVER_SETTINGS.textGenerationModelSelection.model,
             [
               { id: "reasoningEffort", value: "high" },
@@ -601,7 +601,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
 
       const next = yield* serverSettings.updateSettings({
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "claude-haiku-4-5",
         },
       });
@@ -609,7 +609,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       // Reset drops the stale options. The selection resolves to Claude: the
       // environment default points at Pi, which is an opt-in provider.
       assert.deepEqual(next.textGenerationModelSelection, {
-        instanceId: ProviderInstanceId.make("claudeAgent"),
+        instanceId: ProviderInstanceId.make("pi"),
         model: "claude-haiku-4-5",
       });
     }).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -618,12 +618,12 @@ it.layer(NodeServices.layer)("server settings", (it) => {
   it.effect("replaces provider instance maps when clearing optional fields", () =>
     Effect.gen(function* () {
       const serverSettings = yield* ServerSettingsModule.ServerSettingsService;
-      const claudeId = ProviderInstanceId.make("claudeAgent");
+      const claudeId = ProviderInstanceId.make("pi");
 
       yield* serverSettings.updateSettings({
         providerInstances: {
           [claudeId]: {
-            driver: ProviderDriverKind.make("claudeAgent"),
+            driver: ProviderDriverKind.make("pi"),
             displayName: "Claude Work",
             accentColor: "#7c3aed",
             enabled: true,
@@ -635,7 +635,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const next = yield* serverSettings.updateSettings({
         providerInstances: {
           [claudeId]: {
-            driver: ProviderDriverKind.make("claudeAgent"),
+            driver: ProviderDriverKind.make("pi"),
             displayName: "Claude Work",
             enabled: true,
             config: { homePath: "~/.claude" },
@@ -644,7 +644,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       });
 
       assert.deepEqual(next.providerInstances[claudeId], {
-        driver: ProviderDriverKind.make("claudeAgent"),
+        driver: ProviderDriverKind.make("pi"),
         displayName: "Claude Work",
         enabled: true,
         config: { homePath: "~/.claude" },
@@ -731,7 +731,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       // to skip it and use the next enabled provider (Pi, opted in here).
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"textGenerationModelSelection":{"instanceId":"claudeAgent","model":"claude-haiku-4-5"},"providerInstances":{"claudeAgent":{"driver":"claudeAgent","enabled":false,"config":{}},"pi":{"driver":"pi","enabled":true,"config":{}}}}',
+        '{"textGenerationModelSelection":{"instanceId":"opencode","model":"claude-haiku-4-5"},"providerInstances":{"opencode":{"driver":"opencode","enabled":false,"config":{}},"pi":{"driver":"pi","enabled":true,"config":{}}}}',
       );
 
       const settings = yield* serverSettings.getSettings;
@@ -921,7 +921,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       // The explicit false must win so a user's disable sticks.
       yield* fileSystem.writeFileString(
         serverConfig.settingsPath,
-        '{"providerInstances":{"pi":{"driver":"pi","enabled":true,"config":{"enabled":false}},"claude_work":{"driver":"claudeAgent","config":{"enabled":true,"homePath":"~/.claude"}},"example":{"driver":"example","config":{"enabled":"nope"}}}}',
+        '{"providerInstances":{"pi":{"driver":"pi","enabled":true,"config":{"enabled":false}},"claude_work":{"driver":"pi","config":{"enabled":true,"homePath":"~/.claude"}},"example":{"driver":"example","config":{"enabled":"nope"}}}}',
       );
 
       const settings = yield* serverSettings.getSettings;
@@ -935,7 +935,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       });
       // A lone in-config flag is lifted to the envelope and stripped.
       assert.deepEqual(settings.providerInstances[claudeWorkId], {
-        driver: ProviderDriverKind.make("claudeAgent"),
+        driver: ProviderDriverKind.make("pi"),
         enabled: true,
         config: { homePath: "~/.claude" },
       });
@@ -1035,11 +1035,14 @@ it.layer(NodeServices.layer)("server settings", (it) => {
           pi: {
             binaryPath: "   ",
           },
+          opencode: {
+            binaryPath: "",
+          },
         },
       });
 
       assert.equal(next.providers.pi.binaryPath, "pi");
-      assert.equal(next.providers.claudeAgent.binaryPath, "claude");
+      assert.equal(next.providers.opencode.binaryPath, "opencode");
     }).pipe(Effect.provide(makeServerSettingsLayer())),
   );
 
@@ -1133,13 +1136,13 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const config = yield* ServerConfig.ServerConfig;
       const fs = yield* FileSystem.FileSystem;
       const original =
-        '{"providerInstances":{"claude_personal":{"driver":"claudeAgent","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true}],"config":{}}}}';
+        '{"providerInstances":{"claude_personal":{"driver":"pi","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true}],"config":{}}}}';
       yield* fs.writeFileString(config.settingsPath, original);
       const error = yield* Effect.flip(
         service.updateSettings({
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("claudeAgent"),
+              driver: ProviderDriverKind.make("pi"),
               environment: [{ name: "API_TOKEN", value: "", sensitive: true, valueRedacted: true }],
               config: {},
             },
@@ -1189,8 +1192,8 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         yield* fileSystem.writeFileString(
           serverConfig.settingsPath,
           duplicate
-            ? '{"providerInstances":{"claude_personal":{"driver":"claudeAgent","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true},{"name":"API_TOKEN","value":"last-inline-test-token","sensitive":true}],"config":{}}}}'
-            : '{"providerInstances":{"claude_personal":{"driver":"claudeAgent","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true}],"config":{}}}}',
+            ? '{"providerInstances":{"claude_personal":{"driver":"pi","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true},{"name":"API_TOKEN","value":"last-inline-test-token","sensitive":true}],"config":{}}}}'
+            : '{"providerInstances":{"claude_personal":{"driver":"pi","environment":[{"name":"API_TOKEN","value":"inline-test-token","sensitive":true}],"config":{}}}}',
         );
         const initial = yield* serverSettings.getSettings;
         assert.equal(
@@ -1201,7 +1204,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         const next = yield* serverSettings.updateSettings({
           providerInstances: {
             [instanceId]: {
-              driver: ProviderDriverKind.make("claudeAgent"),
+              driver: ProviderDriverKind.make("pi"),
               displayName: "Renamed provider",
               environment: duplicate ? [variable, variable] : [variable],
               config: {},
@@ -1236,7 +1239,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const next = yield* serverSettings.updateSettings({
         providerInstances: {
           [instanceId]: {
-            driver: ProviderDriverKind.make("claudeAgent"),
+            driver: ProviderDriverKind.make("pi"),
             environment: [
               { name: "OPENROUTER_API_KEY", value: "sk-or-secret", sensitive: true },
               { name: "ANTHROPIC_BASE_URL", value: "https://openrouter.ai/api", sensitive: false },
@@ -1272,7 +1275,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const roundTripped = yield* serverSettings.updateSettings({
         providerInstances: {
           [instanceId]: {
-            driver: ProviderDriverKind.make("claudeAgent"),
+            driver: ProviderDriverKind.make("pi"),
             displayName: "Claude Personal",
             environment: [
               { name: "OPENROUTER_API_KEY", value: "", sensitive: true, valueRedacted: true },
@@ -1301,7 +1304,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       yield* serverSettings.updateSettings({
         providerInstances: {
           [instanceId]: {
-            driver: ProviderDriverKind.make("claudeAgent"),
+            driver: ProviderDriverKind.make("pi"),
             environment: [
               { name: "OPENROUTER_API_KEY", value: "sk-terminal-secret", sensitive: true },
             ],
@@ -1319,7 +1322,6 @@ it.layer(NodeServices.layer)("server settings", (it) => {
       const persisted = yield* fileSystem.readFileString(serverConfig.settingsPath);
 
       assert.equal(environment.OPENROUTER_API_KEY, "sk-terminal-secret");
-      assert.match(environment.CLAUDE_CONFIG_DIR ?? "", /[\\/][.]claude-terminal$/);
       assert.notInclude(persisted, "sk-terminal-secret");
       assert.include(persisted, '"valueRedacted": true');
     }).pipe(Effect.provide(makeServerSettingsLayer())),
@@ -1354,7 +1356,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
           operation: "upsert",
           instanceId,
           instance: {
-            driver: ProviderDriverKind.make("claudeAgent"),
+            driver: ProviderDriverKind.make("pi"),
             environment: [{ name: "OPENROUTER_API_KEY", value: "sk-kept", sensitive: true }],
             config: {},
           },
@@ -1366,7 +1368,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
             operation: "upsert",
             instanceId,
             instance: {
-              driver: ProviderDriverKind.make("claudeAgent"),
+              driver: ProviderDriverKind.make("pi"),
               environment: [{ name: "OPENROUTER_API_KEY", value: "sk-new", sensitive: true }],
               config: {},
             },
@@ -1453,7 +1455,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         operation: "upsert",
         instanceId,
         instance: {
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("pi"),
           environment: [{ name: "OPENROUTER_API_KEY", value: "sk-kept", sensitive: true }],
           config: {},
         },
@@ -1465,7 +1467,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
           operation: "upsert",
           instanceId,
           instance: {
-            driver: ProviderDriverKind.make("claudeAgent"),
+            driver: ProviderDriverKind.make("pi"),
             environment: [{ name: "OPENROUTER_API_KEY", value: "sk-new", sensitive: true }],
             config: {},
           },
@@ -1496,7 +1498,7 @@ it.layer(NodeServices.layer)("server settings", (it) => {
         icon: "play",
         runOnWorktreeCreate: false,
       };
-      const model = createModelSelection(ProviderInstanceId.make("claudeAgent"), "gpt-5.5");
+      const model = createModelSelection(ProviderInstanceId.make("pi"), "gpt-5.5");
       const modelJson = yield* Schema.encodeEffect(Schema.fromJsonString(ModelSelection))(model);
       const scriptsJson = yield* Schema.encodeEffect(
         Schema.fromJsonString(Schema.Array(ProjectScript)),

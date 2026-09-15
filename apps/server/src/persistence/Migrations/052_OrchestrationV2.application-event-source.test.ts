@@ -27,7 +27,7 @@ layer("052_OrchestrationV2 application event source", (it) => {
           'project:existing',
           'Existing project',
           '/work/existing',
-          '{"instanceId":"claudeAgent","model":"gpt-5.4"}',
+          '{"instanceId":"pi","model":"gpt-5.4"}',
           '[]',
           '2026-06-19T00:00:00.000Z',
           '2026-06-20T00:00:00.000Z',

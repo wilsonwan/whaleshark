@@ -102,7 +102,7 @@ const seedProject = Effect.fn("ProjectDeletionTest.seedProject")(function* (proj
 
 function nativeThreadCreated(projectId: ProjectId, threadId: ThreadId) {
   const createdAt = DateTime.makeUnsafe("2026-01-01T00:00:00.000Z");
-  const providerInstanceId = ProviderInstanceId.make("claudeAgent");
+  const providerInstanceId = ProviderInstanceId.make("pi");
   const payload: OrchestrationV2AppThread = {
     createdBy: "user",
     creationSource: "web",
@@ -273,7 +273,7 @@ it.effect(
         runtime_mode, interaction_mode, branch, worktree_path, latest_turn_id,
         created_at, updated_at, archived_at, deleted_at
       ) VALUES (
-        ${threadId}, ${projectId}, 'Legacy thread', '{"instanceId":"claudeAgent","model":"claude-opus-5"}',
+        ${threadId}, ${projectId}, 'Legacy thread', '{"instanceId":"pi","model":"claude-opus-5"}',
         'full-access', 'default', NULL, NULL, NULL,
         '2026-01-01T00:00:00.000Z', '2026-01-04T00:00:00.000Z', NULL, NULL
       )

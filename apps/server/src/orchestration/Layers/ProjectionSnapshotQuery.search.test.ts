@@ -53,10 +53,10 @@ it.effect("search uses v2 visibility while legacy transcripts are still lazy", (
         interaction_mode, branch, worktree_path, latest_turn_id, created_at,
         updated_at, archived_at, settled_override, settled_at, deleted_at
       ) VALUES
-        ('thread:active', 'project:search', 'Active', '{"instanceId":"claudeAgent","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
-        ('thread:archived', 'project:search', 'Archived', '{"instanceId":"claudeAgent","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
-        ('thread:deleted', 'project:search', 'Deleted', '{"instanceId":"claudeAgent","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
-        ('thread:assistant', 'project:search', 'Assistant', '{"instanceId":"claudeAgent","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, 'turn:assistant', ${now}, ${now}, NULL, NULL, NULL, NULL)
+        ('thread:active', 'project:search', 'Active', '{"instanceId":"pi","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
+        ('thread:archived', 'project:search', 'Archived', '{"instanceId":"pi","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
+        ('thread:deleted', 'project:search', 'Deleted', '{"instanceId":"pi","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, NULL, ${now}, ${now}, NULL, NULL, NULL, NULL),
+        ('thread:assistant', 'project:search', 'Assistant', '{"instanceId":"pi","model":"gpt-5.4"}', 'full-access', 'default', NULL, NULL, 'turn:assistant', ${now}, ${now}, NULL, NULL, NULL, NULL)
     `;
     yield* sql`
       INSERT INTO projection_thread_messages (
@@ -85,9 +85,9 @@ it.effect("search uses v2 visibility while legacy transcripts are still lazy", (
         runtime_mode, interaction_mode, active_provider_thread_id, created_at,
         updated_at, archived_at, deleted_at, payload_json
       ) VALUES
-        ('thread:active', 'project:search', 'Active', 'claudeAgent', 'claudeAgent', 'full-access', 'default', NULL, ${now}, ${now}, NULL, NULL, '{}'),
-        ('thread:archived', 'project:search', 'Archived', 'claudeAgent', 'claudeAgent', 'full-access', 'default', NULL, ${now}, ${now}, ${now}, NULL, '{}'),
-        ('thread:deleted', 'project:search', 'Deleted', 'claudeAgent', 'claudeAgent', 'full-access', 'default', NULL, ${now}, ${now}, NULL, ${now}, '{}')
+        ('thread:active', 'project:search', 'Active', 'pi', 'pi', 'full-access', 'default', NULL, ${now}, ${now}, NULL, NULL, '{}'),
+        ('thread:archived', 'project:search', 'Archived', 'pi', 'pi', 'full-access', 'default', NULL, ${now}, ${now}, ${now}, NULL, '{}'),
+        ('thread:deleted', 'project:search', 'Deleted', 'pi', 'pi', 'full-access', 'default', NULL, ${now}, ${now}, NULL, ${now}, '{}')
     `;
 
     const result = yield* query.searchThreads({ query: "migration needle", limit: 20 });

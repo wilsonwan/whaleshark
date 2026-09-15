@@ -18,7 +18,7 @@ const rates: RateTable = new Map([
 
 function record(overrides: Partial<UsageRecord> = {}): UsageRecord {
   return {
-    provider: "codex",
+    provider: "claude",
     // 2026-08-07T04:05Z is still Aug 6 in Los Angeles.
     timestampMs: Date.parse("2026-08-07T04:05:13.944Z"),
     model: "claude-fable-5",

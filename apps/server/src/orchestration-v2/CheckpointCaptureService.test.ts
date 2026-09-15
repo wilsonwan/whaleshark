@@ -40,8 +40,8 @@ const rootNodeId = NodeId.make("node:checkpoint-capture-delegated-root");
 const taskId = NodeId.make("node:checkpoint-capture-task");
 const deliveryMessageId = MessageId.make("message:checkpoint-capture-delivery");
 const providerThreadId = ProviderThreadId.make("provider-thread:checkpoint-capture-delegated");
-const providerInstanceId = ProviderInstanceId.make("claudeAgent");
-const driver = ProviderDriverKind.make("claudeAgent");
+const providerInstanceId = ProviderInstanceId.make("pi");
+const driver = ProviderDriverKind.make("pi");
 const modelSelection = {
   instanceId: providerInstanceId,
   model: "gpt-5.4",

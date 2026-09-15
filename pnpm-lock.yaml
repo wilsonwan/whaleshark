@@ -464,9 +464,6 @@ importers:
       stream-json:
         specifier: 3.6.0
         version: 3.6.0
-      yaml:
-        specifier: ^2.9.0
-        version: 2.9.0
     devDependencies:
       '@effect/vitest':
         specifier: 4.0.0-rc.112

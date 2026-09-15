@@ -17,8 +17,8 @@ describe("mobile model options", () => {
     const config = {
       providers: [
         {
-          instanceId: "claudeAgent",
-          driver: "claudeAgent",
+          instanceId: "pi",
+          driver: "pi",
           displayName: "Claude",
           enabled: true,
           installed: true,
@@ -44,16 +44,16 @@ describe("mobile model options", () => {
 
     expect(groupByProvider(buildModelOptions(config, null))).toMatchObject([
       {
-        providerKey: "claudeAgent",
+        providerKey: "pi",
         providerLabel: "Claude",
         models: [
           {
-            key: "claudeAgent:claude-fable-5-1",
+            key: "pi:claude-fable-5-1",
             label: "Claude Fable 5.1",
             subtitle: "",
             isLegacy: false,
           },
-          { key: "claudeAgent:claude-opus-4-1", label: "Claude Opus 4.1", isLegacy: true },
+          { key: "pi:claude-opus-4-1", label: "Claude Opus 4.1", isLegacy: true },
         ],
       },
     ]);
@@ -150,8 +150,8 @@ describe("mobile model options", () => {
     const config = {
       providers: [
         {
-          instanceId: "claudeAgent",
-          driver: "claudeAgent",
+          instanceId: "pi",
+          driver: "pi",
           displayName: "Claude",
           enabled: true,
           installed: true,
@@ -182,7 +182,7 @@ describe("mobile model options", () => {
     } as unknown as ServerConfig;
 
     const [option] = buildModelOptions(config, {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "claude-test",
     });
 
@@ -190,7 +190,7 @@ describe("mobile model options", () => {
     expect(option?.selection.options).toBeUndefined();
 
     const [explicitOption] = buildModelOptions(config, {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "claude-test",
       options: [{ id: "serviceTier", value: "priority" }],
     });
@@ -209,8 +209,8 @@ describe("mobile model options", () => {
           models: [],
         },
         {
-          instanceId: "pi",
-          driver: "pi",
+          instanceId: "opencode",
+          driver: "opencode",
           enabled: false,
           installed: true,
           auth: { status: "authenticated" },
@@ -224,7 +224,7 @@ describe("mobile model options", () => {
       model: "xai/grok-4.6",
     };
     const disabled = {
-      instanceId: ProviderInstanceId.make("pi"),
+      instanceId: ProviderInstanceId.make("opencode"),
       model: "claude-sonnet-5",
     };
     const removed = {
@@ -280,8 +280,8 @@ describe("mobile model options", () => {
     const config = {
       providers: [
         {
-          instanceId: "claudeAgent",
-          driver: "claudeAgent",
+          instanceId: "pi",
+          driver: "pi",
           displayName: "Claude",
           enabled: true,
           installed: true,
@@ -306,11 +306,11 @@ describe("mobile model options", () => {
     } as unknown as ServerConfig;
 
     const current = {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "claude-fable-5-1",
     };
     const legacy = {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "claude-opus-4-1",
     };
 
@@ -322,11 +322,11 @@ describe("mobile model options", () => {
   });
 
   it("resolves new tasks from draft, project, sticky, then provider defaults", () => {
-    const draft = { instanceId: ProviderInstanceId.make("claudeAgent"), model: "draft" };
-    const project = { instanceId: ProviderInstanceId.make("claudeAgent"), model: "project" };
-    const sticky = { instanceId: ProviderInstanceId.make("claudeAgent"), model: "sticky" };
+    const draft = { instanceId: ProviderInstanceId.make("pi"), model: "draft" };
+    const project = { instanceId: ProviderInstanceId.make("pi"), model: "project" };
+    const sticky = { instanceId: ProviderInstanceId.make("pi"), model: "sticky" };
     const providerDefault = {
-      selection: { instanceId: ProviderInstanceId.make("claudeAgent"), model: "default" },
+      selection: { instanceId: ProviderInstanceId.make("pi"), model: "default" },
       isDefault: true,
     } as ModelOption;
     const resolve = (

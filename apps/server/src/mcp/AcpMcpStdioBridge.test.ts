@@ -71,7 +71,7 @@ describe("AcpMcpStdioBridge", () => {
               result:
                 request.method === "initialize"
                   ? { protocolVersion: "2025-06-18", capabilities: {}, serverInfo: {} }
-                  : { structuredContent: { providers: ["claudeAgent"] } },
+                  : { structuredContent: { providers: ["pi"] } },
             }),
             {
               headers: { "content-type": "application/json", "mcp-session-id": "session-42" },
@@ -80,7 +80,7 @@ describe("AcpMcpStdioBridge", () => {
         },
       });
 
-      expect(result).toEqual({ structuredContent: { providers: ["claudeAgent"] } });
+      expect(result).toEqual({ structuredContent: { providers: ["pi"] } });
       expect(requests).toHaveLength(3);
       expect(requests[0]?.headers.get("authorization")).toBe("Bearer bridge-test");
       expect(requests[1]?.headers.get("mcp-session-id")).toBe("session-42");

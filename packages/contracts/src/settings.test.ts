@@ -5,7 +5,7 @@ import { ProviderDriverKind, ProviderInstanceId } from "./providerInstance.ts";
 import {
   ClientSettingsSchema,
   ClientSettingsPatch,
-  CodexSettings,
+  PiSettings,
   DEFAULT_SERVER_SETTINGS,
   resolveProviderInstanceEnabled,
   ServerSettings,
@@ -18,7 +18,7 @@ const encodeClientSettings = Schema.encodeSync(ClientSettingsSchema);
 const decodeServerSettings = Schema.decodeUnknownSync(ServerSettings);
 const decodeServerSettingsPatch = Schema.decodeUnknownSync(ServerSettingsPatch);
 const encodeServerSettings = Schema.encodeSync(ServerSettings);
-const decodeCodexSettings = Schema.decodeUnknownSync(CodexSettings);
+const decodePiSettings = Schema.decodeUnknownSync(PiSettings);
 
 describe("ServerSettings default permissions", () => {
   it("keeps full access for settings saved before a default was configured", () => {
@@ -114,7 +114,7 @@ describe("custom model settings", () => {
   };
 
   it("accepts legacy bare slugs alongside full entries", () => {
-    const decoded = decodeCodexSettings({
+    const decoded = decodePiSettings({
       customModels: ["bare-slug", { slug: "named", name: "Named", capabilities }],
     });
     expect(decoded.customModels).toEqual([
@@ -126,12 +126,12 @@ describe("custom model settings", () => {
   it("accepts entries at the settings patch boundary", () => {
     expect(
       decodeServerSettingsPatch({
-        providers: { claudeAgent: { customModels: [{ slug: "x", capabilities }] } },
-      }).providers?.claudeAgent?.customModels,
+        providers: { pi: { customModels: [{ slug: "x", capabilities }] } },
+      }).providers?.pi?.customModels,
     ).toEqual([{ slug: "x", capabilities }]);
     expect(() =>
       decodeServerSettingsPatch({
-        providers: { claudeAgent: { customModels: [{ name: "no slug" }] } },
+        providers: { pi: { customModels: [{ name: "no slug" }] } },
       }),
     ).toThrow();
   });
@@ -505,7 +505,7 @@ describe("ClientSettings pull request merge methods", () => {
 describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
   it("defaults text generation to Luna at low reasoning effort", () => {
     expect(DEFAULT_SERVER_SETTINGS.textGenerationModelSelection).toEqual({
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5.6-luna",
       options: [{ id: "reasoningEffort", value: "low" }],
     });
@@ -519,20 +519,21 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
     const decoded = decodeServerSettings({});
     expect(decoded.providerInstances).toEqual({});
     // Legacy `providers` struct is still hydrated with its per-driver defaults
-    // so existing call sites keep working through the migration.
-    expect(decoded.providers.claudeAgent.enabled).toBe(true);
+    // so existing call sites keep working through the migration. Every
+    // remaining binding opts in, so the hydrated default is disabled.
+    expect(decoded.providers.pi.enabled).toBe(false);
   });
 
   it("decodes a multi-instance map mixing first-party and fork drivers", () => {
     const decoded = decodeServerSettings({
       providerInstances: {
         claude_personal: {
-          driver: "claudeAgent",
+          driver: "pi",
           displayName: "Claude (personal)",
           config: { homePath: "~/.claude_personal" },
         },
         claude_work: {
-          driver: "claudeAgent",
+          driver: "pi",
           config: { homePath: "~/.claude_work" },
         },
         ollama_local: {
@@ -546,7 +547,7 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
     const workId = ProviderInstanceId.make("claude_work");
     const ollamaId = ProviderInstanceId.make("ollama_local");
 
-    expect(decoded.providerInstances[personalId]?.driver).toBe("claudeAgent");
+    expect(decoded.providerInstances[personalId]?.driver).toBe("pi");
     expect(decoded.providerInstances[workId]?.config).toEqual({ homePath: "~/.claude_work" });
     // Critical: a config naming a driver this build does not know about
     // (`ollama` is not in `ProviderDriverKind`) must round-trip without loss.
@@ -560,16 +561,15 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
   it("rejects instance keys that violate the slug pattern", () => {
     expect(() =>
       decodeServerSettings({
-        providerInstances: { "1bad": { driver: "claudeAgent" } },
+        providerInstances: { "1bad": { driver: "pi" } },
       }),
     ).toThrow();
   });
 });
 
 describe("provider enabled defaults", () => {
-  it("enables only the stable bindings by default", () => {
+  it("leaves the built-in bindings disabled by default", () => {
     const decoded = decodeServerSettings({});
-    expect(decoded.providers.claudeAgent.enabled).toBe(true);
     expect(decoded.providers.pi.enabled).toBe(false);
     expect(decoded.providers.opencode.enabled).toBe(false);
   });
@@ -603,10 +603,10 @@ describe("provider enabled defaults", () => {
 
   it("resolves instance enabled state with explicit false winning", () => {
     const pi = ProviderDriverKind.make("pi");
-    const claudeAgent = ProviderDriverKind.make("claudeAgent");
+    const acpRegistry = ProviderDriverKind.make("acpRegistry");
     // No flags anywhere: driver default applies.
     expect(resolveProviderInstanceEnabled({ driver: pi, config: {} })).toBe(false);
-    expect(resolveProviderInstanceEnabled({ driver: claudeAgent, config: {} })).toBe(true);
+    expect(resolveProviderInstanceEnabled({ driver: acpRegistry, config: {} })).toBe(true);
     // Unknown fork drivers stay enabled.
     expect(
       resolveProviderInstanceEnabled({ driver: ProviderDriverKind.make("ollama"), config: {} }),
@@ -614,17 +614,21 @@ describe("provider enabled defaults", () => {
     // Envelope flag wins over the driver default.
     expect(resolveProviderInstanceEnabled({ driver: pi, enabled: true, config: {} })).toBe(true);
     expect(
-      resolveProviderInstanceEnabled({ driver: claudeAgent, enabled: false, config: {} }),
+      resolveProviderInstanceEnabled({ driver: acpRegistry, enabled: false, config: {} }),
     ).toBe(false);
     // Legacy in-config flag fills in when the envelope is silent.
     expect(resolveProviderInstanceEnabled({ driver: pi, config: { enabled: true } })).toBe(true);
     // Conflicting flags: the explicit false wins, whichever side it is on.
     expect(
-      resolveProviderInstanceEnabled({ driver: pi, enabled: true, config: { enabled: false } }),
+      resolveProviderInstanceEnabled({
+        driver: acpRegistry,
+        enabled: true,
+        config: { enabled: false },
+      }),
     ).toBe(false);
     expect(
       resolveProviderInstanceEnabled({
-        driver: claudeAgent,
+        driver: acpRegistry,
         enabled: false,
         config: { enabled: true },
       }),
@@ -678,13 +682,13 @@ describe("ServerSettingsPatch.providerInstances", () => {
 
     const replacement = decodeServerSettingsPatch({
       providerInstances: {
-        claude_personal: { driver: "claudeAgent", config: { homePath: "~/.claude" } },
+        claude_personal: { driver: "pi", config: { homePath: "~/.claude" } },
       },
     });
     expect(replacement.providerInstances).toBeDefined();
     expect(
       replacement.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.driver,
-    ).toBe("claudeAgent");
+    ).toBe("pi");
   });
 
   it("preserves a fork-defined driver entry through patch decoding", () => {
@@ -710,15 +714,14 @@ describe("ServerSettingsPatch string normalization", () => {
         otlpTracesUrl: "  http://localhost:4318/v1/traces  ",
       },
       providers: {
-        claudeAgent: {
+        pi: {
           binaryPath: "  /opt/homebrew/bin/claude  ",
-          homePath: "  ~/.claude  ",
           launchArgs: "  --strict-config --enable foo  ",
         },
       },
       providerInstances: {
         claude_personal: {
-          driver: "  claudeAgent  ",
+          driver: "  pi  ",
           displayName: "  Claude Personal  ",
           config: { homePath: "  ~/.claude-personal  " },
         },
@@ -728,11 +731,10 @@ describe("ServerSettingsPatch string normalization", () => {
     expect(patch.addProjectBaseDirectory).toBe("~/Development");
     expect(patch.textGenerationModelSelection?.model).toBe("gpt-5.4-mini");
     expect(patch.observability?.otlpTracesUrl).toBe("http://localhost:4318/v1/traces");
-    expect(patch.providers?.claudeAgent?.binaryPath).toBe("/opt/homebrew/bin/claude");
-    expect(patch.providers?.claudeAgent?.homePath).toBe("~/.claude");
-    expect(patch.providers?.claudeAgent?.launchArgs).toBe("--strict-config --enable foo");
+    expect(patch.providers?.pi?.binaryPath).toBe("/opt/homebrew/bin/claude");
+    expect(patch.providers?.pi?.launchArgs).toBe("--strict-config --enable foo");
     expect(patch.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.driver).toBe(
-      "claudeAgent",
+      "pi",
     );
     expect(patch.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.displayName).toBe(
       "Claude Personal",

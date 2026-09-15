@@ -53,7 +53,7 @@ const EFFORT_CHOICES = [
 export const DESCRIPTOR_PRESETS_BY_KIND: Partial<
   Record<ProviderDriverKind, ReadonlyArray<DescriptorPreset>>
 > = {
-  [ProviderDriverKind.make("claudeAgent")]: [
+  [ProviderDriverKind.make("pi")]: [
     {
       id: "effort",
       label: "Reasoning",

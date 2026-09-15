@@ -73,7 +73,7 @@ const createThread = (model: OrchestrationReadModel) =>
         threadId: THREAD_ID,
         projectId: PROJECT_ID,
         title: "Thread",
-        modelSelection: { provider: "claudeAgent", model: "gpt-5.4" },
+        modelSelection: { provider: "pi", model: "gpt-5.4" },
         runtimeMode: "full-access",
         interactionMode: "default",
         branch: null,

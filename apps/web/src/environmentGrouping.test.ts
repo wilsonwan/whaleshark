@@ -41,7 +41,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
     workspaceRoot: "/tmp/shared-repo",
     repositoryIdentity: null,
     defaultModelSelection: {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "claude-opus-4-6",
     },
     createdAt: "2026-01-01T00:00:00.000Z",

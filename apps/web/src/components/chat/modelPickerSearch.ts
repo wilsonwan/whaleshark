@@ -1,7 +1,7 @@
 import { normalizeSearchQuery, scoreQueryMatch } from "@t3tools/shared/searchRanking";
 
 type ModelPickerSearchableModel = {
-  /** Driver kind — indexed so "claudeAgent" matches an instance of that driver. */
+  /** Driver kind — indexed so "pi" matches an instance of that driver. */
   driverKind: string;
   /**
    * Instance display name (e.g. "Claude Personal"). Indexed as a search

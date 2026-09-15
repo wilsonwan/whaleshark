@@ -4,10 +4,7 @@ import {
   AcpRegistryAdapterV2Driver,
   type AcpRegistryAdapterV2DriverEnv,
 } from "./Adapters/AcpRegistryAdapterV2.ts";
-import {
-  ClaudeAdapterV2Driver,
-  type ClaudeAdapterV2DriverEnv,
-} from "./Adapters/ClaudeAdapterV2.ts";
+
 import {
   OpenCodeAdapterV2Driver,
   type OpenCodeAdapterV2DriverEnv,
@@ -17,13 +14,12 @@ import type { AnyProviderAdapterDriver } from "./ProviderAdapterDriver.ts";
 
 export type BuiltInProviderAdapterDriversV2Env =
   | AcpRegistryAdapterV2DriverEnv
-  | ClaudeAdapterV2DriverEnv
   | OpenCodeAdapterV2DriverEnv
   | PiAdapterV2DriverEnv;
 
 const BUILT_IN_PROVIDER_ADAPTER_DRIVERS_V2: ReadonlyArray<
   AnyProviderAdapterDriver<BuiltInProviderAdapterDriversV2Env>
-> = [ClaudeAdapterV2Driver, OpenCodeAdapterV2Driver, PiAdapterV2Driver, AcpRegistryAdapterV2Driver];
+> = [OpenCodeAdapterV2Driver, PiAdapterV2Driver, AcpRegistryAdapterV2Driver];
 
 export const BUILT_IN_PROVIDER_ADAPTER_DRIVER_KINDS_V2: ReadonlySet<ProviderDriverKind> = new Set(
   BUILT_IN_PROVIDER_ADAPTER_DRIVERS_V2.map((driver) => driver.driverKind),

@@ -291,7 +291,7 @@ projectionRepositoriesLayer("Projection repositories", (it) => {
         title: "Null options project",
         workspaceRoot: "/tmp/project-null-options",
         defaultModelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "gpt-5.4",
         },
         defaultThreadEnvMode: null,
@@ -318,7 +318,7 @@ projectionRepositoriesLayer("Projection repositories", (it) => {
         row.defaultModelSelection,
         // @effect-diagnostics-next-line preferSchemaOverJson:off
         JSON.stringify({
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "gpt-5.4",
         }),
       );
@@ -327,7 +327,7 @@ projectionRepositoriesLayer("Projection repositories", (it) => {
         projectId: ProjectId.make("project-null-options"),
       });
       assert.deepStrictEqual(Option.getOrNull(persisted)?.defaultModelSelection, {
-        instanceId: ProviderInstanceId.make("claudeAgent"),
+        instanceId: ProviderInstanceId.make("pi"),
         model: "gpt-5.4",
       });
     }),
@@ -407,7 +407,7 @@ projectionRepositoriesLayer("Projection repositories", (it) => {
         projectId: ProjectId.make("project-1"),
         title: "Settled thread",
         modelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "gpt-5.4",
         },
         runtimeMode: "full-access",
@@ -488,7 +488,7 @@ projectionRepositoriesLayer("Projection repositories", (it) => {
         projectId: ProjectId.make("project-linked-pr"),
         title: "Linked pull request",
         modelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "gpt-5.4",
         },
         runtimeMode: "full-access",

@@ -437,7 +437,7 @@ describe("EventNdjsonLogger", () => {
         const store = yield* makeEventNdjsonLogStore(basePath);
         yield* store.logger("native").write(
           {
-            provider: "claudeAgent",
+            provider: "pi",
             event: {
               direction: "incoming",
               stage: "decoded",

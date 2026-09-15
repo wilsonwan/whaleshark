@@ -35,9 +35,9 @@ describe("ComposerCommandMenu", () => {
       <ComposerCommandMenu
         items={[
           {
-            id: "skill:claudeAgent:browser",
+            id: "skill:pi:browser",
             type: "skill",
-            provider: ProviderDriverKind.make("claudeAgent"),
+            provider: ProviderDriverKind.make("pi"),
             skill: {
               name: "browser",
               path: "/Users/maria/.agents/plugins/browser/skills/browser/SKILL.md",
@@ -51,7 +51,7 @@ describe("ComposerCommandMenu", () => {
         resolvedTheme="dark"
         isLoading={false}
         triggerKind="skill"
-        activeItemId="skill:claudeAgent:browser"
+        activeItemId="skill:pi:browser"
         onHighlightedItemChange={() => {}}
         onSelect={() => {}}
       />,
@@ -69,9 +69,9 @@ describe("ComposerCommandMenu", () => {
       <ComposerCommandMenu
         items={[
           {
-            id: "skill:claudeAgent:ask-matt",
+            id: "skill:pi:ask-matt",
             type: "skill",
-            provider: ProviderDriverKind.make("claudeAgent"),
+            provider: ProviderDriverKind.make("pi"),
             skill: {
               name: "ask-matt",
               displayName: "Ask Matt",
@@ -86,7 +86,7 @@ describe("ComposerCommandMenu", () => {
         resolvedTheme="dark"
         isLoading={false}
         triggerKind="slash-command"
-        activeItemId="skill:claudeAgent:ask-matt"
+        activeItemId="skill:pi:ask-matt"
         onHighlightedItemChange={() => {}}
         onSelect={() => {}}
       />,

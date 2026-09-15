@@ -173,7 +173,7 @@ describe("settings scope navigation", () => {
 
   it("preserves the environment from an initially loaded legacy provider URL", async () => {
     const router = createSettingsRouter(
-      "/settings/providers?environmentId=provider-server&instanceId=claudeAgent-work",
+      "/settings/providers?environmentId=provider-server&instanceId=pi-work",
     );
     await router.load();
     await router.navigate({ to: "/settings/general" });

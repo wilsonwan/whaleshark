@@ -201,7 +201,7 @@ describe("collectLimitSources", () => {
     ]);
   }
 
-  it.each(["opencode", "claudeAgent"])(
+  it.each(["opencode", "pi"])(
     "prefers native %s limits by email without changing provider rows or source snapshots",
     (kind) => {
       const driver = ProviderDriverKind.make(kind);
@@ -332,7 +332,7 @@ describe("pools", () => {
     windowDurationMins: 7 * 24 * 60,
     resetsAt: "2026-09-06T12:00:00.000Z",
   } as const;
-  const pi = ProviderDriverKind.make("pi");
+  const claude = ProviderDriverKind.make("pi");
   const source = {
     id: UsageLimitSourceId.make("hub"),
     kind: "cliproxy" as const,
@@ -343,8 +343,8 @@ describe("pools", () => {
 
   it("merges one account reported natively on two environments and by a hub into one entry", () => {
     const native = provider({
-      driver: pi,
-      instanceId: ProviderInstanceId.make("pi"),
+      driver: claude,
+      instanceId: ProviderInstanceId.make("claude"),
       auth: { status: "authenticated", email: "Same@example.com" },
       usageLimits: { checkedAt, windows: [{ ...window, usedPercent: 40 }] },
     });
@@ -370,7 +370,7 @@ describe("pools", () => {
                 accounts: [
                   {
                     id: "claude-same@example.com.json",
-                    driver: pi,
+                    driver: claude,
                     email: "same@example.com",
                     plan: "Claude Subscription",
                     usageLimits: { checkedAt, windows: [{ ...window, usedPercent: 10 }] },
@@ -385,10 +385,10 @@ describe("pools", () => {
     const accounts = collectLimitAccounts(input);
     expect(accounts).toHaveLength(1);
     expect(accounts[0]).toMatchObject({
-      key: "env-a:pi",
+      key: "env-a:claude",
       sourceLabel: null,
       // Desktop's read is fresher, so its credits and its redeem are the ones on show.
-      redeem: { environmentId: "env-b", input: { instanceId: "pi" } },
+      redeem: { environmentId: "env-b", input: { instanceId: "claude" } },
       environments: [
         { environmentId: "env-a", label: "Laptop" },
         { environmentId: "env-b", label: "Desktop" },
@@ -400,8 +400,8 @@ describe("pools", () => {
 
   it("takes windows from a fresher hub read but credits and redeem from the native instance", () => {
     const native = provider({
-      driver: pi,
-      instanceId: ProviderInstanceId.make("pi"),
+      driver: claude,
+      instanceId: ProviderInstanceId.make("claude"),
       auth: { status: "authenticated", email: "same@example.com" },
       usageLimits: {
         checkedAt,
@@ -422,7 +422,7 @@ describe("pools", () => {
                 accounts: [
                   {
                     id: "claude-same@example.com.json",
-                    driver: pi,
+                    driver: claude,
                     email: "same@example.com",
                     usageLimits: {
                       checkedAt: "2026-09-03T11:30:00.000Z",
@@ -439,14 +439,14 @@ describe("pools", () => {
     const [account] = collectLimitAccounts(input);
     expect(account?.limits.windows[0]?.usedPercent).toBe(55);
     expect(account?.limits.resetCredits?.availableCount).toBe(2);
-    expect(account?.redeem).toEqual({ environmentId: "env-a", input: { instanceId: "pi" } });
+    expect(account?.redeem).toEqual({ environmentId: "env-a", input: { instanceId: "claude" } });
     expect(account?.environments).toEqual([{ environmentId: "env-a", label: "Laptop" }]);
   });
 
   it("redeems against the instance even when a hub also reports the account", () => {
     const native = provider({
-      driver: pi,
-      instanceId: ProviderInstanceId.make("pi"),
+      driver: claude,
+      instanceId: ProviderInstanceId.make("claude"),
       auth: { status: "authenticated", email: "same@example.com" },
       usageLimits: {
         checkedAt: "2026-09-03T11:30:00.000Z",
@@ -467,7 +467,7 @@ describe("pools", () => {
                 accounts: [
                   {
                     id: "claude-same@example.com.json",
-                    driver: pi,
+                    driver: claude,
                     email: "same@example.com",
                     usageLimits: {
                       checkedAt,
@@ -649,7 +649,7 @@ describe("pools", () => {
   it("keys a hub account without an email by hub, so two environments on one hub share it", () => {
     const seat = {
       id: "claude-team-seat.json",
-      driver: pi,
+      driver: claude,
       usageLimits: { checkedAt, windows: [window] },
     };
     const hub = { ...source, accounts: [seat] };
@@ -679,7 +679,7 @@ describe("pools", () => {
                 accounts: [
                   {
                     id: "a",
-                    driver: pi,
+                    driver: claude,
                     usageLimits: {
                       checkedAt,
                       windows: [
@@ -690,7 +690,7 @@ describe("pools", () => {
                   },
                   {
                     id: "b",
-                    driver: pi,
+                    driver: claude,
                     usageLimits: {
                       checkedAt,
                       windows: [{ ...window, usedPercent: 40 }],
@@ -703,7 +703,7 @@ describe("pools", () => {
                   },
                   {
                     id: "unsupported",
-                    driver: pi,
+                    driver: claude,
                     usageLimits: {
                       checkedAt,
                       windows: [],
@@ -719,7 +719,7 @@ describe("pools", () => {
     ]);
     const pools = collectLimitPools(collectLimitAccounts(input), now);
     expect(pools.map((pool) => [pool.driver, pool.accounts.length])).toEqual([
-      ["claudeAgent", 2],
+      ["pi", 2],
       ["opencode", 1],
     ]);
     const [session, week] = pools[0]!.windows;
@@ -760,7 +760,7 @@ describe("pools", () => {
         ...collectLimitAccounts(input),
         {
           key: "go",
-          driver: pi,
+          driver: claude,
           displayName: "Go",
           email: undefined,
           plan: undefined,
@@ -889,7 +889,7 @@ describe("pooled account columns", () => {
 
 describe("collectLimitNotices", () => {
   const checkedAt = "2026-09-03T11:00:00.000Z";
-  const pi = ProviderDriverKind.make("pi");
+  const claude = ProviderDriverKind.make("pi");
   const laptop = { entry: { target: { label: "Laptop" } } };
   const hub = {
     id: UsageLimitSourceId.make("hub"),
@@ -901,14 +901,14 @@ describe("collectLimitNotices", () => {
 
   it("names failures and silence, skips unsupported accounts, and labels environments only when several", () => {
     const failed = provider({
-      instanceId: ProviderInstanceId.make("pi"),
-      driver: pi,
+      instanceId: ProviderInstanceId.make("claude"),
+      driver: claude,
       displayName: "Claude Max",
       usageLimits: { checkedAt, windows: [], unavailable: { reason: "probeFailed" } },
     });
     const apiKey = provider({
       instanceId: ProviderInstanceId.make("api"),
-      driver: pi,
+      driver: claude,
       usageLimits: { checkedAt, windows: [], unavailable: { reason: "unsupported" } },
     });
     const silent = provider({ usageLimits: { checkedAt, windows: [] } });
@@ -1035,8 +1035,8 @@ describe("/usage-limits", () => {
           usageLimits: { ...limits, resetCredits: { availableCount: 2 } },
         }),
         provider({
-          driver: ProviderDriverKind.make("pi"),
-          instanceId: ProviderInstanceId.make("pi"),
+          driver: ProviderDriverKind.make("claude"),
+          instanceId: ProviderInstanceId.make("claude"),
           usageLimits: limits,
         }),
       ],

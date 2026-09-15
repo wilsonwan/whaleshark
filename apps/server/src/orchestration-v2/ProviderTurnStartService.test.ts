@@ -176,7 +176,7 @@ function makeLocalCommandHarness(input: {
   };
   const providerThread: OrchestrationV2ThreadProjection["providerThreads"][number] = {
     id: providerThreadId,
-    driver: ProviderDriverKind.make("claudeAgent"),
+    driver: ProviderDriverKind.make("pi"),
     providerInstanceId: newInstanceId,
     providerSessionId,
     appThreadId: threadId,

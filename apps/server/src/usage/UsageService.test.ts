@@ -18,57 +18,30 @@ import * as Scheduler from "effect/Scheduler";
 import * as TestClock from "effect/testing/TestClock";
 import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 
+import { HostProcessEnvironment } from "@t3tools/shared/hostProcess";
 import * as ServerConfig from "../config.ts";
 import * as ServerSettings from "../serverSettings.ts";
 import * as UsageService from "./UsageService.ts";
 
-/** One Codex `token_count` usage event, the line that carries token totals. */
-function codexUsageLine(options: {
-  readonly outputTokens: number;
-  readonly inputTokens?: number;
-  readonly timestamp?: string;
-}): string {
+function claudeLine(id: number, outputTokens: number, model = "claude-fable-5"): string {
   return `${JSON.stringify({
-    type: "event_msg",
-    timestamp: options.timestamp ?? "2026-08-01T10:00:00Z",
-    payload: {
-      type: "token_count",
-      info: {
-        last_token_usage: {
-          input_tokens: options.inputTokens ?? 10,
-          cached_input_tokens: 0,
-          cache_write_input_tokens: 0,
-          output_tokens: options.outputTokens,
-          reasoning_output_tokens: 0,
-        },
-      },
+    type: "assistant",
+    timestamp: "2026-08-01T10:00:00Z",
+    requestId: `req_${id}`,
+    sessionId: "session-1",
+    message: {
+      id: `msg_${id}`,
+      model,
+      usage: { input_tokens: 10, output_tokens: outputTokens },
     },
   })}\n`;
 }
 
-/**
- * A Codex rollout prefix: the session meta, the turn context that carries the
- * model, then the first usage event. `token_count` events have no model of
- * their own, so the turn context has to precede them.
- */
-function codexTranscript(options: {
+function claudeTranscript(options: {
   readonly outputTokens: number;
-  readonly inputTokens?: number;
   readonly model?: string;
-  readonly sessionId?: string;
 }): string {
-  const timestamp = "2026-08-01T10:00:00Z";
-  const sessionMeta = JSON.stringify({
-    type: "session_meta",
-    timestamp,
-    payload: { type: "session_meta", id: options.sessionId ?? "session-1" },
-  });
-  const turnContext = JSON.stringify({
-    type: "turn_context",
-    timestamp,
-    payload: { type: "turn_context", model: options.model ?? "gpt-5.6-sol" },
-  });
-  return `${sessionMeta}\n${turnContext}\n${codexUsageLine(options)}`;
+  return claudeLine(1, options.outputTokens, options.model);
 }
 
 const WINDOW: UsageSummaryInput = {
@@ -84,17 +57,12 @@ const setup = Effect.gen(function* () {
   yield* Effect.addFinalizer(() =>
     Effect.promise(() => NodeFSP.rm(home, { recursive: true, force: true })),
   );
-  const transcriptDir = NodePath.join(home, "codex", "sessions", "proj");
+  const transcriptDir = NodePath.join(home, "claude", "projects", "proj");
   yield* Effect.promise(() => NodeFSP.mkdir(transcriptDir, { recursive: true }));
   return {
     home,
     transcript: NodePath.join(transcriptDir, "session.jsonl"),
-    sessionsDir: NodePath.join(home, "codex", "sessions"),
-    settings: {
-      providers: {
-        claudeAgent: { homePath: NodePath.join(home, "claude") },
-      },
-    },
+    settings: {},
   };
 });
 
@@ -107,6 +75,11 @@ const serviceLayers = (input: {
   readonly ratesDocument?: unknown;
 }) =>
   ServerConfig.layerTest(process.cwd(), { prefix: input.prefix }).pipe(
+    Layer.provideMerge(
+      Layer.succeed(HostProcessEnvironment, {
+        CLAUDE_CONFIG_DIR: NodePath.join(input.home, "claude"),
+      }),
+    ),
     Layer.provideMerge(NodeServices.layer),
     Layer.provideMerge(ServerSettings.layerTest(input.settings)),
     Layer.provideMerge(
@@ -133,7 +106,10 @@ describe("UsageService", () => {
     Effect.gen(function* () {
       const { transcript, settings, home } = yield* setup;
       yield* Effect.promise(() =>
-        NodeFSP.writeFile(transcript, codexTranscript({ outputTokens: 5, model: "example-model" })),
+        NodeFSP.writeFile(
+          transcript,
+          claudeTranscript({ outputTokens: 5, model: "example-model" }),
+        ),
       );
 
       yield* Effect.gen(function* () {
@@ -178,7 +154,7 @@ describe("UsageService", () => {
     Effect.gen(function* () {
       const { transcript, settings, home } = yield* setup;
       yield* Effect.promise(() =>
-        NodeFSP.writeFile(transcript, codexTranscript({ outputTokens: 5 })),
+        NodeFSP.writeFile(transcript, claudeTranscript({ outputTokens: 5 })),
       );
 
       const service = yield* UsageService.make.pipe(
@@ -188,11 +164,8 @@ describe("UsageService", () => {
       const first = yield* service.readSummary(WINDOW);
       assert.strictEqual(totalOutputTokens(first), 5);
 
-      // The appended rollout line carries no model of its own: the resumed
-      // parse must keep attributing it from the cached Codex reducer state.
-      yield* Effect.promise(() =>
-        NodeFSP.appendFile(transcript, codexUsageLine({ outputTokens: 7 })),
-      );
+      // A resumed parse must keep attributing the appended line to the same model.
+      yield* Effect.promise(() => NodeFSP.appendFile(transcript, claudeLine(2, 7)));
       const second = yield* service.readSummary(WINDOW);
       assert.strictEqual(totalOutputTokens(second), 12);
     }).pipe(Effect.scoped),
@@ -200,9 +173,12 @@ describe("UsageService", () => {
 
   it.live("does not share an in-flight scan after custom prices change", () =>
     Effect.gen(function* () {
-      const { transcript, settings, home, sessionsDir } = yield* setup;
+      const { transcript, settings, home } = yield* setup;
       yield* Effect.promise(() =>
-        NodeFSP.writeFile(transcript, codexTranscript({ outputTokens: 5, model: "example-model" })),
+        NodeFSP.writeFile(
+          transcript,
+          claudeTranscript({ outputTokens: 5, model: "example-model" }),
+        ),
       );
 
       yield* Effect.gen(function* () {
@@ -218,8 +194,8 @@ describe("UsageService", () => {
             exists: (path) =>
               fileSystem.exists(path).pipe(
                 Effect.tap(() => {
-                  // The scan probes the Codex sessions directory once per pass.
-                  if (path !== sessionsDir) return Effect.void;
+                  // The scan probes the Claude projects directory once per pass.
+                  if (path !== NodePath.join(home, "claude", "projects")) return Effect.void;
                   homeProbes += 1;
                   return Deferred.succeed(
                     homeProbes === 1 ? firstScanStarted : secondScanStarted,
@@ -263,7 +239,7 @@ describe("UsageService", () => {
     Effect.gen(function* () {
       const { transcript, settings, home } = yield* setup;
       yield* Effect.promise(() =>
-        NodeFSP.writeFile(transcript, codexTranscript({ outputTokens: 5 })),
+        NodeFSP.writeFile(transcript, claudeTranscript({ outputTokens: 5 })),
       );
 
       let ratesFetches = 0;
@@ -297,7 +273,7 @@ describe("UsageService", () => {
     Effect.gen(function* () {
       const { transcript, settings, home } = yield* setup;
       yield* Effect.promise(() =>
-        NodeFSP.writeFile(transcript, codexTranscript({ outputTokens: 5 })),
+        NodeFSP.writeFile(transcript, claudeTranscript({ outputTokens: 5 })),
       );
 
       let ratesFetches = 0;
@@ -308,7 +284,7 @@ describe("UsageService", () => {
             home,
             settings,
             ratesDocument: {
-              "gpt-5.6-sol": { input_cost_per_token: 1e-5, output_cost_per_token: 5e-5 },
+              "claude-fable-5": { input_cost_per_token: 1e-5, output_cost_per_token: 5e-5 },
             },
             onRatesFetch: () => {
               ratesFetches += 1;

@@ -34,7 +34,7 @@ describe("scoreModelPickerSearch", () => {
     expect(
       scoreModelPickerSearch(
         {
-          driverKind: "claudeAgent",
+          driverKind: "pi",
           providerDisplayName: "Claude",
           name: "Fable-5 Preview",
         },
@@ -120,7 +120,7 @@ describe("scoreModelPickerSearch", () => {
     expect(
       scoreModelPickerSearch(
         {
-          driverKind: "claudeAgent",
+          driverKind: "pi",
           providerDisplayName: "Claude Personal",
           name: "Fable-5 Preview",
         },

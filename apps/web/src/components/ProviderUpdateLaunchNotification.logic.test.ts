@@ -118,14 +118,14 @@ describe("provider update launch notification logic", () => {
           instanceId: instanceId("pi"),
           latestVersion: "1.1.0",
         }),
-        provider({ driver: driver("pi"), latestVersion: "0.3.0" }),
+        provider({ driver: driver("opencode"), latestVersion: "0.3.0" }),
       ]),
     ).toHaveLength(2);
   });
 
   it("disables one-click updates when provider instances disagree on the update command", () => {
     const candidate = updateCandidate({
-      driver: driver("pi"),
+      driver: driver("opencode"),
       instanceId: instanceId("claude_personal"),
       latestVersion: "2.1.123",
     });
@@ -134,8 +134,8 @@ describe("provider update launch notification logic", () => {
       canOneClickUpdateProviderCandidate(candidate, [
         candidate,
         provider({
-          driver: driver("pi"),
-          instanceId: instanceId("pi_work"),
+          driver: driver("opencode"),
+          instanceId: instanceId("claude_work"),
           latestVersion: "2.1.123",
           canUpdate: true,
           updateCommand: "bun add -g @anthropic-ai/claude-code@latest",
@@ -146,7 +146,7 @@ describe("provider update launch notification logic", () => {
 
   it("keeps one-click updates enabled when sibling instances are already current", () => {
     const candidate = updateCandidate({
-      driver: driver("pi"),
+      driver: driver("opencode"),
       instanceId: instanceId("claude_personal"),
       latestVersion: "2.1.123",
       updateCommand: "npm install -g @anthropic-ai/claude-code@latest",
@@ -156,8 +156,8 @@ describe("provider update launch notification logic", () => {
       hasOneClickUpdateProviderCandidate(candidate, [
         candidate,
         provider({
-          driver: driver("pi"),
-          instanceId: instanceId("pi_work"),
+          driver: driver("opencode"),
+          instanceId: instanceId("claude_work"),
           version: "2.1.123",
           latestVersion: "2.1.123",
           advisoryStatus: "current",
@@ -170,8 +170,8 @@ describe("provider update launch notification logic", () => {
       canOneClickUpdateProviderCandidate(candidate, [
         candidate,
         provider({
-          driver: driver("pi"),
-          instanceId: instanceId("pi_work"),
+          driver: driver("opencode"),
+          instanceId: instanceId("claude_work"),
           version: "2.1.123",
           latestVersion: "2.1.123",
           advisoryStatus: "current",
@@ -204,13 +204,13 @@ describe("provider update launch notification logic", () => {
       version: "1.0.0",
       latestVersion: "1.1.0",
     });
-    const pi = updateCandidate({
-      driver: driver("pi"),
+    const claude = updateCandidate({
+      driver: driver("opencode"),
       version: "0.2.0",
       latestVersion: "0.3.0",
     });
 
-    expect(providerUpdateNotificationKey([pi, claude])).toBe("claudeAgent:0.3.0|pi:1.1.0");
+    expect(providerUpdateNotificationKey([pi, claude])).toBe("opencode:0.3.0|pi:1.1.0");
     expect(providerUpdateNotificationKey([])).toBeNull();
   });
 
@@ -293,12 +293,12 @@ describe("provider update launch notification logic", () => {
     const view = getProviderUpdateInitialToastView({
       updateProviders: [
         updateCandidate({ driver: driver("pi"), canUpdate: false }),
-        updateCandidate({ driver: driver("claudeAgent"), canUpdate: false }),
+        updateCandidate({ driver: driver("opencode"), canUpdate: false }),
       ],
       oneClickProviders: [],
     });
 
-    expect(view.description).toBe("Pi and Claude can be updated from provider settings.");
+    expect(view.description).toBe("Pi and OpenCode can be updated from provider settings.");
   });
 
   it("uses server update state for running progress", () => {
@@ -432,15 +432,15 @@ describe("provider update launch notification logic", () => {
 
   it("collects only attempted provider snapshots from update responses", () => {
     const pi = provider({ driver: driver("pi") });
-    const claude = provider({ driver: driver("claudeAgent") });
+    const claude = provider({ driver: driver("opencode") });
     const results = [AsyncResult.success({ providers: [pi, claude] })];
 
     expect(
       collectUpdatedProviderSnapshots({
         results,
-        providerInstanceIds: new Set([pi.instanceId]),
+        providerInstanceIds: new Set([claude.instanceId]),
       }),
-    ).toEqual([pi]);
+    ).toEqual([claude]);
   });
 
   it("summarizes active provider updates for the sidebar pill", () => {
@@ -470,7 +470,7 @@ describe("provider update launch notification logic", () => {
     expect(view).toMatchObject({
       tone: "loading",
       title: "Updating 2 providers",
-      description: "Pi and Claude updates are in progress.",
+      description: "Pi and OpenCode updates are in progress.",
     });
   });
 
@@ -647,7 +647,7 @@ describe("provider update launch notification logic", () => {
     expect(
       getProviderUpdateSidebarPillView([
         provider({ driver: driver("pi"), canUpdate: true }),
-        provider({ driver: driver("claudeAgent"), canUpdate: false }),
+        provider({ driver: driver("opencode"), canUpdate: false }),
       ]),
     ).toBeNull();
   });

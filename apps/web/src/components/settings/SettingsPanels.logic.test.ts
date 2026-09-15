@@ -191,9 +191,9 @@ describe("formatDiagnosticsDescription", () => {
 
 describe("buildProviderInstanceUpdatePatch", () => {
   it("promotes an edited default provider into providerInstances and resets the legacy provider", () => {
-    const instanceId = ProviderInstanceId.make("claudeAgent");
+    const instanceId = ProviderInstanceId.make("pi");
     const nextInstance = {
-      driver: ProviderDriverKind.make("claudeAgent"),
+      driver: ProviderDriverKind.make("pi"),
       enabled: true,
       config: {
         binaryPath: "/opt/t3/claude",
@@ -205,26 +205,26 @@ describe("buildProviderInstanceUpdatePatch", () => {
         ...DEFAULT_SERVER_SETTINGS,
         providers: {
           ...DEFAULT_SERVER_SETTINGS.providers,
-          claudeAgent: {
-            ...DEFAULT_SERVER_SETTINGS.providers.claudeAgent,
+          pi: {
+            ...DEFAULT_SERVER_SETTINGS.providers.pi,
             binaryPath: "/legacy/claude",
           },
         },
       },
       instanceId,
       instance: nextInstance,
-      driver: ProviderDriverKind.make("claudeAgent"),
+      driver: ProviderDriverKind.make("pi"),
       isDefault: true,
     });
 
     expect(patch.providerInstances?.[instanceId]).toEqual(nextInstance);
-    expect(patch.providers?.claudeAgent).toEqual(DEFAULT_SERVER_SETTINGS.providers.claudeAgent);
+    expect(patch.providers?.pi).toEqual(DEFAULT_SERVER_SETTINGS.providers.pi);
   });
 
   it("updates custom instances without touching legacy provider settings", () => {
     const instanceId = ProviderInstanceId.make("claude_personal");
     const nextInstance = {
-      driver: ProviderDriverKind.make("claudeAgent"),
+      driver: ProviderDriverKind.make("pi"),
       enabled: true,
       config: {
         homePath: "/Users/example/.claude-personal",
@@ -235,7 +235,7 @@ describe("buildProviderInstanceUpdatePatch", () => {
       settings: DEFAULT_SERVER_SETTINGS,
       instanceId,
       instance: nextInstance,
-      driver: ProviderDriverKind.make("claudeAgent"),
+      driver: ProviderDriverKind.make("pi"),
       isDefault: false,
     });
 

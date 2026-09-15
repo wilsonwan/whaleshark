@@ -2,7 +2,6 @@ import * as NodeServices from "@effect/platform-node/NodeServices";
 import * as NodeOS from "node:os";
 import { describe, expect, it } from "@effect/vitest";
 import {
-  type AgentSessionSource,
   type OrchestrationProjectShell,
   ProjectId,
   ProviderDriverKind,
@@ -85,15 +84,18 @@ const makeScannerTestLayer = (input: ScannerTestInput) =>
     Layer.provide(
       Layer.mergeAll(
         ServerSettings.layerTest({
-          providers: {
-            claudeAgent: { homePath: input.claudeHomePath },
+          providerInstances: {
+            [ProviderInstanceId.make("claudeAgent")]: {
+              driver: ProviderDriverKind.make("claudeAgent"),
+              environment: [
+                { name: "CLAUDE_CONFIG_DIR", value: input.claudeHomePath, sensitive: false },
+              ],
+            },
+            ...(input.providerInstances ?? {}),
           },
-          ...(input.providerInstances === undefined
-            ? {}
-            : { providerInstances: input.providerInstances }),
         }),
         ServerConfig.layerTest(
-          input.codexHomePath,
+          input.claudeHomePath,
           input.configBaseDir ?? { prefix: "t3code-scanner-config-" },
         ),
         makeProjectionSnapshotQueryLayer(input.importedWorkspaceRoots ?? []),
@@ -354,8 +356,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         yield* fileSystem.symlink(workspace, workspaceAlias);
 
         yield* writeTranscript({
-          filePath: path.join(codexHomePath, "sessions", "2026", "01", "01", "rollout-alias.jsonl"),
-          contents: codexRolloutLine(workspaceAlias),
+          filePath: path.join(claudeHomePath, "projects", "-slug", "a.jsonl"),
+          contents: claudeSessionLine(workspaceAlias),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
 
@@ -384,15 +386,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         yield* fileSystem.symlink(workspace, workspaceAlias);
 
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "01",
-            "01",
-            "rollout-realpath.jsonl",
-          ),
-          contents: codexRolloutLine(workspace),
+          filePath: path.join(claudeHomePath, "projects", "-slug", "a.jsonl"),
+          contents: claudeSessionLine(workspace),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
 
@@ -468,13 +463,13 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const lowerWorkspace = path.join(aliasParent, "repo");
 
         yield* writeTranscript({
-          filePath: path.join(codexHomePath, "sessions", "2026", "01", "02", "rollout-upper.jsonl"),
-          contents: codexRolloutLine(upperWorkspace),
+          filePath: path.join(claudeHomePath, "projects", "-upper", "a.jsonl"),
+          contents: claudeSessionLine(upperWorkspace),
           mtimeMs: Date.parse("2026-01-02T00:00:00.000Z"),
         });
         yield* writeTranscript({
-          filePath: path.join(codexHomePath, "sessions", "2026", "01", "01", "rollout-lower.jsonl"),
-          contents: codexRolloutLine(lowerWorkspace),
+          filePath: path.join(claudeHomePath, "projects", "-lower", "b.jsonl"),
+          contents: claudeSessionLine(lowerWorkspace),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
 
@@ -509,15 +504,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const claudeWorkspace = yield* makeTempDir("t3code-workspace-claude-");
 
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "01",
-            "01",
-            "rollout-legacy.jsonl",
-          ),
-          contents: codexRolloutLine(legacyWorkspace),
+          filePath: path.join(claudeHomePath, "projects", "-legacy", "session.jsonl"),
+          contents: claudeSessionLine(legacyWorkspace),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
         yield* writeTranscript({
@@ -619,15 +607,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const workspace = yield* makeTempDir("t3code-workspace-");
 
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "01",
-            "01",
-            "rollout-session.jsonl",
-          ),
-          contents: codexRolloutLine(workspace),
+          filePath: path.join(claudeHomePath, "projects", "-actual", "session.jsonl"),
+          contents: claudeSessionLine(workspace),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
 
@@ -691,15 +672,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const workspace = yield* makeTempDir("t3code-workspace-");
 
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "01",
-            "01",
-            "rollout-relative.jsonl",
-          ),
-          contents: codexRolloutLine(path.relative(path.resolve(), workspace)),
+          filePath: path.join(claudeHomePath, "projects", "-relative", "session.jsonl"),
+          contents: claudeSessionLine(path.relative(path.resolve(), workspace)),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
 
@@ -715,15 +689,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const claudeHomePath = yield* makeTempDir("t3code-claude-home-");
 
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "01",
-            "01",
-            "rollout-missing-directory.jsonl",
-          ),
-          contents: codexRolloutLine(path.join(codexHomePath, "does-not-exist")),
+          filePath: path.join(claudeHomePath, "projects", "-slug", "a.jsonl"),
+          contents: claudeSessionLine(path.join(claudeHomePath, "does-not-exist")),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
 
@@ -747,15 +714,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
           workspace,
         ].entries()) {
           yield* writeTranscript({
-            filePath: path.join(
-              codexHomePath,
-              "sessions",
-              "2026",
-              "01",
-              `0${index + 1}`,
-              "rollout-session.jsonl",
-            ),
-            contents: codexRolloutLine(cwd),
+            filePath: path.join(claudeHomePath, "projects", `-slug-${index}`, "session.jsonl"),
+            contents: claudeSessionLine(cwd),
             mtimeMs: Date.parse("2026-01-01T00:00:00.000Z") + index,
           });
         }
@@ -772,18 +732,11 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const claudeHomePath = yield* makeTempDir("t3code-claude-home-");
         const fileSystem = yield* FileSystem.FileSystem;
 
-        const worktreeCwd = path.join(codexHomePath, ".t3", "worktrees", "t3code", "wt-1");
+        const worktreeCwd = path.join(claudeHomePath, ".t3", "worktrees", "t3code", "wt-1");
         yield* fileSystem.makeDirectory(worktreeCwd, { recursive: true });
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "01",
-            "01",
-            "rollout-worktree.jsonl",
-          ),
-          contents: codexRolloutLine(worktreeCwd),
+          filePath: path.join(claudeHomePath, "projects", "-slug", "a.jsonl"),
+          contents: claudeSessionLine(worktreeCwd),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
 
@@ -862,15 +815,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
 
         for (const [index, cwd] of [repo, worktree, plain, noRemote, submodule].entries()) {
           yield* writeTranscript({
-            filePath: path.join(
-              codexHomePath,
-              "sessions",
-              "2026",
-              "01",
-              `0${index + 1}`,
-              "rollout-session.jsonl",
-            ),
-            contents: codexRolloutLine(cwd),
+            filePath: path.join(claudeHomePath, "projects", `-slug-${index}`, "a.jsonl"),
+            contents: claudeSessionLine(cwd),
             mtimeMs: Date.parse(`2026-01-0${index + 1}T00:00:00.000Z`),
           });
         }
@@ -907,15 +853,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const worktreeCwd = path.join(configBaseDir, "worktrees", "t3code", "wt-2");
         yield* fileSystem.makeDirectory(worktreeCwd, { recursive: true });
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "01",
-            "01",
-            "rollout-managed.jsonl",
-          ),
-          contents: codexRolloutLine(worktreeCwd),
+          filePath: path.join(claudeHomePath, "projects", "-slug", "a.jsonl"),
+          contents: claudeSessionLine(worktreeCwd),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
 
@@ -940,15 +879,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const symlinkCwd = path.join(linkParent, "innocent-project");
         yield* fileSystem.symlink(worktreeCwd, symlinkCwd);
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "01",
-            "01",
-            "rollout-symlink.jsonl",
-          ),
-          contents: codexRolloutLine(symlinkCwd),
+          filePath: path.join(claudeHomePath, "projects", "-slug", "a.jsonl"),
+          contents: claudeSessionLine(symlinkCwd),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
 
@@ -964,21 +896,10 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const claudeHomePath = yield* makeTempDir("t3code-claude-home-");
         const workspace = yield* makeTempDir("t3code-workspace-");
 
-        // Codex rollouts can open with records that carry no cwd.
-        const contents = [
-          encodeTranscriptRecord({ type: "event_msg", payload: { type: "agent_reasoning" } }),
-          encodeTranscriptRecord({ type: "turn_context", payload: { model: "gpt-5.4" } }),
-          codexRolloutLine(workspace).trim(),
-        ].join("\n");
+        // Claude transcripts often open with records that have no cwd.
+        const contents = `{"type":"file-history-snapshot","messageId":"m1"}\n{"type":"queue-operation","operation":"enqueue"}\n${claudeSessionLine(workspace)}`;
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "01",
-            "01",
-            "rollout-later-line.jsonl",
-          ),
+          filePath: path.join(claudeHomePath, "projects", "-slug", "a.jsonl"),
           contents,
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
@@ -994,13 +915,13 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const path = yield* Path.Path;
         const claudeHomePath = yield* makeTempDir("t3code-claude-home-");
         const workspace = yield* makeTempDir("t3code-workspace-");
-        const record = codexRolloutLine(workspace).trim();
+        const record = claudeSessionLine(workspace).split("\n")[0]!;
         const prefix = '{"padding":"';
         const suffix = `",${record.slice(1)}`;
         const contents = `${prefix}${"x".repeat(32 * 1024 - prefix.length - suffix.length)}${suffix}`;
 
         yield* writeTranscript({
-          filePath: path.join(codexHomePath, "sessions", "2026", "01", "01", "rollout-exact.jsonl"),
+          filePath: path.join(claudeHomePath, "projects", "-exact", "session.jsonl"),
           contents,
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
@@ -1017,18 +938,11 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const path = yield* Path.Path;
         const claudeHomePath = yield* makeTempDir("t3code-claude-home-");
         const workspace = yield* makeTempDir("t3code-workspace-");
-        const history = `{"type":"event_msg","payload":{"type":"agent_reasoning","text":"${"x".repeat(32 * 1024)}"}}\n`;
+        const history = `{"type":"file-history-snapshot","data":"${"x".repeat(32 * 1024)}"}\n`;
 
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "01",
-            "01",
-            "rollout-large-record.jsonl",
-          ),
-          contents: `${history}${codexRolloutLine(workspace)}`,
+          filePath: path.join(claudeHomePath, "projects", "-large", "session.jsonl"),
+          contents: `${history}${claudeSessionLine(workspace)}`,
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
 
@@ -1047,8 +961,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const firstWorkspace = yield* makeTempDir("t3code-metadata-first-project-");
         const secondWorkspace = yield* makeTempDir("t3code-metadata-second-project-");
         const directories = [
-          path.join(codexHomePath, "sessions", "2026", "01", "01"),
-          path.join(secondHome, "sessions", "2026", "01", "01"),
+          path.join(claudeHomePath, "projects", "p"),
+          path.join(secondHome, "projects", "p"),
         ];
         const templates = directories.map((directory) => path.join(directory, "template.jsonl"));
         for (const [index, workspace] of [firstWorkspace, secondWorkspace].entries()) {
@@ -1076,7 +990,7 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
               : Effect.succeed(
                   Array.from(
                     { length: index === 0 ? 32 : count - 32 },
-                    (_, item) => `rollout-${item}.jsonl`,
+                    (_, item) => `session-${item}.jsonl`,
                   ),
                 );
           },
@@ -1101,8 +1015,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const result = yield* runScan({
           claudeHomePath,
           providerInstances: {
-            [ProviderInstanceId.make("codex-work")]: {
-              driver: ProviderDriverKind.make("codex"),
+            [ProviderInstanceId.make("claude-work")]: {
+              driver: ProviderDriverKind.make("claudeAgent"),
               config: { homePath: secondHome },
             },
           },
@@ -1126,7 +1040,7 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const fileSystem = yield* FileSystem.FileSystem;
         const claudeHomePath = yield* makeTempDir("t3code-short-metadata-home-");
         const workspace = yield* makeTempDir("t3code-short-metadata-project-");
-        const directory = path.join(codexHomePath, "sessions", "2026", "01", "01");
+        const directory = path.join(claudeHomePath, "projects", "p");
         const template = path.join(directory, "template.jsonl");
         const record = encodeTranscriptRecord({ cwd: workspace });
         const contents = " ".repeat(399 - new TextEncoder().encode(record).byteLength) + record;
@@ -1142,7 +1056,7 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
           readDirectory: (target, options) =>
             target === directory
               ? Effect.succeed(
-                  Array.from({ length: count }, (_, index) => `rollout-${index}.jsonl`),
+                  Array.from({ length: count }, (_, index) => `session-${index}.jsonl`),
                 )
               : fileSystem.readDirectory(target, options),
           stat: (filePath) =>
@@ -1181,7 +1095,7 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const claudeHomePath = yield* makeTempDir("t3code-record-metadata-home-");
         const secondHome = yield* makeTempDir("t3code-record-metadata-second-");
         const workspace = yield* makeTempDir("t3code-record-metadata-project-");
-        const directory = path.join(codexHomePath, "sessions", "2026", "01", "01");
+        const directory = path.join(claudeHomePath, "projects", "p");
         const template = path.join(directory, "template.jsonl");
         yield* writeTranscript({
           filePath: template,
@@ -1189,8 +1103,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
           mtimeMs: Date.parse("2026-01-02T00:00:00.000Z"),
         });
         yield* writeTranscript({
-          filePath: path.join(secondHome, "sessions", "2026", "01", "01", "rollout-session.jsonl"),
-          contents: codexRolloutLine(workspace),
+          filePath: path.join(secondHome, "projects", "p", "session.jsonl"),
+          contents: encodeTranscriptRecord({ cwd: workspace }),
           mtimeMs: Date.parse("2026-01-01T00:00:00.000Z"),
         });
         let malformedOpens = 0;
@@ -1198,7 +1112,7 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
           ...fileSystem,
           readDirectory: (target, options) =>
             target === directory
-              ? Effect.succeed(Array.from({ length: 102 }, (_, index) => `rollout-${index}.jsonl`))
+              ? Effect.succeed(Array.from({ length: 102 }, (_, index) => `session-${index}.jsonl`))
               : fileSystem.readDirectory(target, options),
           stat: (filePath) =>
             fileSystem.stat(path.dirname(filePath) === directory ? template : filePath),
@@ -1211,8 +1125,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const result = yield* runScan({
           claudeHomePath,
           providerInstances: {
-            [ProviderInstanceId.make("codex-work")]: {
-              driver: ProviderDriverKind.make("codex"),
+            [ProviderInstanceId.make("claude-work")]: {
+              driver: ProviderDriverKind.make("claudeAgent"),
               config: { homePath: secondHome },
             },
           },
@@ -1224,7 +1138,7 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
     );
 
     it.effect.each([19_999, 20_000])(
-      "reports unfinished directory work for %s session date directories",
+      "reports unfinished directory work for %s project directories",
       (count) =>
         Effect.gen(function* () {
           const path = yield* Path.Path;
@@ -1235,11 +1149,13 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
           const observedFileSystem = FileSystem.FileSystem.of({
             ...fileSystem,
             readDirectory: (directory, options) => {
-              if (directory === sessionsDir) {
+              if (directory === projectsDir) {
                 reads += 1;
-                return Effect.succeed(Array.from({ length: count }, (_, index) => `year-${index}`));
+                return Effect.succeed(
+                  Array.from({ length: count }, (_, index) => `project-${index}`),
+                );
               }
-              if (path.dirname(directory) === sessionsDir) {
+              if (path.dirname(directory) === projectsDir) {
                 reads += 1;
                 return Effect.succeed([]);
               }
@@ -1262,36 +1178,19 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const workspace = yield* makeTempDir("t3code-workspace-");
 
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "05",
-            "01",
-            "rollout-broken.jsonl",
-          ),
+          filePath: path.join(claudeHomePath, "projects", "-broken", "a.jsonl"),
           contents: "not json at all\n",
           mtimeMs: Date.parse("2026-05-01T00:00:00.000Z"),
         });
         // Valid JSON, but no cwd anywhere in the record.
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "05",
-            "02",
-            "rollout-no-cwd.jsonl",
-          ),
-          contents: `${encodeTranscriptRecord({
-            type: "event_msg",
-            payload: { type: "agent_reasoning" },
-          })}\n`,
+          filePath: path.join(claudeHomePath, "projects", "-no-cwd", "a.jsonl"),
+          contents: `{"type":"summary"}\n`,
           mtimeMs: Date.parse("2026-05-02T00:00:00.000Z"),
         });
         yield* writeTranscript({
-          filePath: path.join(codexHomePath, "sessions", "2026", "05", "03", "rollout-good.jsonl"),
-          contents: codexRolloutLine(workspace),
+          filePath: path.join(claudeHomePath, "projects", "-good", "a.jsonl"),
+          contents: claudeSessionLine(workspace),
           mtimeMs: Date.parse("2026-05-03T00:00:00.000Z"),
         });
 
@@ -1301,7 +1200,7 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
           {
             path: workspace,
             title: path.basename(workspace),
-            sources: ["codex"],
+            sources: ["claudeAgent"],
             threadCount: 1,
             lastActiveAt: "2026-05-03T00:00:00.000Z",
             alreadyImported: false,
@@ -1314,7 +1213,7 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
     it.effect("returns an empty result when the home directory does not exist", () =>
       Effect.gen(function* () {
         const path = yield* Path.Path;
-        const root = yield* makeTempDir("t3code-missing-home-");
+        const root = yield* makeTempDir("t3code-missing-homes-");
 
         const result = yield* runScan({ claudeHomePath: path.join(root, "no-claude") });
 
@@ -1433,23 +1332,20 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         );
 
         yield* writeTranscript({
-          filePath: path.join(
-            codexHomePath,
-            "sessions",
-            "2026",
-            "08",
-            "24",
-            "rollout-case-session.jsonl",
-          ),
+          filePath: path.join(claudeHomePath, "projects", "-alias", "case-session.jsonl"),
           contents: [
             encodeTranscriptRecord({
-              type: "session_meta",
-              payload: { id: "case-session", cwd: workspaceAlias },
+              type: "user",
+              cwd: workspaceAlias,
+              sessionId: "case-session",
+              timestamp: "2026-08-24T10:00:00.000Z",
+              message: { role: "user", content: "Import case alias history" },
             }),
             encodeTranscriptRecord({
-              type: "event_msg",
-              timestamp: "2026-08-24T10:00:00.000Z",
-              payload: { type: "user_message", message: "Import case alias history" },
+              type: "assistant",
+              sessionId: "case-session",
+              timestamp: "2026-08-24T10:01:00.000Z",
+              message: { role: "assistant", content: "Imported" },
             }),
           ].join("\n"),
           mtimeMs: nowMs,
@@ -2251,47 +2147,38 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const claudeHomePath = yield* makeTempDir("t3code-claude-home-");
         const oldWorkspace = yield* makeTempDir("t3code-workspace-old-");
         const recentWorkspace = yield* makeTempDir("t3code-workspace-recent-");
-        const recentHome = yield* makeTempDir("t3code-codex-recent-home-");
-        const oldDirectory = path.join(codexHomePath, "sessions", "2026", "08", "24");
-        const oldTranscript = path.join(oldDirectory, "rollout-old-template.jsonl");
-        const recentDirectory = path.join(recentHome, "sessions", "2026", "08", "24");
+        const recentHome = yield* makeTempDir("t3code-claude-recent-home-");
+        const oldDirectory = path.join(claudeHomePath, "projects", "-aaa-old");
+        const oldTranscript = path.join(oldDirectory, "old.jsonl");
+        const recentDirectory = path.join(recentHome, "projects", "-zzz-recent");
 
         yield* writeTranscript({
           filePath: oldTranscript,
-          contents: [
-            encodeTranscriptRecord({
-              type: "session_meta",
-              payload: { id: "old-session", cwd: oldWorkspace },
-            }),
-            encodeTranscriptRecord({
-              type: "event_msg",
-              payload: { type: "user_message", message: "Old work" },
-            }),
-          ].join("\n"),
+          contents: encodeTranscriptRecord({
+            type: "user",
+            cwd: oldWorkspace,
+            sessionId: "old-session",
+            message: { role: "user", content: "Old work" },
+          }),
           mtimeMs: nowMs,
         });
         yield* writeTranscript({
-          filePath: path.join(recentDirectory, "rollout-recent.jsonl"),
-          contents: [
-            encodeTranscriptRecord({
-              type: "session_meta",
-              payload: { id: "recent-session", cwd: recentWorkspace },
-            }),
-            encodeTranscriptRecord({
-              type: "event_msg",
-              payload: { type: "user_message", message: "Recent work" },
-            }),
-          ].join("\n"),
+          filePath: path.join(recentDirectory, "recent.jsonl"),
+          contents: encodeTranscriptRecord({
+            type: "user",
+            cwd: recentWorkspace,
+            sessionId: "recent-session",
+            message: { role: "user", content: "Recent work" },
+          }),
           mtimeMs: nowMs - 1_000,
         });
 
         const simulatedOldTranscripts = Array.from(
           { length: 5_000 },
-          (_, index) => `rollout-old-${index}.jsonl`,
+          (_, index) => `old-${index}.jsonl`,
         );
         const resolveTranscript = (filePath: string) =>
-          path.dirname(filePath) === oldDirectory &&
-          path.basename(filePath).startsWith("rollout-old-")
+          path.dirname(filePath) === oldDirectory && path.basename(filePath).startsWith("old-")
             ? oldTranscript
             : filePath;
         const simulatedFileSystem = FileSystem.FileSystem.of({
@@ -2307,8 +2194,8 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
         const input = {
           claudeHomePath,
           providerInstances: {
-            [ProviderInstanceId.make("codex-work")]: {
-              driver: ProviderDriverKind.make("codex"),
+            [ProviderInstanceId.make("claude-work")]: {
+              driver: ProviderDriverKind.make("claudeAgent"),
               config: { homePath: recentHome },
             },
           },
@@ -2416,20 +2303,13 @@ describe("parseAgentSessionTranscript", () => {
 
   it("skips sessions without a visible user message", () => {
     const thread = AgentSessionScanner.parseAgentSessionTranscript({
-      contents: [
-        encodeTranscriptRecord({ type: "session_meta", payload: { id: "codex-session" } }),
-        encodeTranscriptRecord({
-          type: "response_item",
-          payload: {
-            type: "message",
-            role: "assistant",
-            content: [{ type: "output_text", text: "Done" }],
-          },
-        }),
-      ].join("\n"),
-      source: "codex",
-      providerInstanceId: ProviderInstanceId.make("codex"),
-      fallbackSessionId: "codex-session",
+      contents: JSON.stringify({
+        type: "assistant",
+        message: { role: "assistant", content: "Done" },
+      }),
+      source: "claudeAgent",
+      providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+      fallbackSessionId: "claude-session",
       lastActiveAtMs: Date.parse("2026-08-24T12:00:00.000Z"),
     });
 
@@ -2438,27 +2318,23 @@ describe("parseAgentSessionTranscript", () => {
 
   it("keeps the first prompt when later assistant output exceeds the message limit", () => {
     const transcript = [
-      encodeTranscriptRecord({ type: "session_meta", payload: { id: "codex-session" } }),
       encodeTranscriptRecord({
-        type: "event_msg",
-        payload: { type: "user_message", message: "Keep this prompt" },
+        type: "user",
+        sessionId: "claude-session",
+        message: { role: "user", content: "Keep this prompt" },
       }),
       ...Array.from({ length: 250 }, (_, index) =>
         encodeTranscriptRecord({
-          type: "response_item",
-          payload: {
-            type: "message",
-            role: "assistant",
-            content: [{ type: "output_text", text: `Assistant update ${index}` }],
-          },
+          type: "assistant",
+          message: { role: "assistant", content: `Assistant update ${index}` },
         }),
       ),
     ].join("\n");
 
     const thread = AgentSessionScanner.parseAgentSessionTranscript({
       contents: transcript,
-      source: "codex",
-      providerInstanceId: ProviderInstanceId.make("codex"),
+      source: "claudeAgent",
+      providerInstanceId: ProviderInstanceId.make("claudeAgent"),
       fallbackSessionId: "fallback",
       lastActiveAtMs: Date.parse("2026-08-24T12:00:00.000Z"),
     });

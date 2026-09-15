@@ -50,7 +50,7 @@ describe("ProviderModelPicker", () => {
   it("shows a neutral aggregate value without a representative model or availability badge", () => {
     const markup = renderPicker({
       instanceId: "claude_personal",
-      driver: "claudeAgent",
+      driver: "pi",
       model: "gpt-5",
       options: [{ slug: "gpt-5", name: "GPT 5", isUnavailable: true }],
       triggerLabel: "Mixed values",
@@ -60,7 +60,7 @@ describe("ProviderModelPicker", () => {
     expect(markup).not.toContain("Unavailable");
   });
 
-  it.each(["opencode", "claudeAgent", "pi"])(
+  it.each(["opencode", "pi", "pi"])(
     "shows a choice prompt before a %s account has a model catalog",
     (driver) => {
       const markup = renderPicker({
@@ -86,7 +86,7 @@ describe("ProviderModelPicker", () => {
     expect(markup).not.toContain("Fallback model");
   });
 
-  it.each(["claudeAgent", "acpRegistry", "pi"])(
+  it.each(["pi", "acpRegistry", "pi"])(
     "uses the first option label for a missing %s model",
     (driver) => {
       const markup = renderPicker({
@@ -130,13 +130,13 @@ describe("ProviderModelPicker", () => {
   });
 
   it("keeps instance initials visible in the resting trigger", () => {
-    const activeEntry = providerEntry("claude_personal", "claudeAgent");
+    const activeEntry = providerEntry("claude_personal", "pi");
     const markup = renderToStaticMarkup(
       <ProviderModelPicker
         activeInstanceId={activeEntry.instanceId}
         model="gpt-5"
         lockedProvider={null}
-        instanceEntries={[providerEntry("claudeAgent", "claudeAgent"), activeEntry]}
+        instanceEntries={[providerEntry("pi", "pi"), activeEntry]}
         modelOptionsByInstance={new Map()}
         size="xs"
         onInstanceModelChange={() => {}}

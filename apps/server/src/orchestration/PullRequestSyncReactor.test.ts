@@ -64,7 +64,7 @@ function makeThread(
     projectId: PROJECT_ID,
     title: id,
     modelSelection: {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5",
     },
     runtimeMode: "full-access",

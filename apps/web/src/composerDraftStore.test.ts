@@ -29,10 +29,8 @@ import {
 // in production; these aliases keep the legacy-key migration tests concise.
 const PI_INSTANCE = ProviderInstanceId.make("pi");
 const PI_SECONDARY_INSTANCE = ProviderInstanceId.make("pi_secondary");
-const CLAUDE_AGENT_INSTANCE = ProviderInstanceId.make("claudeAgent");
 const OPENCODE_INSTANCE = ProviderInstanceId.make("opencode");
 const PI_DRIVER = ProviderDriverKind.make("pi");
-const CLAUDE_AGENT_DRIVER = ProviderDriverKind.make("claudeAgent");
 const OPENCODE_DRIVER = ProviderDriverKind.make("opencode");
 
 type ProviderOptionSelectionBag = ReadonlyArray<ProviderOptionSelection>;
@@ -2062,11 +2060,11 @@ describe("composerDraftStore modelSelection", () => {
       threadRef,
       providerModelOptions({
         opencode: { fastMode: true },
-        claudeAgent: { effort: "max" },
+        pi: { effort: "max" },
       }),
     );
 
-    // Now set options for only opencode — claudeAgent should be untouched
+    // Now set options for only opencode — pi should be untouched
     store.setModelOptions(
       threadRef,
       providerModelOptions({ opencode: { reasoningEffort: "xhigh" } }),
@@ -2077,9 +2075,8 @@ describe("composerDraftStore modelSelection", () => {
       createModelSelection(OPENCODE_INSTANCE, "gpt-5.4", toSelections({ reasoningEffort: "xhigh" }))
         .options,
     );
-    expect(draft?.modelSelectionByProvider[OPENCODE_INSTANCE]?.options).toEqual(
-      createModelSelection(OPENCODE_INSTANCE, "openai/gpt-5", toSelections({ variant: "high" }))
-        .options,
+    expect(draft?.modelSelectionByProvider[PI_INSTANCE]?.options).toEqual(
+      createModelSelection(PI_INSTANCE, "claude-opus-4-6", toSelections({ effort: "max" })).options,
     );
   });
 
@@ -2090,20 +2087,20 @@ describe("composerDraftStore modelSelection", () => {
       threadRef,
       providerModelOptions({
         opencode: { fastMode: true },
-        claudeAgent: { effort: "max" },
+        pi: { effort: "max" },
       }),
     );
 
-    store.setModelSelection(threadRef, modelSelection(OPENCODE_DRIVER, "openai/gpt-5"));
+    store.setModelSelection(threadRef, modelSelection(PI_DRIVER, "claude-opus-4-6"));
 
     const draft = draftFor(threadId, TEST_ENVIRONMENT_ID);
-    expect(draft?.modelSelectionByProvider[OPENCODE_INSTANCE]).toEqual(
-      modelSelection(OPENCODE_DRIVER, "openai/gpt-5", { variant: "high" }),
+    expect(draft?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
+      modelSelection(PI_DRIVER, "claude-opus-4-6", { effort: "max" }),
     );
     expect(draft?.modelSelectionByProvider[OPENCODE_INSTANCE]?.options).toEqual(
       createModelSelection(OPENCODE_INSTANCE, "gpt-5.4", toSelections({ fastMode: true })).options,
     );
-    expect(draft?.activeProvider).toBe("opencode");
+    expect(draft?.activeProvider).toBe("pi");
   });
 
   it("creates the first sticky snapshot from provider option changes", () => {
@@ -2702,13 +2699,14 @@ describe("composerDraftStore provider-scoped option updates", () => {
         reasoningEffort: "medium",
       }),
     );
-    store.setProviderModelOptions(threadRef, PI_DRIVER, toSelections({ effort: "max" }));
+    store.setProviderModelOptions(threadRef, OPENCODE_DRIVER, toSelections({ effort: "max" }));
     const draft = draftFor(threadId, TEST_ENVIRONMENT_ID);
     expect(draft?.modelSelectionByProvider[PI_INSTANCE]).toEqual(
       modelSelection(PI_DRIVER, "anthropic/claude-opus-4-6", { reasoningEffort: "medium" }),
     );
-    expect(draft?.modelSelectionByProvider[PI_INSTANCE]?.options).toEqual(
-      createModelSelection(PI_INSTANCE, "claude-opus-4-6", toSelections({ effort: "max" })).options,
+    expect(draft?.modelSelectionByProvider[OPENCODE_INSTANCE]?.options).toEqual(
+      createModelSelection(OPENCODE_INSTANCE, "claude-opus-4-6", toSelections({ effort: "max" }))
+        .options,
     );
     expect(draft?.activeProvider).toBe("pi");
   });

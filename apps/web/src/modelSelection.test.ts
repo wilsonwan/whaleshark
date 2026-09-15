@@ -20,7 +20,7 @@ function provider(input: {
   models?: ReadonlyArray<string>;
   supportsTextGeneration?: boolean;
 }): ServerProvider {
-  const driver = input.provider ?? ProviderDriverKind.make("claudeAgent");
+  const driver = input.provider ?? ProviderDriverKind.make("pi");
   return {
     instanceId: ProviderInstanceId.make(input.instanceId),
     driver,
@@ -473,8 +473,8 @@ describe("instance-scoped model selection", () => {
   it("does not add unavailable options for other providers", () => {
     const providers = [
       provider({
-        provider: ProviderDriverKind.make("claudeAgent"),
-        instanceId: "claudeAgent",
+        provider: ProviderDriverKind.make("pi"),
+        instanceId: "pi",
         models: ["gpt-5.6-sol"],
       }),
     ];
@@ -487,7 +487,7 @@ describe("instance-scoped model selection", () => {
     ).toEqual(["gpt-5.6-sol"]);
     expect(
       resolveAppModelSelectionForInstance(
-        ProviderInstanceId.make("claudeAgent"),
+        ProviderInstanceId.make("pi"),
         settingsWithProviderInstances(),
         providers,
         "gpt-missing",
@@ -497,8 +497,8 @@ describe("instance-scoped model selection", () => {
   });
 
   it("falls back from an explicit non-OpenCode draft with a missing model", () => {
-    const instanceId = ProviderInstanceId.make("claudeAgent");
-    const driver = ProviderDriverKind.make("claudeAgent");
+    const instanceId = ProviderInstanceId.make("pi");
+    const driver = ProviderDriverKind.make("pi");
     const providers = [provider({ provider: driver, instanceId, models: ["gpt-5.6-sol"] })];
     const state = deriveEffectiveComposerModelState({
       draft: {
@@ -683,7 +683,7 @@ describe("instance-scoped model selection", () => {
         supportsTextGeneration: false,
       }),
       provider({
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         models: ["gpt-5.6-luna"],
       }),
     ];
@@ -696,7 +696,7 @@ describe("instance-scoped model selection", () => {
     };
 
     expect(resolveAppModelSelectionState(settings, providers).instanceId).toBe(
-      ProviderInstanceId.make("claudeAgent"),
+      ProviderInstanceId.make("pi"),
     );
   });
   it("does not select a provider that cannot generate system text", () => {
@@ -709,7 +709,7 @@ describe("instance-scoped model selection", () => {
       }),
       supportsTextGeneration: false,
     };
-    const supported = provider({ instanceId: "claudeAgent", models: ["gpt-5.6-sol"] });
+    const supported = provider({ instanceId: "pi", models: ["gpt-5.6-sol"] });
     const settings = {
       ...settingsWithProviderInstances(),
       textGenerationModelSelection: createModelSelection(instanceId, "default"),

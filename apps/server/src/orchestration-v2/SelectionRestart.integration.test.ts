@@ -22,7 +22,7 @@ import * as Queue from "effect/Queue";
 import * as Ref from "effect/Ref";
 import * as Stream from "effect/Stream";
 
-import { PiProviderCapabilitiesV2 } from "./Adapters/PiAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import { OrchestrationEffectWorkerV2 } from "./EffectWorker.ts";
 import { OrchestratorV2 } from "./Orchestrator.ts";
 import {
@@ -39,8 +39,8 @@ import {
 import { makeOrchestratorV2ReplayLayerWithRegistry } from "./testkit/ProviderReplayHarness.ts";
 import { checkpointWorkspace } from "./testkit/ReplayFixtureWorkspace.ts";
 
-const driver = ProviderDriverKind.make("pi");
-const providerInstanceId = ProviderInstanceId.make("pi-restart-test");
+const driver = ProviderDriverKind.make("opencode");
+const providerInstanceId = ProviderInstanceId.make("opencode-restart-test");
 const initialSelection = {
   instanceId: providerInstanceId,
   model: "restart-model-a",
@@ -55,29 +55,14 @@ const handoffSelection = {
   instanceId: handoffProviderInstanceId,
   model: "handoff-model",
 } satisfies ModelSelection;
-// The pooled session supports multiple provider threads per session and
-// interrupt-and-restart steering, which no surviving built-in adapter
-// advertises by default, so opt in explicitly.
-const RESTART_PROVIDER_TURNS = {
-  ...PiProviderCapabilitiesV2.turns,
-  supportsSteeringByInterruptRestart: true,
-};
-const pooledCapabilities: OrchestrationV2ProviderCapabilities = {
-  ...PiProviderCapabilitiesV2,
-  sessions: {
-    ...PiProviderCapabilitiesV2.sessions,
-    supportsMultipleProviderThreadsPerSession: true,
-  },
-  turns: RESTART_PROVIDER_TURNS,
-};
+const pooledCapabilities: OrchestrationV2ProviderCapabilities = TestProviderCapabilitiesV2;
 const exclusiveCapabilities: OrchestrationV2ProviderCapabilities = {
-  ...PiProviderCapabilitiesV2,
+  ...TestProviderCapabilitiesV2,
   sessions: {
-    ...PiProviderCapabilitiesV2.sessions,
+    ...TestProviderCapabilitiesV2.sessions,
     supportsMultipleProviderThreadsPerSession: false,
     supportsModelSwitchInSession: false,
   },
-  turns: RESTART_PROVIDER_TURNS,
 };
 
 interface ActiveTurn {
@@ -670,7 +655,7 @@ for (const mode of ["active", "idle", "selection-command", "pooled", "separate-h
         const name = `shared-home-${mode}`;
         const cwd = yield* checkpointWorkspace(name);
         const threadId = ThreadId.make(`thread:${name}`);
-        const targetId = ProviderInstanceId.make("pi-shadow-account");
+        const targetId = ProviderInstanceId.make("opencode-shadow-account");
         const state = yield* Ref.make<RestartAdapterState>({
           activeTurn: null,
           opened: [],
@@ -717,7 +702,7 @@ for (const mode of ["active", "idle", "selection-command", "pooled", "separate-h
             Effect.succeed({
               driver,
               continuationKey:
-                mode === "separate-home" ? `pi:home:/${instanceId}` : "pi:home:/shared",
+                mode === "separate-home" ? `opencode:home:/${instanceId}` : "opencode:home:/shared",
               enabled: true,
               capabilities,
             }),

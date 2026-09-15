@@ -38,9 +38,10 @@ import * as Schema from "effect/Schema";
 import * as Semaphore from "effect/Semaphore";
 import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 
+import { HostProcessEnvironment } from "@t3tools/shared/hostProcess";
 import { ServerConfig } from "../config.ts";
+import { expandHomePath } from "../pathExpansion.ts";
 import * as ServerSettings from "../serverSettings.ts";
-import { resolveClaudeHomePath } from "../provider/Drivers/ClaudeHome.ts";
 import { UsageAggregator } from "./usageAggregation.ts";
 import { createOverrideRateTable, parseRateTable, type RateTable } from "./usagePricing.ts";
 import {
@@ -228,14 +229,24 @@ export const make = Effect.gen(function* () {
     ),
   );
 
+  /**
+   * Claude Code's config directory: the CLI's own `CLAUDE_CONFIG_DIR` when it
+   * is set, otherwise the default `~/.claude` install. The removed Claude
+   * provider's per-instance `homePath` override went with the provider.
+   */
+  const hostEnvironment = yield* HostProcessEnvironment;
+  const resolveClaudeConfigDir = (): string => {
+    const configured = hostEnvironment.CLAUDE_CONFIG_DIR?.trim() ?? "";
+    return configured.length > 0
+      ? (path.resolve(expandHomePath(configured)) as string)
+      : path.join(NodeOS.homedir(), ".claude");
+  };
+
   /** Resolves the transcript directory for each provider. */
   const resolveTranscriptDirs = Effect.fn("UsageService.resolveTranscriptDirs")(function* (
-    settings: ServerSettingsValue,
+    _settings: ServerSettingsValue,
   ) {
-    const claudeHome = yield* resolveClaudeHomePath(settings.providers.claudeAgent);
-    const claudeDir = yield* resolveClaudeTranscriptDir(claudeHome);
-
-    return [{ provider: "claude" as const, dir: claudeDir }];
+    return [{ provider: "claude" as const, dir: path.join(resolveClaudeConfigDir(), "projects") }];
   });
 
   /**

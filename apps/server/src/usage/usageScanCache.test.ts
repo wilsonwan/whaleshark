@@ -12,7 +12,7 @@ import type { UsageRecord } from "./usageTranscripts.ts";
 
 function record(overrides: Partial<UsageRecord> = {}): UsageRecord {
   return {
-    provider: "codex",
+    provider: "claude",
     timestampMs: 1_786_000_000_000,
     model: "gpt-5.6-sol",
     sessionId: "session-a",
@@ -44,7 +44,7 @@ function cacheWith(entries: readonly [string, number, readonly UsageRecord[]][])
     cache.set(path, {
       size: records.length * 10,
       mtimeMs,
-      provider: "codex",
+      provider: "claude",
       records,
       tailRecords: [],
       position: position(),
@@ -56,15 +56,15 @@ function cacheWith(entries: readonly [string, number, readonly UsageRecord[]][])
 describe("scan cache round trip", () => {
   it("restores records unchanged", () => {
     const original = cacheWith([
-      ["/a.jsonl", 100, [record(), record({ dedupeKey: "msg_2:", model: "gpt-5.2-codex" })]],
+      ["/a.jsonl", 100, [record(), record({ dedupeKey: "msg_2:", model: "opencode-model" })]],
       ["/b.jsonl", 200, [record({ sessionId: "session-b", reportedCostUsd: 1.5 })]],
     ]);
     original.set("/with-tail.jsonl", {
       size: 40,
       mtimeMs: 300,
-      provider: "codex",
-      records: [record({ model: "gpt-5.2-codex", dedupeKey: "s:p:gpt-5.2-codex" })],
-      tailRecords: [record({ model: "gpt-5.2-codex", dedupeKey: null })],
+      provider: "claude",
+      records: [record({ model: "opencode-model", dedupeKey: "s:p:opencode-model" })],
+      tailRecords: [record({ model: "opencode-model", dedupeKey: null })],
       position: position({ resumeOffset: 30, guardLength: 30, guardHash: 123 }),
     });
     original.set("/c.jsonl", {
@@ -94,7 +94,7 @@ describe("scan cache round trip", () => {
       ...encoded,
       files: {
         ...encoded.files,
-        "/legacy.jsonl": { ...encoded.files["/a.jsonl"]!, p: "claude" },
+        "/legacy.jsonl": { ...encoded.files["/a.jsonl"]!, p: "removed-provider" },
       },
     };
 
@@ -143,7 +143,7 @@ describe("scan cache round trip", () => {
     const encoded = encodeScanCache(cacheWith([["/good.jsonl", 100, [record()]]]));
     const withJunk = {
       ...encoded,
-      files: { ...encoded.files, "/bad.jsonl": { s: "nope", m: 1, p: "codex", r: [] } },
+      files: { ...encoded.files, "/bad.jsonl": { s: "nope", m: 1, p: "claude", r: [] } },
     };
 
     const restored = decodeScanCache(JSON.parse(JSON.stringify(withJunk)));
@@ -249,7 +249,7 @@ describe("pruneScanCache with an unwalked root", () => {
 
     const removed = pruneScanCache(cache, {
       livePaths: new Set(),
-      walkedRoots: ["/codex/archived_sessions"],
+      walkedRoots: ["/claude/archived_projects"],
       windowStartMs: 4000,
       retentionCutoffMs: 1000,
     });
@@ -259,11 +259,11 @@ describe("pruneScanCache with an unwalked root", () => {
   });
 
   it("keeps entries under a sibling path that only shares the walked root prefix", () => {
-    const cache = cacheWith([["/codex/sessions-copy/a.jsonl", 5000, [record()]]]);
+    const cache = cacheWith([["/claude/projects-copy/a.jsonl", 5000, [record()]]]);
 
     const removed = pruneScanCache(cache, {
       livePaths: new Set(),
-      walkedRoots: ["/codex/sessions"],
+      walkedRoots: ["/claude/projects"],
       windowStartMs: 4000,
       retentionCutoffMs: 1000,
     });

@@ -28,7 +28,7 @@ const scope = {
   environmentId: EnvironmentId.make("environment-1"),
   threadId: ThreadId.make("thread-1"),
   providerSessionId: "provider-session-1",
-  providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+  providerInstanceId: ProviderInstanceId.make("pi"),
   capabilities: new Set(["preview"] as const),
   issuedAt: 1,
 };

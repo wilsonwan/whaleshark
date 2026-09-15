@@ -34,7 +34,7 @@ const creation: QueuedThreadMessage = {
       previewUri: "data:image/png;base64,AAAA",
     },
   ],
-  modelSelection: { instanceId: ProviderInstanceId.make("claudeAgent"), model: "gpt-5.6-sol" },
+  modelSelection: { instanceId: ProviderInstanceId.make("pi"), model: "gpt-5.6-sol" },
   runtimeMode: "full-access",
   creation: {
     projectId: ProjectId.make("project-1"),

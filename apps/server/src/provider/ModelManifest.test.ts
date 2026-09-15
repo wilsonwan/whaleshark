@@ -28,7 +28,7 @@ import {
  * synthetic models for resolver coverage.
  */
 
-const MANIFEST_DRIVER = ProviderDriverKind.make("claudeAgent");
+const MANIFEST_DRIVER = ProviderDriverKind.make("pi");
 const model = (overrides: Partial<ServerProviderModel>): ServerProviderModel => ({
   slug: "gpt-test",
   name: "GPT Test",
@@ -41,7 +41,7 @@ describe("classifyModels", () => {
   it("flags non-current models, clears stale flags, and skips custom models", () => {
     const manifest: ModelManifestData = {
       version: 1,
-      currentModels: { claudeAgent: ["current-a", "current-b"] },
+      currentModels: { pi: ["current-a", "current-b"] },
     };
     const models = [
       model({ slug: "current-a" }),
@@ -199,7 +199,7 @@ const REMOTE_MANIFEST: ModelManifestData = {
   version: 1,
   updatedAt: REMOTE_UPDATED_AT,
   currentModels: {
-    claudeAgent: ["remote-agent-model"],
+    pi: ["remote-agent-model"],
   },
 };
 

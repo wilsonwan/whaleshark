@@ -39,6 +39,8 @@ import * as AgentSessionScanner from "./AgentSessionScanner.ts";
 import { ProjectService } from "./ProjectService.ts";
 
 const IMPORT_EVENT_PREFIX = "agent-session-import:v2";
+const CLAUDE_SESSION_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const decodeImportedTranscriptPayload = Schema.decodeUnknownOption(
   Schema.Struct({
     cwd: Schema.optional(Schema.String),
@@ -238,6 +240,15 @@ const make = Effect.gen(function* () {
 
         const imported = yield* Effect.gen(function* () {
           const thread = outcome.thread;
+          if (
+            thread.source === "claudeAgent" &&
+            !CLAUDE_SESSION_ID_PATTERN.test(thread.providerSessionId)
+          ) {
+            return yield* new AgentSessionUnresumableSessionError({
+              source: thread.source,
+              providerSessionId: thread.providerSessionId,
+            });
+          }
           const existing = yield* Effect.option(orchestrator.getThreadProjection(threadId));
           if (Option.isSome(existing)) {
             if (existing.value.thread.projectId !== input.projectId) {

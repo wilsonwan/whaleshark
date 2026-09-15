@@ -45,7 +45,6 @@ import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import { McpSchema, McpServer } from "effect/unstable/ai";
 
-import { ClaudeProviderCapabilitiesV2 } from "../orchestration-v2/Adapters/ClaudeAdapterV2.ts";
 import { PiProviderCapabilitiesV2 } from "../orchestration-v2/Adapters/PiAdapterV2.ts";
 import { OrchestratorV2, type OrchestratorV2Shape } from "../orchestration-v2/Orchestrator.ts";
 import { layer as threadManagementServiceLayer } from "../orchestration-v2/ThreadManagementService.ts";
@@ -71,9 +70,7 @@ import { delegatedTaskRun, hasPendingChildRuns } from "./OrchestratorMcpService.
 const parentThreadId = ThreadId.make("thread:mcp-orchestrator-parent");
 const projectId = ProjectId.make("project:mcp-orchestrator");
 const piInstanceId = ProviderInstanceId.make("pi");
-const claudeInstanceId = ProviderInstanceId.make("claudeAgent");
 const piModel = "default";
-const claudeModel = "claude-sonnet-4-6";
 const parentPrompt = "Keep this parent turn active while orchestration tools are tested.";
 const delegatedPrompt = "Inspect the delegated API boundary and return the result.";
 const delegatedResult = "Delegated API boundary inspected.";
@@ -94,11 +91,6 @@ const decodeThreadReadResult = Schema.decodeUnknownEffect(OrchestratorMcpThreadR
 const decodeThreadSendResult = Schema.decodeUnknownEffect(OrchestratorMcpThreadSendResult);
 const decodeThreadWaitResult = Schema.decodeUnknownEffect(OrchestratorMcpThreadWaitResult);
 const decodeThreadUpdateResult = Schema.decodeUnknownEffect(ThreadMetadataMcpUpdateResult);
-
-const piSelection = {
-  instanceId: piInstanceId,
-  model: piModel,
-} satisfies ModelSelection;
 
 const piSelection = {
   instanceId: piInstanceId,
@@ -470,19 +462,6 @@ describe("orchestrator MCP toolkit", () => {
               capturedTurns,
               shouldComplete: (turn) =>
                 turn.threadId !== parentThreadId && turn.message.text !== cancellationPrompt,
-              terminalGate: (turn) =>
-                turn.message.text.startsWith("Delegated task") ||
-                turn.message.text.startsWith("Delegated tasks")
-                  ? deliveryTerminalGates.get(turn.threadId)
-                  : parentTerminalGates.get(turn.threadId),
-              response: (turn) => `Pi completed: ${turn.message.text}`,
-            }),
-            makeDeterministicAdapter({
-              instanceId: piInstanceId,
-              driver: ProviderDriverKind.make("pi"),
-              capabilities: PiProviderCapabilitiesV2,
-              capturedTurns,
-              shouldComplete: (turn) => turn.message.text !== cancellationPrompt,
               terminalGate: (turn) =>
                 turn.message.text.startsWith("Delegated task") ||
                 turn.message.text.startsWith("Delegated tasks")

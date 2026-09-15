@@ -1,19 +1,19 @@
 import { assert, it } from "@effect/vitest";
 import { ProviderDriverKind, ProviderInstanceId } from "@t3tools/contracts";
 
-import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import { decideProviderSessionTransition } from "./ProviderSessionTransitionPolicy.ts";
 
-const driver = ProviderDriverKind.make("claudeAgent");
-const instanceId = ProviderInstanceId.make("claudeAgent");
+const driver = ProviderDriverKind.make("opencode");
+const instanceId = ProviderInstanceId.make("opencode");
 const base = {
   driver,
-  continuationIdentity: { driverKind: driver, continuationKey: "claude:account:one" },
-  modelSelection: { instanceId, model: "claude-sonnet-4-6" },
+  continuationIdentity: { driverKind: driver, continuationKey: "opencode:account:one" },
+  modelSelection: { instanceId, model: "opencode-model-a" },
   runtimeMode: "full-access" as const,
   interactionMode: "default" as const,
   workspace: "/repo",
-  capabilities: ClaudeProviderCapabilitiesV2,
+  capabilities: TestProviderCapabilitiesV2,
 };
 
 it("reuses compatible sessions and treats interaction mode as turn-scoped", () => {
@@ -32,7 +32,7 @@ it("uses the adapter's selection transition classification", () => {
       current: base,
       target: {
         ...base,
-        modelSelection: { ...base.modelSelection, model: "claude-opus-4-6" },
+        modelSelection: { ...base.modelSelection, model: "opencode-model-b" },
         available: true,
       },
       selectionTransition: { type: "apply_on_next_turn" },
@@ -54,7 +54,7 @@ it("uses the adapter's selection transition classification", () => {
           ...base.capabilities,
           sessions: { ...base.capabilities.sessions, supportsModelSwitchInSession: false },
         },
-        modelSelection: { ...base.modelSelection, model: "claude-opus-4-6" },
+        modelSelection: { ...base.modelSelection, model: "opencode-model-b" },
         available: true,
       },
       selectionTransition: { type: "restart_session" },
@@ -103,7 +103,7 @@ it("preserves a rejected selection when the workspace also changes", () => {
       current: base,
       target: {
         ...base,
-        modelSelection: { ...base.modelSelection, model: "claude-opus-4-6" },
+        modelSelection: { ...base.modelSelection, model: "opencode-model-b" },
         workspace: "/other",
         available: true,
       },
@@ -119,7 +119,7 @@ it("preserves a rejected selection when the workspace also changes", () => {
 it("preserves handoff and missing-classification outcomes across workspace changes", () => {
   const target = {
     ...base,
-    modelSelection: { ...base.modelSelection, model: "claude-opus-4-6" },
+    modelSelection: { ...base.modelSelection, model: "opencode-model-b" },
     workspace: "/other",
     available: true,
   };
@@ -145,9 +145,9 @@ it("uses portable handoff for incompatible continuation identities", () => {
         ...base,
         modelSelection: {
           ...base.modelSelection,
-          instanceId: ProviderInstanceId.make("claude_other"),
+          instanceId: ProviderInstanceId.make("opencode_other"),
         },
-        continuationIdentity: { driverKind: driver, continuationKey: "claude:account:other" },
+        continuationIdentity: { driverKind: driver, continuationKey: "opencode:account:other" },
         available: true,
       },
     }),

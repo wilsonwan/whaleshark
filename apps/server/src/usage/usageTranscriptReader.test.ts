@@ -36,30 +36,30 @@ function claudeLine(id: number, outputTokens: number): string {
 describe("readTranscriptRecords resume", () => {
   it("parses only appended lines when resuming a grown file", async () => {
     const path = NodePath.join(dir, "rollout.jsonl");
-    await NodeFSP.writeFile(path, codexHead() + codexUsageLine(5, 4) + codexUsageLine(7, 5));
-    const first = await readTranscriptRecords(path, "codex");
+    await NodeFSP.writeFile(path, claudeLine(1, 5) + claudeLine(2, 7));
+    const first = await readTranscriptRecords(path, "claude");
     assert.isNotNull(first);
     assert.strictEqual(first.records.length, 2);
     assert.isFalse(first.resumed);
 
-    await NodeFSP.appendFile(path, codexUsageLine(11, 9));
-    const second = await readTranscriptRecords(path, "codex", first.position);
+    await NodeFSP.appendFile(path, claudeLine(3, 11));
+    const second = await readTranscriptRecords(path, "claude", first.position);
     assert.isNotNull(second);
     assert.isTrue(second.resumed);
     assert.strictEqual(second.records.length, 1);
     assert.strictEqual(second.records[0]?.totals.outputTokens, 11);
 
     // The stitched result matches a from-scratch parse of the whole file.
-    const full = await readTranscriptRecords(path, "codex");
+    const full = await readTranscriptRecords(path, "claude");
     assert.isNotNull(full);
     assert.deepStrictEqual([...first.records, ...second.records], [...full.records]);
   });
 
   it("defers an unterminated trailing line to tailRecords, then consumes it once terminated", async () => {
     const path = NodePath.join(dir, "rollout.jsonl");
-    const unterminated = codexUsageLine(7, 5).trimEnd();
-    await NodeFSP.writeFile(path, codexHead() + codexUsageLine(5, 4) + unterminated);
-    const first = await readTranscriptRecords(path, "codex");
+    const unterminated = claudeLine(2, 7).trimEnd();
+    await NodeFSP.writeFile(path, claudeLine(1, 5) + unterminated);
+    const first = await readTranscriptRecords(path, "claude");
     assert.isNotNull(first);
     assert.strictEqual(first.records.length, 1);
     assert.strictEqual(first.tailRecords.length, 1);
@@ -67,8 +67,8 @@ describe("readTranscriptRecords resume", () => {
 
     // Completing the line and appending another re-reads from the resume
     // point, so the once-tail record arrives exactly once as a line record.
-    await NodeFSP.appendFile(path, `\n${codexUsageLine(11, 9)}`);
-    const second = await readTranscriptRecords(path, "codex", first.position);
+    await NodeFSP.appendFile(path, `\n${claudeLine(3, 11)}`);
+    const second = await readTranscriptRecords(path, "claude", first.position);
     assert.isNotNull(second);
     assert.isTrue(second.resumed);
     assert.deepStrictEqual(
@@ -80,13 +80,13 @@ describe("readTranscriptRecords resume", () => {
 
   it("re-parses from the start when the guard bytes no longer match", async () => {
     const path = NodePath.join(dir, "rollout.jsonl");
-    await NodeFSP.writeFile(path, codexHead() + codexUsageLine(5, 4));
-    const first = await readTranscriptRecords(path, "codex");
+    await NodeFSP.writeFile(path, claudeLine(1, 5));
+    const first = await readTranscriptRecords(path, "claude");
     assert.isNotNull(first);
 
     // Same path, larger size, different content: a replaced file, not growth.
-    await NodeFSP.writeFile(path, codexHead() + codexUsageLine(13, 4) + codexUsageLine(17, 5));
-    const second = await readTranscriptRecords(path, "codex", first.position);
+    await NodeFSP.writeFile(path, claudeLine(4, 13) + claudeLine(5, 17));
+    const second = await readTranscriptRecords(path, "claude", first.position);
     assert.isNotNull(second);
     assert.isFalse(second.resumed);
     assert.deepStrictEqual(
@@ -97,12 +97,12 @@ describe("readTranscriptRecords resume", () => {
 
   it("re-parses from the start when the file shrank below the resume point", async () => {
     const path = NodePath.join(dir, "rollout.jsonl");
-    await NodeFSP.writeFile(path, codexHead() + codexUsageLine(5, 4) + codexUsageLine(7, 5));
-    const first = await readTranscriptRecords(path, "codex");
+    await NodeFSP.writeFile(path, claudeLine(1, 5) + claudeLine(2, 7));
+    const first = await readTranscriptRecords(path, "claude");
     assert.isNotNull(first);
 
-    await NodeFSP.writeFile(path, codexHead() + codexUsageLine(11, 4));
-    const second = await readTranscriptRecords(path, "codex", first.position);
+    await NodeFSP.writeFile(path, claudeLine(3, 11));
+    const second = await readTranscriptRecords(path, "claude", first.position);
     assert.isNotNull(second);
     assert.isFalse(second.resumed);
     assert.deepStrictEqual(
@@ -116,17 +116,20 @@ describe("readTranscriptRecords resume", () => {
     // split across many chunks and must reassemble into one record.
     const path = NodePath.join(dir, "rollout.jsonl");
     const bigLine = `${JSON.stringify({
-      type: "event_msg",
+      type: "assistant",
       timestamp: "2026-08-01T10:00:04Z",
-      padding: "x".repeat(512 * 1024),
-      payload: {
-        type: "token_count",
-        info: { last_token_usage: { input_tokens: 100, output_tokens: 42 } },
+      requestId: "req_big",
+      sessionId: "session-1",
+      message: {
+        id: "msg_big",
+        model: "claude-fable-5",
+        usage: { input_tokens: 100, output_tokens: 42 },
+        content: "x".repeat(512 * 1024),
       },
     })}\n`;
-    await NodeFSP.writeFile(path, codexHead() + bigLine + codexUsageLine(7, 5));
+    await NodeFSP.writeFile(path, bigLine + claudeLine(2, 7));
 
-    const parsed = await readTranscriptRecords(path, "codex");
+    const parsed = await readTranscriptRecords(path, "claude");
     assert.isNotNull(parsed);
     assert.deepStrictEqual(
       parsed.records.map((record) => record.totals.outputTokens),
@@ -135,6 +138,6 @@ describe("readTranscriptRecords resume", () => {
   });
 
   it("returns null for an unreadable file", async () => {
-    assert.isNull(await readTranscriptRecords(NodePath.join(dir, "missing.jsonl"), "codex"));
+    assert.isNull(await readTranscriptRecords(NodePath.join(dir, "missing.jsonl"), "claude"));
   });
 });

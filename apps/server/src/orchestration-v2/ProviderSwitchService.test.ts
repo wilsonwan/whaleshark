@@ -10,19 +10,19 @@ import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
-import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import type { ProviderAdapterV2Shape } from "./ProviderAdapter.ts";
 import * as ProviderAdapterRegistry from "./ProviderAdapterRegistry.ts";
 import * as ProviderSwitch from "./ProviderSwitchService.ts";
 
-const driver = ProviderDriverKind.make("claudeAgent");
-const currentInstanceId = ProviderInstanceId.make("claude_primary");
+const driver = ProviderDriverKind.make("opencode");
+const currentInstanceId = ProviderInstanceId.make("opencode_primary");
 const currentSessionId = ProviderSessionId.make("session_primary");
 const now = DateTime.makeUnsafe("2026-06-20T00:00:00.000Z");
 const capabilitiesWithoutModelSwitch = {
-  ...ClaudeProviderCapabilitiesV2,
+  ...TestProviderCapabilitiesV2,
   sessions: {
-    ...ClaudeProviderCapabilitiesV2.sessions,
+    ...TestProviderCapabilitiesV2.sessions,
     supportsModelSwitchInSession: false,
   },
 };
@@ -31,7 +31,7 @@ function projection(): OrchestrationV2ThreadProjection {
   return {
     thread: {
       id: ThreadId.make("thread_switch_service"),
-      modelSelection: { instanceId: currentInstanceId, model: "claude-sonnet-4-6" },
+      modelSelection: { instanceId: currentInstanceId, model: "opencode-model-a" },
       runtimeMode: "full-access",
       interactionMode: "default",
       worktreePath: "/repo",
@@ -90,13 +90,13 @@ it.effect(
       const service = yield* ProviderSwitch.ProviderSwitchServiceV2;
       const result = yield* service.plan({
         projection: projection(),
-        targetModelSelection: { instanceId: currentInstanceId, model: "claude-opus-4-6" },
+        targetModelSelection: { instanceId: currentInstanceId, model: "opencode-model-b" },
       });
       assert.equal(result.transition.type, "restart_and_resume");
       assert.deepEqual(result.releaseProviderSessionIds, [currentSessionId]);
     }).pipe(
       Effect.provide(
-        testLayer({ [currentInstanceId]: { continuationKey: "claude:account:primary" } }),
+        testLayer({ [currentInstanceId]: { continuationKey: "opencode:account:primary" } }),
       ),
     ),
 );
@@ -104,24 +104,24 @@ it.effect(
 it.effect("distinguishes compatible and incompatible instances of the same driver", () =>
   Effect.gen(function* () {
     const service = yield* ProviderSwitch.ProviderSwitchServiceV2;
-    const compatibleId = ProviderInstanceId.make("claude_compatible");
-    const incompatibleId = ProviderInstanceId.make("claude_incompatible");
+    const compatibleId = ProviderInstanceId.make("opencode_compatible");
+    const incompatibleId = ProviderInstanceId.make("opencode_incompatible");
     const compatible = yield* service.plan({
       projection: projection(),
-      targetModelSelection: { instanceId: compatibleId, model: "claude-sonnet-4-6" },
+      targetModelSelection: { instanceId: compatibleId, model: "opencode-model-a" },
     });
     const incompatible = yield* service.plan({
       projection: projection(),
-      targetModelSelection: { instanceId: incompatibleId, model: "claude-sonnet-4-6" },
+      targetModelSelection: { instanceId: incompatibleId, model: "opencode-model-a" },
     });
     assert.equal(compatible.transition.type, "restart_and_resume");
     assert.equal(incompatible.transition.type, "create_with_handoff");
   }).pipe(
     Effect.provide(
       testLayer({
-        [currentInstanceId]: { continuationKey: "claude:account:primary" },
-        claude_compatible: { continuationKey: "claude:account:primary" },
-        claude_incompatible: { continuationKey: "claude:account:other" },
+        [currentInstanceId]: { continuationKey: "opencode:account:primary" },
+        opencode_compatible: { continuationKey: "opencode:account:primary" },
+        opencode_incompatible: { continuationKey: "opencode:account:other" },
       }),
     ),
   ),

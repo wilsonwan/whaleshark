@@ -96,8 +96,8 @@ beforeEach(() => {
         serverConfig: {
           providers: [
             {
-              instanceId: ProviderInstanceId.make("claudeAgent"),
-              driver: "claudeAgent",
+              instanceId: ProviderInstanceId.make("pi"),
+              driver: "pi",
               enabled: true,
               installed: true,
               version: null,
