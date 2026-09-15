@@ -31,7 +31,7 @@ layer("016_CanonicalizeModelSelections", (it) => {
           deleted_at
         )
         VALUES
-          ('project-codex', 'Codex project', '/tmp/project-codex', 'gpt-5.4', '[]', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL),
+          ('project-other', 'Other project', '/tmp/project-other', 'gpt-5.4', '[]', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL),
           ('project-claude', 'Claude project', '/tmp/project-claude', 'claude-sonnet-4-6', '[]', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL),
           ('project-null', 'Null project', '/tmp/project-null', NULL, '[]', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL)
       `;
@@ -56,9 +56,9 @@ layer("016_CanonicalizeModelSelections", (it) => {
           interaction_mode
         )
         VALUES
-          ('thread-session', 'project-codex', 'Session thread', 'gpt-5.4', NULL, NULL, NULL, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL, 'full-access', 'default'),
+          ('thread-session', 'project-other', 'Session thread', 'gpt-5.4', NULL, NULL, NULL, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL, 'full-access', 'default'),
           ('thread-claude', 'project-claude', 'Claude thread', 'claude-opus-4-6', NULL, NULL, NULL, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL, 'full-access', 'default'),
-          ('thread-codex', 'project-codex', 'Codex thread', 'gpt-5.4', NULL, NULL, NULL, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL, 'full-access', 'default'),
+          ('thread-other', 'project-other', 'Other thread', 'gpt-5.4', NULL, NULL, NULL, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL, 'full-access', 'default'),
           ('thread-legacy-options', 'project-claude', 'Legacy options thread', 'claude-opus-4-6', NULL, NULL, NULL, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL, 'full-access', 'default')
       `;
           yield* sql`
@@ -112,7 +112,7 @@ layer("016_CanonicalizeModelSelections", (it) => {
           NULL,
           'correlation-project-created',
           'user',
-          '{"projectId":"project-1","title":"Project","workspaceRoot":"/tmp/project","defaultModel":"claude-opus-4-6","defaultModelOptions":{"codex":{"reasoningEffort":"high"},"claudeAgent":{"effort":"max"}},"scripts":[],"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}',
+          '{"projectId":"project-1","title":"Project","workspaceRoot":"/tmp/project","defaultModel":"claude-opus-4-6","defaultModelOptions":{"claudeAgent":{"effort":"max"},"pi":{"reasoningEffort":"high"}},"scripts":[],"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}',
           '{}'
         ),
         (
@@ -126,7 +126,7 @@ layer("016_CanonicalizeModelSelections", (it) => {
           NULL,
           'correlation-project-created-fallback',
           'user',
-          '{"projectId":"project-2","title":"Fallback Project","workspaceRoot":"/tmp/project-2","defaultModel":"claude-opus-4-6","defaultModelOptions":{"codex":{"reasoningEffort":"low"}},"scripts":[],"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}',
+          '{"projectId":"project-2","title":"Fallback Project","workspaceRoot":"/tmp/project-2","defaultModel":"claude-opus-4-6","defaultModelOptions":{"reasoningEffort":"low"},"scripts":[],"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}',
           '{}'
         ),
         (
@@ -154,7 +154,7 @@ layer("016_CanonicalizeModelSelections", (it) => {
           NULL,
           'correlation-thread-created',
           'user',
-          '{"threadId":"thread-1","projectId":"project-1","title":"Thread","model":"claude-opus-4-6","modelOptions":{"codex":{"reasoningEffort":"high"},"claudeAgent":{"effort":"max","thinking":false}},"runtimeMode":"full-access","interactionMode":"default","branch":null,"worktreePath":null,"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}',
+          '{"threadId":"thread-1","projectId":"project-1","title":"Thread","model":"claude-opus-4-6","modelOptions":{"claudeAgent":{"effort":"max","thinking":false},"pi":{"reasoningEffort":"high"}},"runtimeMode":"full-access","interactionMode":"default","branch":null,"worktreePath":null,"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}',
           '{}'
         ),
         (
@@ -182,7 +182,7 @@ layer("016_CanonicalizeModelSelections", (it) => {
           NULL,
           'correlation-turn-start-requested',
           'user',
-          '{"threadId":"thread-1","turnId":"turn-1","input":"hi","model":"gpt-5.4","modelOptions":{"codex":{"fastMode":true},"claudeAgent":{"effort":"max"}},"deliveryMode":"buffered"}',
+          '{"threadId":"thread-1","turnId":"turn-1","input":"hi","model":"gpt-5.4","modelOptions":{"claudeAgent":{"effort":"max"},"pi":{"fastMode":true}},"deliveryMode":"buffered"}',
           '{}'
         ),
         (
@@ -222,11 +222,11 @@ layer("016_CanonicalizeModelSelections", (it) => {
               projectId: "project-claude",
               defaultModelSelection: '{"provider":"claudeAgent","model":"claude-opus-4-6"}',
             },
-            {
-              projectId: "project-codex",
-              defaultModelSelection: '{"provider":"codex","model":"gpt-5.4"}',
-            },
             { projectId: "project-null", defaultModelSelection: null },
+            {
+              projectId: "project-other",
+              defaultModelSelection: '{"provider":"claudeAgent","model":"gpt-5.4"}',
+            },
           ]);
 
           const threadRows = yield* sql<{
@@ -245,12 +245,12 @@ layer("016_CanonicalizeModelSelections", (it) => {
               modelSelection: '{"provider":"claudeAgent","model":"claude-opus-4-6"}',
             },
             {
-              threadId: "thread-codex",
-              modelSelection: '{"provider":"codex","model":"gpt-5.4"}',
-            },
-            {
               threadId: "thread-legacy-options",
               modelSelection: '{"provider":"claudeAgent","model":"claude-opus-4-6"}',
+            },
+            {
+              threadId: "thread-other",
+              modelSelection: '{"provider":"claudeAgent","model":"gpt-5.4"}',
             },
             {
               threadId: "thread-session",
@@ -333,7 +333,7 @@ layer("016_CanonicalizeModelSelections", (it) => {
             projectId: "project-1",
             title: "Fallback Thread",
             modelSelection: {
-              provider: "codex",
+              provider: "claudeAgent",
               model: "gpt-5.4",
               options: {
                 effort: "max",
@@ -352,10 +352,10 @@ layer("016_CanonicalizeModelSelections", (it) => {
             turnId: "turn-1",
             input: "hi",
             modelSelection: {
-              provider: "codex",
+              provider: "claudeAgent",
               model: "gpt-5.4",
               options: {
-                fastMode: true,
+                effort: "max",
               },
             },
             deliveryMode: "buffered",
@@ -366,7 +366,7 @@ layer("016_CanonicalizeModelSelections", (it) => {
             projectId: "project-1",
             title: "Ancient Thread",
             modelSelection: {
-              provider: "codex",
+              provider: "claudeAgent",
               model: "gpt-5.4",
             },
             runtimeMode: "full-access",
@@ -401,9 +401,9 @@ layer("044_ClearAutomaticProjectModelDefaults", (it) => {
           deleted_at
         )
         VALUES
-          ('project-auto', 'Auto', '/tmp/auto', '{"instanceId":"codex","model":"gpt-5.6-sol"}', NULL, NULL, '[]', '2026-08-01T00:00:00.000Z', '2026-08-01T00:00:00.000Z', NULL),
-          ('project-title-only', 'Title only', '/tmp/title-only', '{"instanceId":"codex","model":"gpt-5.6-sol"}', NULL, NULL, '[]', '2026-08-01T00:00:00.000Z', '2026-08-02T00:00:00.000Z', NULL),
-          ('project-explicit', 'Explicit', '/tmp/explicit', '{"instanceId":"codex","model":"gpt-5.6-sol","options":[{"id":"reasoningEffort","value":"high"}]}', NULL, NULL, '[]', '2026-08-01T00:00:00.000Z', '2026-08-02T00:00:00.000Z', NULL)
+          ('project-auto', 'Auto', '/tmp/auto', '{"instanceId":"claudeAgent","model":"gpt-5.6-sol"}', NULL, NULL, '[]', '2026-08-01T00:00:00.000Z', '2026-08-01T00:00:00.000Z', NULL),
+          ('project-title-only', 'Title only', '/tmp/title-only', '{"instanceId":"claudeAgent","model":"gpt-5.6-sol"}', NULL, NULL, '[]', '2026-08-01T00:00:00.000Z', '2026-08-02T00:00:00.000Z', NULL),
+          ('project-explicit', 'Explicit', '/tmp/explicit', '{"instanceId":"claudeAgent","model":"gpt-5.6-sol","options":[{"id":"reasoningEffort","value":"high"}]}', NULL, NULL, '[]', '2026-08-01T00:00:00.000Z', '2026-08-02T00:00:00.000Z', NULL)
       `;
 
       yield* sql`
@@ -422,11 +422,11 @@ layer("044_ClearAutomaticProjectModelDefaults", (it) => {
           metadata_json
         )
         VALUES
-          ('event-auto-create', 'project', 'project-auto', 0, 'project.created', '2026-08-01T00:00:00.000Z', 'command-auto-create', NULL, 'command-auto-create', 'client', '{"defaultModelSelection":{"instanceId":"codex","model":"gpt-5.6-sol"}}', '{}'),
-          ('event-title-create', 'project', 'project-title-only', 0, 'project.created', '2026-08-01T00:00:00.000Z', 'command-title-create', NULL, 'command-title-create', 'client', '{"defaultModelSelection":{"instanceId":"codex","model":"gpt-5.6-sol"}}', '{}'),
+          ('event-auto-create', 'project', 'project-auto', 0, 'project.created', '2026-08-01T00:00:00.000Z', 'command-auto-create', NULL, 'command-auto-create', 'client', '{"defaultModelSelection":{"instanceId":"claudeAgent","model":"gpt-5.6-sol"}}', '{}'),
+          ('event-title-create', 'project', 'project-title-only', 0, 'project.created', '2026-08-01T00:00:00.000Z', 'command-title-create', NULL, 'command-title-create', 'client', '{"defaultModelSelection":{"instanceId":"claudeAgent","model":"gpt-5.6-sol"}}', '{}'),
           ('event-title-update', 'project', 'project-title-only', 1, 'project.meta-updated', '2026-08-02T00:00:00.000Z', 'command-title-update', NULL, 'command-title-update', 'client', '{"title":"Renamed"}', '{}'),
-          ('event-explicit-create', 'project', 'project-explicit', 0, 'project.created', '2026-08-01T00:00:00.000Z', 'command-explicit-create', NULL, 'command-explicit-create', 'client', '{"defaultModelSelection":{"instanceId":"codex","model":"gpt-5.6-sol"}}', '{}'),
-          ('event-explicit-update', 'project', 'project-explicit', 1, 'project.meta-updated', '2026-08-02T00:00:00.000Z', 'command-explicit-update', NULL, 'command-explicit-update', 'client', '{"defaultModelSelection":{"instanceId":"codex","model":"gpt-5.6-sol","options":[{"id":"reasoningEffort","value":"high"}]}}', '{}')
+          ('event-explicit-create', 'project', 'project-explicit', 0, 'project.created', '2026-08-01T00:00:00.000Z', 'command-explicit-create', NULL, 'command-explicit-create', 'client', '{"defaultModelSelection":{"instanceId":"claudeAgent","model":"gpt-5.6-sol"}}', '{}'),
+          ('event-explicit-update', 'project', 'project-explicit', 1, 'project.meta-updated', '2026-08-02T00:00:00.000Z', 'command-explicit-update', NULL, 'command-explicit-update', 'client', '{"defaultModelSelection":{"instanceId":"claudeAgent","model":"gpt-5.6-sol","options":[{"id":"reasoningEffort","value":"high"}]}}', '{}')
       `;
 
       yield* runMigrations({ toMigrationInclusive: 44 });
@@ -446,7 +446,7 @@ layer("044_ClearAutomaticProjectModelDefaults", (it) => {
         {
           projectId: "project-explicit",
           selection:
-            '{"instanceId":"codex","model":"gpt-5.6-sol","options":[{"id":"reasoningEffort","value":"high"}]}',
+            '{"instanceId":"claudeAgent","model":"gpt-5.6-sol","options":[{"id":"reasoningEffort","value":"high"}]}',
         },
         { projectId: "project-title-only", selection: null },
       ]);

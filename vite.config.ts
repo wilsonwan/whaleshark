@@ -11,7 +11,6 @@ export default defineConfig({
   test: {
     environment: "node",
     exclude: [
-      "**/.repos/**",
       "**/.t3/**",
       "**/node_modules/**",
       "**/dist/**",
@@ -32,7 +31,6 @@ export default defineConfig({
   },
   fmt: {
     ignorePatterns: [
-      ".repos/**",
       ".alchemy",
       "dist",
       "dist-electron",
@@ -57,8 +55,6 @@ export default defineConfig({
   },
   lint: {
     ignorePatterns: [
-      ".repos",
-      ".repos/**",
       "dist",
       "dist-electron",
       "node_modules",

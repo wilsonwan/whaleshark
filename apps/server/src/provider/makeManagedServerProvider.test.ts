@@ -38,22 +38,22 @@ interface TestSettings {
 }
 
 const maintenanceCapabilities = {
-  provider: ProviderDriverKind.make("codex"),
-  packageName: "@openai/codex",
+  provider: ProviderDriverKind.make("claudeAgent"),
+  packageName: "@anthropic-ai/claude-code",
   update: {
-    command: "npm install -g @openai/codex@latest",
+    command: "npm install -g @anthropic-ai/claude-code@latest",
 
     executable: "npm",
 
-    args: ["install", "-g", "@openai/codex@latest"],
+    args: ["install", "-g", "@anthropic-ai/claude-code@latest"],
 
     lockKey: "npm-global",
   },
 } as const;
 
 const initialSnapshot: ServerProvider = {
-  instanceId: ProviderInstanceId.make("codex"),
-  driver: ProviderDriverKind.make("codex"),
+  instanceId: ProviderInstanceId.make("claudeAgent"),
+  driver: ProviderDriverKind.make("claudeAgent"),
   enabled: true,
   installed: true,
   version: null,
@@ -67,8 +67,8 @@ const initialSnapshot: ServerProvider = {
 };
 
 const refreshedSnapshot: ServerProvider = {
-  instanceId: ProviderInstanceId.make("codex"),
-  driver: ProviderDriverKind.make("codex"),
+  instanceId: ProviderInstanceId.make("claudeAgent"),
+  driver: ProviderDriverKind.make("claudeAgent"),
   enabled: true,
   installed: true,
   version: "1.0.0",

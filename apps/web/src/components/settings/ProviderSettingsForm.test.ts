@@ -9,13 +9,13 @@ import {
 
 describe("ProviderSettingsForm helpers", () => {
   it("derives visible provider config fields from the client definition schema", () => {
-    const codex = DRIVER_OPTION_BY_VALUE[ProviderDriverKind.make("codex")];
+    const claudeAgent = DRIVER_OPTION_BY_VALUE[ProviderDriverKind.make("claudeAgent")];
 
-    expect(codex).toBeDefined();
-    expect(deriveProviderSettingsFields(codex!).map((field) => field.key)).toEqual([
+    expect(claudeAgent).toBeDefined();
+    expect(deriveProviderSettingsFields(claudeAgent!).map((field) => field.key)).toEqual([
       "binaryPath",
       "homePath",
-      "shadowHomePath",
+      "autoCompactWindow",
       "launchArgs",
     ]);
   });

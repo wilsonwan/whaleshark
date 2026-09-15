@@ -1,10 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import { type EnvironmentConnectionPhase } from "@t3tools/client-runtime/connection";
 import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/shell";
-import type {
-  CodexFeedbackSubmission,
-  EnvironmentThreadStatus,
-} from "@t3tools/client-runtime/state/threads";
+import type { EnvironmentThreadStatus } from "@t3tools/client-runtime/state/threads";
 import { useKeyboardChatComposerInset, useKeyboardScrollToEnd } from "@legendapp/list/keyboard";
 import { resolveProviderSkillsForCwd } from "@t3tools/client-runtime/providerSkills";
 import type { LegendListRef } from "@legendapp/list/react-native";
@@ -21,10 +18,6 @@ import type {
   ThreadId,
   UsageLimitsReport,
 } from "@t3tools/contracts";
-import {
-  appendCodexArtifactTemplateUsePrompt,
-  type CodexArtifactTemplate,
-} from "@t3tools/client-runtime/codex-artifact-templates";
 import type { ThreadUserInputQuestion } from "@t3tools/client-runtime/state/thread-requests";
 import * as Haptics from "expo-haptics";
 import { BlurTargetView } from "expo-blur";
@@ -85,7 +78,6 @@ import type {
   ThreadFeedLatestRun,
 } from "../../lib/threadActivity";
 import { PendingApprovalCard } from "./PendingApprovalCard";
-import { ComposerFeedback } from "./ComposerFeedback";
 import { ComposerUsageLimits } from "./ComposerUsageLimits";
 import { PendingUserInputCard } from "./PendingUserInputCard";
 import { ThreadCreationFailedCard } from "./ThreadCreationFailedCard";
@@ -118,8 +110,6 @@ export interface ThreadDetailScreenProps {
   readonly screenTone: StatusTone;
   readonly connectionError: string | null;
   readonly environmentLabel: string | null;
-  readonly feedbackSubmissions: ReadonlyArray<CodexFeedbackSubmission>;
-  readonly onDismissFeedback: (id: MessageId) => void;
   readonly selectedThreadFeed: ReadonlyArray<ThreadFeedEntry>;
   readonly activityRun: ThreadFeedLatestRun | null;
   readonly activeWorkStartedAt: string | null;
@@ -862,22 +852,6 @@ export const ThreadDetailScreen = memo(function ThreadDetailScreen(props: Thread
     composerEditorRef.current?.blur();
   }, []);
 
-  const handleUseArtifactTemplate = useCallback(
-    (template: CodexArtifactTemplate) => {
-      const currentDraft = draftMessageRef.current;
-      const nextDraft = appendCodexArtifactTemplateUsePrompt(currentDraft, template);
-      if (nextDraft !== currentDraft) {
-        draftMessageRef.current = nextDraft;
-        props.onChangeDraftMessage(nextDraft);
-      }
-      requestAnimationFrame(() => {
-        composerEditorRef.current?.focus();
-        composerEditorRef.current?.setSelection({ start: nextDraft.length, end: nextDraft.length });
-      });
-    },
-    [props.onChangeDraftMessage],
-  );
-
   const handleScrollToEnd = useCallback(() => {
     void Haptics.selectionAsync();
     void scrollMessageToEnd({ animated: true, closeKeyboard: false }).catch(() => {
@@ -975,7 +949,6 @@ export const ThreadDetailScreen = memo(function ThreadDetailScreen(props: Thread
             onHeaderMaterialVisibilityChange={props.onHeaderMaterialVisibilityChange}
             onEndFollowEnabledChange={setEndFollowEnabled}
             skills={selectedProviderSkills}
-            onUseArtifactTemplate={handleUseArtifactTemplate}
           />
         </BlurTargetView>
       ) : (
@@ -1020,13 +993,6 @@ export const ThreadDetailScreen = memo(function ThreadDetailScreen(props: Thread
                 }}
               />
               <View className="w-full self-center" style={{ maxWidth: contentMaxWidth }}>
-                {props.feedbackSubmissions.map((submission) => (
-                  <ComposerFeedback
-                    key={submission.id}
-                    submission={submission}
-                    onDismiss={() => props.onDismissFeedback(submission.id)}
-                  />
-                ))}
                 {usageLimitsReport && activeUserInputRequestId === null ? (
                   <Animated.View
                     className="shrink-0 px-4 pb-3"

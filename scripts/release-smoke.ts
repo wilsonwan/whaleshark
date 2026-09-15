@@ -16,6 +16,11 @@ const workspaceFiles = [
   "apps/server/package.json",
   "apps/desktop/package.json",
   "apps/web/package.json",
+  "apps/mobile/package.json",
+  "apps/mobile/deps/react-native-nitro-markdown-0.5.0.tgz",
+  "apps/mobile/modules/t3-markdown-text/package.json",
+  "apps/mobile/modules/t3-review-diff/package.json",
+  "apps/mobile/modules/t3-terminal/package.json",
   "oxlint-plugin-t3code/package.json",
   "packages/client-runtime/package.json",
   "packages/contracts/package.json",
@@ -23,7 +28,6 @@ const workspaceFiles = [
   "packages/ssh/package.json",
   "packages/tailscale/package.json",
   "packages/effect-acp/package.json",
-  "packages/effect-codex-app-server/package.json",
   "scripts/package.json",
 ] as const;
 

@@ -25,7 +25,6 @@ import * as SqlClient from "effect/unstable/sql/SqlClient";
 
 import { SqlitePersistenceMemory } from "../../persistence/Layers/Sqlite.ts";
 import { ClaudeProviderCapabilitiesV2 } from "../Adapters/ClaudeAdapterV2.ts";
-import { CodexProviderCapabilitiesV2 } from "../Adapters/CodexAdapterV2.ts";
 import { PiProviderCapabilitiesV2 } from "../Adapters/PiAdapterV2.ts";
 import { layer as eventSinkLayer } from "../EventSink.ts";
 import { layer as eventStoreLayer } from "../EventStore.ts";
@@ -46,20 +45,15 @@ import {
 } from "../ProviderAdapter.ts";
 import { makeLayer as makeProviderAdapterRegistryLayer } from "../ProviderAdapterRegistry.ts";
 import { makeProviderFailure } from "../ProviderFailure.ts";
-import {
-  CLAUDE_MODEL_SELECTION,
-  CODEX_MODEL_SELECTION,
-  PI_MODEL_SELECTION,
-} from "./fixtures/shared.ts";
+import { CLAUDE_MODEL_SELECTION, PI_MODEL_SELECTION } from "./fixtures/shared.ts";
 import { makeOrchestratorV2ReplayLayerWithRegistry } from "./ProviderReplayHarness.ts";
 import { checkpointWorkspace } from "./ReplayFixtureWorkspace.ts";
 
 const threadId = ThreadId.make("thread:provider-switch");
 const projectId = ProjectId.make("project:provider-switch");
-const firstPrompt = "Respond with exactly: codex before switch";
+const firstPrompt = "Respond with exactly: pi before switch";
 const claudePrompt = "Respond with exactly: claude switched response";
-const returnPrompt = "Respond with exactly: codex after return";
-const CODEX_DRIVER = ProviderDriverKind.make("codex");
+const returnPrompt = "Respond with exactly: pi after return";
 const CLAUDE_DRIVER = ProviderDriverKind.make("claudeAgent");
 const PI_DRIVER = ProviderDriverKind.make("pi");
 
@@ -321,10 +315,10 @@ describe("orchestration v2 provider switching", () => {
         const capturedTurns = yield* Ref.make<ReadonlyArray<CapturedTurn>>([]);
         const registryLayer = makeProviderAdapterRegistryLayer([
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("codex"),
-            driver: CODEX_DRIVER,
-            capabilities: CodexProviderCapabilitiesV2,
-            modelSelection: CODEX_MODEL_SELECTION,
+            instanceId: ProviderInstanceId.make("pi"),
+            driver: PI_DRIVER,
+            capabilities: PiProviderCapabilitiesV2,
+            modelSelection: PI_MODEL_SELECTION,
             responseByRunOrdinal: {},
             capturedTurns,
             failedRunOrdinals: new Set([1]),
@@ -396,7 +390,7 @@ describe("orchestration v2 provider switching", () => {
               ${importedProjectId},
               'Imported provider switch project',
               ${cwd},
-              '{"instanceId":"codex","model":"gpt-5.4"}',
+              '{"instanceId":"pi","model":"gpt-5.4"}',
               '[]',
               '2026-01-01T00:00:00.000Z',
               '2026-01-01T00:00:00.000Z',
@@ -424,7 +418,7 @@ describe("orchestration v2 provider switching", () => {
               ${importedThreadId},
               ${importedProjectId},
               'Imported provider switch thread',
-              '{"instanceId":"codex","model":"gpt-5.4"}',
+              '{"instanceId":"pi","model":"gpt-5.4"}',
               'full-access',
               'default',
               'main',
@@ -487,7 +481,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:provider-switch:legacy-import:failed"),
             text: failedPrompt,
             attachments: [],
-            modelSelection: CODEX_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           });
           yield* waitForIdle(importedThreadId);
@@ -510,7 +504,7 @@ describe("orchestration v2 provider switching", () => {
         assert.deepEqual(
           projection.runs.map((run) => [run.providerInstanceId, run.status]),
           [
-            ["codex", "failed"],
+            ["pi", "failed"],
             ["claudeAgent", "completed"],
           ],
         );
@@ -542,13 +536,13 @@ describe("orchestration v2 provider switching", () => {
         const capturedTurns = yield* Ref.make<ReadonlyArray<CapturedTurn>>([]);
         const registryLayer = makeProviderAdapterRegistryLayer([
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("codex"),
-            driver: CODEX_DRIVER,
-            capabilities: CodexProviderCapabilitiesV2,
-            modelSelection: CODEX_MODEL_SELECTION,
+            instanceId: ProviderInstanceId.make("pi"),
+            driver: PI_DRIVER,
+            capabilities: PiProviderCapabilitiesV2,
+            modelSelection: PI_MODEL_SELECTION,
             responseByRunOrdinal: {
-              1: "codex before switch",
-              3: "codex after return",
+              1: "pi before switch",
+              3: "pi after return",
             },
             capturedTurns,
             failResume: true,
@@ -571,7 +565,7 @@ describe("orchestration v2 provider switching", () => {
             threadId,
             projectId,
             title: "Provider switch",
-            modelSelection: CODEX_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             runtimeMode: "full-access",
             interactionMode: "default",
             branch: null,
@@ -581,12 +575,12 @@ describe("orchestration v2 provider switching", () => {
             type: "message.dispatch",
             createdBy: "user",
             creationSource: "web",
-            commandId: CommandId.make("command:provider-switch:codex"),
+            commandId: CommandId.make("command:provider-switch:pi"),
             threadId,
-            messageId: MessageId.make("message:provider-switch:codex"),
+            messageId: MessageId.make("message:provider-switch:pi"),
             text: firstPrompt,
             attachments: [],
-            modelSelection: CODEX_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
           {
@@ -610,7 +604,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:provider-switch:return"),
             text: returnPrompt,
             attachments: [],
-            modelSelection: CODEX_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
         ] satisfies ReadonlyArray<OrchestrationV2Command>;
@@ -648,9 +642,9 @@ describe("orchestration v2 provider switching", () => {
         assert.deepEqual(
           projection.runs.map((run) => [run.providerInstanceId, run.status]),
           [
-            ["codex", "completed"],
+            ["pi", "completed"],
             ["claudeAgent", "completed"],
-            ["codex", "completed"],
+            ["pi", "completed"],
           ],
         );
         assert.lengthOf(projection.providerThreads, 2);
@@ -684,24 +678,24 @@ describe("orchestration v2 provider switching", () => {
             providerThread.handoffIds.length,
           ]),
           [
-            ["codex", "idle", 1],
+            ["pi", "idle", 1],
             ["claudeAgent", "idle", 1],
           ],
         );
         assert.equal(turns[0]?.text, firstPrompt);
         assert.include(turns[1]?.text ?? "", "Context handoff (full_thread_summary):");
-        assert.include(turns[1]?.text ?? "", "codex before switch");
+        assert.include(turns[1]?.text ?? "", "pi before switch");
         assert.include(turns[1]?.text ?? "", claudePrompt);
         assert.include(turns[2]?.text ?? "", "Context handoff (delta_since_target_last_seen):");
         assert.include(turns[2]?.text ?? "", "claude switched response");
         assert.include(turns[2]?.text ?? "", returnPrompt);
-        assert.notInclude(turns[2]?.text ?? "", "codex before switch");
+        assert.notInclude(turns[2]?.text ?? "", "pi before switch");
         assert.equal(turns[0]?.providerThreadId, turns[2]?.providerThreadId);
       }),
     ),
   );
 
-  it.live("resolves a Claude fork into portable Codex context on first dispatch", () =>
+  it.live("resolves a Claude fork into portable Pi context on first dispatch", () =>
     Effect.scoped(
       Effect.gen(function* () {
         const sourceThreadId = ThreadId.make("thread:cross-provider-fork:source");
@@ -712,10 +706,10 @@ describe("orchestration v2 provider switching", () => {
         const capturedTurns = yield* Ref.make<ReadonlyArray<CapturedTurn>>([]);
         const registryLayer = makeProviderAdapterRegistryLayer([
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("codex"),
-            driver: CODEX_DRIVER,
-            capabilities: CodexProviderCapabilitiesV2,
-            modelSelection: CODEX_MODEL_SELECTION,
+            instanceId: ProviderInstanceId.make("pi"),
+            driver: PI_DRIVER,
+            capabilities: PiProviderCapabilitiesV2,
+            modelSelection: PI_MODEL_SELECTION,
             responseByRunOrdinal: { 1: "The release color is violet." },
             capturedTurns,
           }),
@@ -774,7 +768,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-fork:target"),
             text: targetPrompt,
             attachments: [],
-            modelSelection: CODEX_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
         ] satisfies ReadonlyArray<OrchestrationV2Command>;
@@ -811,10 +805,10 @@ describe("orchestration v2 provider switching", () => {
 
         assert.deepEqual(
           targetProjection.runs.map((run) => [run.providerInstanceId, run.status]),
-          [["codex", "completed"]],
+          [["pi", "completed"]],
         );
         assert.lengthOf(targetProjection.providerThreads, 1);
-        assert.equal(targetProjection.providerThreads[0]?.driver, "codex");
+        assert.equal(targetProjection.providerThreads[0]?.driver, "pi");
         assert.isNull(targetProjection.providerThreads[0]?.forkedFrom);
         assert.deepEqual(
           targetProjection.contextTransfers.map((transfer) => [
@@ -987,10 +981,10 @@ describe("orchestration v2 provider switching", () => {
         const capturedTurns = yield* Ref.make<ReadonlyArray<CapturedTurn>>([]);
         const registryLayer = makeProviderAdapterRegistryLayer([
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("codex"),
-            driver: CODEX_DRIVER,
-            capabilities: CodexProviderCapabilitiesV2,
-            modelSelection: CODEX_MODEL_SELECTION,
+            instanceId: ProviderInstanceId.make("pi"),
+            driver: PI_DRIVER,
+            capabilities: PiProviderCapabilitiesV2,
+            modelSelection: PI_MODEL_SELECTION,
             responseByRunOrdinal: {},
             responseByThreadId: {
               [sourceThreadId]: {
@@ -1021,7 +1015,7 @@ describe("orchestration v2 provider switching", () => {
             threadId: sourceThreadId,
             projectId,
             title: "Cross-provider merge source",
-            modelSelection: CODEX_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             runtimeMode: "full-access",
             interactionMode: "default",
             branch: null,
@@ -1036,7 +1030,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-merge:first-source"),
             text: firstSourcePrompt,
             attachments: [],
-            modelSelection: CODEX_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
           {
@@ -1070,7 +1064,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-merge:fork-turn"),
             text: forkPrompt,
             attachments: [],
-            modelSelection: CODEX_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
           {
@@ -1091,7 +1085,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-merge:consume"),
             text: mergePrompt,
             attachments: [],
-            modelSelection: CODEX_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
         ] satisfies ReadonlyArray<OrchestrationV2Command>;
@@ -1130,7 +1124,7 @@ describe("orchestration v2 provider switching", () => {
         );
         const turns = yield* Ref.get(capturedTurns);
         const mergedTurn = turns.findLast(
-          (turn) => turn.threadId === sourceThreadId && turn.driver === "codex",
+          (turn) => turn.threadId === sourceThreadId && turn.driver === "pi",
         );
         const mergeTransfer = projection.contextTransfers.find(
           (transfer) => transfer.type === "merge_back",
@@ -1148,7 +1142,7 @@ describe("orchestration v2 provider switching", () => {
         assert.include(mergedTurn.text, mergePrompt);
         assert.isDefined(mergeTransfer);
         assert.equal(mergeTransfer.status, "consumed");
-        assert.equal(mergeTransfer.targetProviderInstanceId, "codex");
+        assert.equal(mergeTransfer.targetProviderInstanceId, "pi");
         assert.equal(mergeTransfer.resolution?.strategy, "fork_delta_context");
       }),
     ),
@@ -1157,31 +1151,31 @@ describe("orchestration v2 provider switching", () => {
   it.live("routes two custom instances of the same driver independently", () =>
     Effect.scoped(
       Effect.gen(function* () {
-        const personalThreadId = ThreadId.make("thread:custom-codex-personal");
-        const workThreadId = ThreadId.make("thread:custom-codex-work");
+        const personalThreadId = ThreadId.make("thread:custom-pi-personal");
+        const workThreadId = ThreadId.make("thread:custom-pi-work");
         const personalSelection = {
-          instanceId: ProviderInstanceId.make("codex_personal"),
+          instanceId: ProviderInstanceId.make("pi_personal"),
           model: "gpt-5.4",
         } satisfies ModelSelection;
         const workSelection = {
-          instanceId: ProviderInstanceId.make("codex_work"),
+          instanceId: ProviderInstanceId.make("pi_work"),
           model: "gpt-5.4",
         } satisfies ModelSelection;
-        const cwd = yield* checkpointWorkspace("custom-codex-instances");
+        const cwd = yield* checkpointWorkspace("custom-pi-instances");
         const capturedTurns = yield* Ref.make<ReadonlyArray<CapturedTurn>>([]);
         const registryLayer = makeProviderAdapterRegistryLayer([
           makeTestAdapter({
             instanceId: personalSelection.instanceId,
-            driver: CODEX_DRIVER,
-            capabilities: CodexProviderCapabilitiesV2,
+            driver: PI_DRIVER,
+            capabilities: PiProviderCapabilitiesV2,
             modelSelection: personalSelection,
             responseByRunOrdinal: { 1: "personal response" },
             capturedTurns,
           }),
           makeTestAdapter({
             instanceId: workSelection.instanceId,
-            driver: CODEX_DRIVER,
-            capabilities: CodexProviderCapabilitiesV2,
+            driver: PI_DRIVER,
+            capabilities: PiProviderCapabilitiesV2,
             modelSelection: workSelection,
             responseByRunOrdinal: { 1: "work response" },
             capturedTurns,
@@ -1198,10 +1192,10 @@ describe("orchestration v2 provider switching", () => {
               type: "thread.create",
               createdBy: "user",
               creationSource: "web",
-              commandId: CommandId.make(`command:custom-codex:${suffix}:create`),
+              commandId: CommandId.make(`command:custom-pi:${suffix}:create`),
               threadId: targetThreadId,
               projectId,
-              title: `Custom Codex ${suffix}`,
+              title: `Custom Pi ${suffix}`,
               modelSelection: selection,
               runtimeMode: "full-access",
               interactionMode: "default",
@@ -1212,9 +1206,9 @@ describe("orchestration v2 provider switching", () => {
               type: "message.dispatch",
               createdBy: "user",
               creationSource: "web",
-              commandId: CommandId.make(`command:custom-codex:${suffix}:message`),
+              commandId: CommandId.make(`command:custom-pi:${suffix}:message`),
               threadId: targetThreadId,
-              messageId: MessageId.make(`message:custom-codex:${suffix}`),
+              messageId: MessageId.make(`message:custom-pi:${suffix}`),
               text: `${suffix} prompt`,
               attachments: [],
               modelSelection: selection,
@@ -1230,7 +1224,7 @@ describe("orchestration v2 provider switching", () => {
           Effect.provide(
             makeOrchestratorV2ReplayLayerWithRegistry(
               {
-                name: "custom-codex-instances",
+                name: "custom-pi-instances",
                 runtimePolicyOverride: {
                   cwd,
                   approvalPolicy: "never",

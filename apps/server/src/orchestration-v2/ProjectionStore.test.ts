@@ -26,7 +26,7 @@ import * as Schema from "effect/Schema";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
 
 import { SqlitePersistenceMemory } from "../persistence/Layers/Sqlite.ts";
-import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
+import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
 import {
   isTurnItemAtOrBeforeRun,
   layerMemory as projectionStoreMemoryLayer,
@@ -47,10 +47,10 @@ const TestLayer = Layer.mergeAll(
   SqlitePersistenceMemory,
 );
 const modelSelection = {
-  instanceId: ProviderInstanceId.make("codex"),
+  instanceId: ProviderInstanceId.make("claudeAgent"),
   model: "gpt-5.4",
 } satisfies ModelSelection;
-const driver = ProviderDriverKind.make("codex");
+const driver = ProviderDriverKind.make("claudeAgent");
 const providerInstanceId = modelSelection.instanceId;
 const encodeUnknownJsonString = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
 
@@ -764,7 +764,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
             run_id, thread_id, ordinal, provider, provider_thread_id, status,
             requested_at, completed_at, payload_json
           ) VALUES (
-            ${runId}, ${threadId}, ${ordinal}, 'codex', NULL, 'completed', ${nowIso}, ${nowIso},
+            ${runId}, ${threadId}, ${ordinal}, 'claudeAgent', NULL, 'completed', ${nowIso}, ${nowIso},
             ${encodeUnknownJsonString({
               id: runId,
               threadId,
@@ -907,7 +907,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           run_id, thread_id, ordinal, provider, provider_thread_id, status,
           requested_at, completed_at, payload_json
         ) VALUES (
-          ${hiddenRunId}, ${threadId}, 1001, 'codex', NULL, 'rolled_back', ${nowIso}, ${nowIso},
+          ${hiddenRunId}, ${threadId}, 1001, 'claudeAgent', NULL, 'rolled_back', ${nowIso}, ${nowIso},
           ${encodeUnknownJsonString({
             id: hiddenRunId,
             threadId,
@@ -998,7 +998,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           run_id, thread_id, ordinal, provider, provider_thread_id, status,
           requested_at, completed_at, payload_json
         ) VALUES (
-          ${cancelledRunId}, ${threadId}, 1002, 'codex', NULL, 'cancelled', ${nowIso}, ${nowIso},
+          ${cancelledRunId}, ${threadId}, 1002, 'claudeAgent', NULL, 'cancelled', ${nowIso}, ${nowIso},
           ${encodeUnknownJsonString({
             id: cancelledRunId,
             threadId,
@@ -1149,7 +1149,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           run_id, thread_id, ordinal, provider, provider_thread_id, status,
           requested_at, completed_at, payload_json
         ) VALUES (
-          ${interruptRunId}, ${threadId}, 1003, 'codex', 'provider-thread:interrupt', 'completed',
+          ${interruptRunId}, ${threadId}, 1003, 'claudeAgent', 'provider-thread:interrupt', 'completed',
           ${nowIso}, ${nowIso},
           ${encodeUnknownJsonString({
             id: interruptRunId,
@@ -1176,7 +1176,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           provider_instance_id, provider_thread_id, provider_turn_id, status, payload_json
         ) VALUES (
           'attempt:bounded-sql-history:interrupt', ${threadId}, ${interruptRunId}, 1,
-          ${interruptNodeId}, 'codex', ${providerInstanceId}, 'provider-thread:interrupt', NULL,
+          ${interruptNodeId}, 'claudeAgent', ${providerInstanceId}, 'provider-thread:interrupt', NULL,
           'superseded',
           ${encodeUnknownJsonString({
             id: "attempt:bounded-sql-history:interrupt",
@@ -1334,7 +1334,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
             status: "running",
             cwd: "/workspace",
             model: modelSelection.model,
-            capabilities: CodexProviderCapabilitiesV2,
+            capabilities: ClaudeProviderCapabilitiesV2,
             createdAt: now,
             updatedAt: now,
             lastError: null,
@@ -1419,9 +1419,9 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
         },
       });
       const providerThreads = [
-        // The root Codex conversation, then a Claude subagent it delegated to
+        // The root claudeAgent conversation, then a subagent on another instance it delegated to
         // (owned by a node, so not a handoff), then the handoff target.
-        { suffix: "codex", instanceId: providerInstanceId, ownerNodeId: null, seconds: 0 },
+        { suffix: "claudeAgent", instanceId: providerInstanceId, ownerNodeId: null, seconds: 0 },
         {
           suffix: "claude-subagent",
           instanceId: claudeInstanceId,
@@ -1429,8 +1429,13 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           seconds: 1,
         },
         { suffix: "claude", instanceId: claudeInstanceId, ownerNodeId: null, seconds: 2 },
-        // A second Codex conversation after handing back: no duplicate entry.
-        { suffix: "codex-again", instanceId: providerInstanceId, ownerNodeId: null, seconds: 3 },
+        // A second claudeAgent conversation after handing back: no duplicate entry.
+        {
+          suffix: "claudeAgent-again",
+          instanceId: providerInstanceId,
+          ownerNodeId: null,
+          seconds: 3,
+        },
       ] as const;
       for (const providerThread of providerThreads) {
         const createdAt = DateTime.add(now, { seconds: providerThread.seconds });
@@ -1962,7 +1967,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
         status: "error" as const,
         cwd: "/workspace",
         model: modelSelection.model,
-        capabilities: CodexProviderCapabilitiesV2,
+        capabilities: ClaudeProviderCapabilitiesV2,
         createdAt: now,
         updatedAt: now,
         lastError: "provider process exited",
@@ -3347,7 +3352,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           provider_instance_id, provider_thread_id, provider_turn_id, status, payload_json
         ) VALUES (
           'attempt:projection-fork-source-rollback:inherited-superseded',
-          ${sourceThreadId}, ${sourceRun2Id}, 2, ${inheritedSupersededNodeId}, 'codex',
+          ${sourceThreadId}, ${sourceRun2Id}, 2, ${inheritedSupersededNodeId}, 'claudeAgent',
           ${providerInstanceId}, ${sourceProviderThreadId}, NULL, 'superseded',
           ${encodeUnknownJsonString({
             id: "attempt:projection-fork-source-rollback:inherited-superseded",

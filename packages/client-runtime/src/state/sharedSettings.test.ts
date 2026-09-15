@@ -57,7 +57,7 @@ describe("splitSharedServerPatch", () => {
 
   it.each([
     {
-      instanceId: ProviderInstanceId.make("codex"),
+      instanceId: ProviderInstanceId.make("claudeAgent"),
       model: "gpt-5.6-sol",
       options: [{ id: "reasoningEffort", value: "low" }],
     },
@@ -140,12 +140,12 @@ describe("filterSharedServerPatch", () => {
       const settings = {
         ...DEFAULT_SERVER_SETTINGS,
         providerInstances: {
-          codex: { driver: ProviderDriverKind.make("codex"), enabled: false, config: {} },
           claudeAgent: {
             driver: ProviderDriverKind.make("claudeAgent"),
-            enabled: true,
+            enabled: false,
             config: {},
           },
+          pi: { driver: ProviderDriverKind.make("pi"), enabled: true, config: {} },
         },
         textGenerationModelSelection: {
           instanceId: ProviderInstanceId.make("claudeAgent"),
@@ -171,16 +171,14 @@ describe("filterSharedServerPatch", () => {
   it.each(["missing", "disabled", "different-driver", "enabled"] as const)(
     "shares a custom model only when its target provider is enabled (%s)",
     (availability) => {
-      const instanceId = ProviderInstanceId.make("codex_personal");
+      const instanceId = ProviderInstanceId.make("claude_personal");
       const selection = {
         instanceId,
         model: "gpt-5.6-luna",
         options: [{ id: "reasoningEffort", value: "low" }],
       };
       const instance = {
-        driver: ProviderDriverKind.make(
-          availability === "different-driver" ? "claudeAgent" : "codex",
-        ),
+        driver: ProviderDriverKind.make(availability === "different-driver" ? "claudeAgent" : "pi"),
         enabled: availability !== "disabled",
         config: {},
       };
@@ -192,7 +190,7 @@ describe("filterSharedServerPatch", () => {
       const sourceSettings = {
         ...settings,
         providerInstances: {
-          [instanceId]: { ...instance, driver: ProviderDriverKind.make("codex"), enabled: true },
+          [instanceId]: { ...instance, driver: ProviderDriverKind.make("pi"), enabled: true },
         },
       };
       expect(filterSharedServerPatch(patch, restartCapabilities, settings, sourceSettings)).toEqual(

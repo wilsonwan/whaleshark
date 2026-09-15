@@ -1017,7 +1017,7 @@ const T3_MCP_BARE_TITLE_CALL = /^(?<tool>[A-Za-z0-9_]+)(?::\s|$)/;
  * Best-effort recovery of MCP identity from a generic ACP tool call.
  *
  * ACP has no typed MCP tool-call item, so agents surface MCP calls in
- * agent-specific shapes: codex-acp tags execute calls with
+ * agent-specific shapes: some tag execute calls with
  * `rawInput.server`/`rawInput.tool`, while agents on T3's terminal fallback
  * run the `acp-mcp-call <tool>` CLI through their command or an embedded
  * client terminal. Recovered identity lets the projection render the same

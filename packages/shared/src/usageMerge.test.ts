@@ -10,6 +10,14 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { isModelCostUnknown, mergeUsage, type EnvironmentUsage } from "./usageMerge.ts";
 
+/**
+ * This build reports a single usage provider kind, but `mergeUsage` must stay
+ * generic: a client still folds buckets from environments running an older
+ * build that reported more than one. A second kind is cast in at each use so
+ * those branches stay covered.
+ */
+const SECOND_PROVIDER = "acpRegistry";
+
 function bucket(overrides: Partial<UsageBucket> = {}): UsageBucket {
   return {
     day: "2026-08-07" as UsageDay,
@@ -124,26 +132,40 @@ describe("mergeUsage", () => {
         environment(
           "env-b",
           summary(
-            [bucket(), bucket({ provider: "codex", model: "gpt-5.6-sol", costUsd: 4 })],
-            [sharedClaude, { provider: "codex", hostId: "mac", homePath: "/home/theo/.codex" }],
+            [
+              bucket(),
+              bucket({
+                provider: SECOND_PROVIDER as UsageProviderKind,
+                model: "acp-model",
+                costUsd: 4,
+              }),
+            ],
+            [
+              sharedClaude,
+              {
+                provider: SECOND_PROVIDER as UsageProviderKind,
+                hostId: "mac",
+                homePath: "/home/theo/.acp",
+              },
+            ],
           ),
         ),
       ],
       USAGE_CONTRACT_VERSION,
     );
 
-    // env-b's claude bucket is dropped, its codex bucket survives.
+    // env-b's claude bucket is dropped, its second-provider bucket survives.
     expect(merged.costUsd).toBe(14);
     expect(merged.providers.map((provider) => provider.provider).sort()).toEqual([
+      SECOND_PROVIDER,
       "claude",
-      "codex",
     ]);
     expect(merged.sessions).toBe(2);
     expect(
       Object.fromEntries(
         merged.providers.map((provider) => [provider.provider, provider.sessions]),
       ),
-    ).toEqual({ claude: 1, codex: 1 });
+    ).toEqual({ claude: 1, [SECOND_PROVIDER]: 1 });
   });
 
   it("excludes an environment reporting an older contract version", () => {
@@ -182,8 +204,8 @@ describe("mergeUsage", () => {
         environment(
           "env-b",
           summary(
-            [bucket({ costUsd: 4, provider: "codex", model: "gpt-5.6-sol" })],
-            [{ provider: "codex", hostId: "linux", homePath: "/b" }],
+            [bucket({ costUsd: 4, model: "claude-fable-5-mini" })],
+            [{ provider: "claude", hostId: "linux", homePath: "/b" }],
             USAGE_CONTRACT_VERSION - 1,
           ),
         ),
@@ -203,11 +225,20 @@ describe("mergeUsage", () => {
           summary(
             [
               bucket({ costUsd: 75 }),
-              bucket({ provider: "codex", model: "gpt-5.6-sol", costUsd: 25, unpricedRecords: 5 }),
+              bucket({
+                provider: SECOND_PROVIDER as UsageProviderKind,
+                model: "acp-model",
+                costUsd: 25,
+                unpricedRecords: 5,
+              }),
             ],
             [
               { provider: "claude", hostId: "mac", homePath: "/a/.claude" },
-              { provider: "codex", hostId: "mac", homePath: "/a/.codex" },
+              {
+                provider: SECOND_PROVIDER as UsageProviderKind,
+                hostId: "mac",
+                homePath: "/a/.acp",
+              },
             ],
           ),
         ),
@@ -230,17 +261,13 @@ describe("mergeUsage", () => {
             [
               bucket({ costUsd: 75 }),
               bucket({
-                provider: "codex",
                 model: "unknown-model",
                 costUsd: 0,
                 costSource: "unpriced",
                 unpricedRecords: 5,
               }),
             ],
-            [
-              { provider: "claude", hostId: "mac", homePath: "/a/.claude" },
-              { provider: "codex", hostId: "mac", homePath: "/a/.codex" },
-            ],
+            [{ provider: "claude", hostId: "mac", homePath: "/a/.claude" }],
           ),
         ),
       ],

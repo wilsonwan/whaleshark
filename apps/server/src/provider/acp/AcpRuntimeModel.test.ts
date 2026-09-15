@@ -1315,8 +1315,8 @@ describe("extractMcpToolCallIdentity", () => {
     return event.toolCall;
   }
 
-  it("recovers server and tool from codex-acp tagged execute calls", () => {
-    // Captured verbatim from codex-acp 2026-08-14: MCP calls arrive as kind
+  it("recovers server and tool from tagged execute calls", () => {
+    // Captured verbatim from an ACP agent: MCP calls arrive as kind
     // "execute" with the identity only in rawInput.
     const toolCall = toolCallFromUpdate({
       sessionUpdate: "tool_call",

@@ -28,6 +28,7 @@ squashfs-root/
 /audits/
 dist-electron/
 .electron-runtime/
+apps/mobile/.generated/
 /.generated/
 .github/pr-assets/
 native/**/target/

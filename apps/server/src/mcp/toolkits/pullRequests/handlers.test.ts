@@ -43,7 +43,7 @@ const invocation = (
   environmentId: EnvironmentId.make("environment-1"),
   threadId: THREAD_ID,
   providerSessionId: "provider-session-1",
-  providerInstanceId: ProviderInstanceId.make("codex"),
+  providerInstanceId: ProviderInstanceId.make("claudeAgent"),
   capabilities: new Set(capabilities),
   issuedAt: 1,
 });
@@ -79,7 +79,7 @@ function makeThread(pullRequests: ReadonlyArray<ThreadPullRequestLink>): Orchest
     id: THREAD_ID,
     projectId: PROJECT_ID,
     title: "Thread",
-    modelSelection: { instanceId: ProviderInstanceId.make("codex"), model: "gpt-5" },
+    modelSelection: { instanceId: ProviderInstanceId.make("claudeAgent"), model: "gpt-5" },
     runtimeMode: "full-access",
     interactionMode: "default",
     branch: null,

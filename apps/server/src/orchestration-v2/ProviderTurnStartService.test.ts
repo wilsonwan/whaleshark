@@ -154,7 +154,7 @@ function makeLocalCommandHarness(input: {
   const providerSessionId = ProviderSessionId.make("new-provider-session");
   const oldProviderThreadId = ProviderThreadId.make("existing-native-provider-thread");
   const oldInstanceId = ProviderInstanceId.make("acpRegistry-personal");
-  const newInstanceId = ProviderInstanceId.make("codex-personal");
+  const newInstanceId = ProviderInstanceId.make("claude-personal");
   const checkpointScopeId = CheckpointScopeId.make("scope-native-account-command");
   const messageId = MessageId.make("message-native-account-command");
   const run: OrchestrationV2ThreadProjection["runs"][number] = {
@@ -176,7 +176,7 @@ function makeLocalCommandHarness(input: {
   };
   const providerThread: OrchestrationV2ThreadProjection["providerThreads"][number] = {
     id: providerThreadId,
-    driver: ProviderDriverKind.make("codex"),
+    driver: ProviderDriverKind.make("claudeAgent"),
     providerInstanceId: newInstanceId,
     providerSessionId,
     appThreadId: threadId,

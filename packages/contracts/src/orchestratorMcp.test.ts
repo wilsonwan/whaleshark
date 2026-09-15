@@ -65,7 +65,7 @@ describe("orchestrator MCP contracts", () => {
     const canonical = decodeDelegateTaskInput({
       task: "Say hello.",
       target: {
-        providerInstanceId: "codex",
+        providerInstanceId: "claudeAgent",
         model: "gpt-5.6-luna",
         options: [{ id: "reasoning", value: "low" }],
       },
@@ -73,7 +73,7 @@ describe("orchestrator MCP contracts", () => {
     const shorthand = decodeDelegateTaskInput({
       task: "Say hello.",
       target: {
-        providerInstanceId: "codex",
+        providerInstanceId: "claudeAgent",
         model: "gpt-5.6-luna",
         options: { reasoning: "low", fastMode: true },
       },
@@ -91,7 +91,7 @@ describe("orchestrator MCP contracts", () => {
       decodeDelegateTaskInput({
         task: "Say hello.",
         target: {
-          providerInstanceId: "codex",
+          providerInstanceId: "claudeAgent",
           model: "gpt-5.6-luna",
           // Must fail loudly instead of being dropped like legacy persistence.
           options: { reasoning: 3 },
@@ -102,7 +102,7 @@ describe("orchestrator MCP contracts", () => {
       decodeDelegateTaskInput({
         task: "Say hello.",
         target: {
-          providerInstanceId: "codex",
+          providerInstanceId: "claudeAgent",
           model: "gpt-5.6-luna",
           options: [{ id: "reasoning", value: null }],
         },

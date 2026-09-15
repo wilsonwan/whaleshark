@@ -20,13 +20,12 @@ import * as NodePath from "node:path";
 import type { UsageProviderKind } from "@t3tools/contracts";
 
 import { GUARD_LENGTH, type TranscriptParsePosition } from "./usageTranscriptReader.ts";
-import type { CodexScanState, UsageRecord } from "./usageTranscripts.ts";
+import type { UsageRecord } from "./usageTranscripts.ts";
 
-// v2: Codex fork-copy suppression changed what a file parses to, so v1
-// entries would keep serving double-counted records forever.
-// v3: entries carry the parse position and reducer state so a grown file
-// re-parses only its appended bytes instead of starting over.
-const USAGE_SCAN_CACHE_VERSION = 3 as const;
+// Any older version is discarded outright: earlier entries either predate the
+// parse-position fields or carry a provider reducer state this reader no longer
+// understands, and resuming from them would silently mis-attribute usage.
+const USAGE_SCAN_CACHE_VERSION = 4 as const;
 
 export interface CachedFile {
   readonly size: number;
@@ -74,8 +73,6 @@ interface SerializedFile {
   readonly o: number;
   readonly gl: number;
   readonly gh: number;
-  /** Codex reducer state at `o`; `null` for stateless providers. */
-  readonly cs: CodexScanState | null;
 }
 
 interface SerializedCache {
@@ -125,7 +122,6 @@ export function encodeScanCache(cache: ScanCache): SerializedCache {
       o: entry.position.resumeOffset,
       gl: entry.position.guardLength,
       gh: entry.position.guardHash,
-      cs: entry.position.codexState,
     };
   }
 
@@ -219,7 +215,7 @@ export function decodeScanCache(document: unknown): ScanCache {
     if (typeof raw !== "object" || raw === null) continue;
     const entry = raw as Partial<SerializedFile>;
     if (typeof entry.s !== "number" || typeof entry.m !== "number") continue;
-    if (entry.p !== "claude" && entry.p !== "codex") continue;
+    if (entry.p !== "claude") continue;
     if (!isRecordArray(entry.r) || !isRecordArray(entry.t)) continue;
     // Position fields feed byte offsets and a Buffer allocation in the reader,
     // so anything outside their real ranges must reject the entry: a bogus
@@ -239,8 +235,6 @@ export function decodeScanCache(document: unknown): ScanCache {
     ) {
       continue;
     }
-    const codexState = decodeCodexState(entry.cs);
-    if (codexState === undefined) continue;
 
     const provider: UsageProviderKind = entry.p;
     const records = decodeRecords(entry.r, provider);
@@ -257,42 +251,11 @@ export function decodeScanCache(document: unknown): ScanCache {
         resumeOffset: entry.o,
         guardLength: entry.gl,
         guardHash: entry.gh,
-        codexState,
       },
     });
   }
 
   return cache;
-}
-
-/**
- * Validates a persisted Codex reducer state. Returns `undefined` for a corrupt
- * value, which disqualifies the entry: resuming with a bad state would attach
- * appended usage to the wrong model or replay fork-copied history.
- */
-function decodeCodexState(value: unknown): CodexScanState | null | undefined {
-  if (value === null) return null;
-  if (typeof value !== "object") return undefined;
-  const state = value as Partial<CodexScanState>;
-  if (
-    typeof state.model !== "string" ||
-    typeof state.sessionId !== "string" ||
-    (state.lastUsageSignature !== null && typeof state.lastUsageSignature !== "string") ||
-    typeof state.sawSessionMeta !== "boolean" ||
-    typeof state.suppressingForkCopies !== "boolean" ||
-    typeof state.forkCopyAnchorMs !== "number" ||
-    !Number.isFinite(state.forkCopyAnchorMs)
-  ) {
-    return undefined;
-  }
-  return {
-    model: state.model,
-    sessionId: state.sessionId,
-    lastUsageSignature: state.lastUsageSignature ?? null,
-    sawSessionMeta: state.sawSessionMeta,
-    suppressingForkCopies: state.suppressingForkCopies,
-    forkCopyAnchorMs: state.forkCopyAnchorMs,
-  };
 }
 
 export interface PruneOptions {

@@ -1,11 +1,13 @@
 import {
   CommandId,
   DEFAULT_MODEL,
+  DEFAULT_MODEL_BY_PROVIDER,
   DEFAULT_PROVIDER_INTERACTION_MODE,
   DEFAULT_SERVER_SETTINGS,
   type ModelSelection,
   type Project,
   ProjectId,
+  ProviderDriverKind,
   ProviderInstanceId,
   ThreadId,
 } from "@t3tools/contracts";
@@ -139,9 +141,16 @@ export const makeCommandGate = Effect.gen(function* () {
   } satisfies CommandGate;
 });
 
+/**
+ * Auto-bootstrap creates a thread before the user has picked anything. Pi is
+ * this fork's default provider, so the thread starts on Pi's default model
+ * (the sentinel that defers to the user's own Pi settings).
+ */
+const AUTO_BOOTSTRAP_DRIVER_KIND = ProviderDriverKind.make("pi");
+
 export const getAutoBootstrapThreadModelSelection = (): ModelSelection => ({
-  instanceId: ProviderInstanceId.make("codex"),
-  model: DEFAULT_MODEL,
+  instanceId: ProviderInstanceId.make(AUTO_BOOTSTRAP_DRIVER_KIND),
+  model: DEFAULT_MODEL_BY_PROVIDER[AUTO_BOOTSTRAP_DRIVER_KIND] ?? DEFAULT_MODEL,
 });
 
 interface AutoBootstrapWelcomeTargets {

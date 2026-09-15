@@ -5,21 +5,21 @@ import { useAppearancePreferences } from "../settings/appearance/AppearancePrefe
  * Series and table order. The chart stacks providers from the bottom in this
  * order, so it also fixes which band sits on top of the bars.
  */
-export const PROVIDER_ORDER: readonly UsageProviderKind[] = ["codex", "claude"];
+export const PROVIDER_ORDER: readonly UsageProviderKind[] = ["claude"];
 
 export const PROVIDER_LABEL: Record<UsageProviderKind, string> = {
   claude: "Claude Code",
-  codex: "Codex",
 };
 
 /**
- * Claude's brand orange holds in both themes; Codex is a neutral and must flip
- * with the theme or its bars vanish against the matching background.
+ * Claude's brand orange holds in both themes; any other driver takes a neutral
+ * that must flip with the theme or its bars vanish against the matching
+ * background.
  */
-export function useProviderColors(): Record<UsageProviderKind, string> {
+export function useProviderColors(): Record<UsageProviderKind, string> & { neutral: string } {
   const { themeAppearance: scheme } = useAppearancePreferences();
   return {
     claude: "#d97757",
-    codex: scheme === "dark" ? "#e6e6e6" : "#3c3c43",
+    neutral: scheme === "dark" ? "#e6e6e6" : "#3c3c43",
   };
 }

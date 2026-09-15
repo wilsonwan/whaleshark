@@ -20,11 +20,6 @@ import {
   type ThreadId,
 } from "@t3tools/contracts";
 import { safeErrorLogAttributes } from "@t3tools/client-runtime/errors";
-import {
-  parseCodexFeedbackCommand,
-  submitCodexFeedback,
-  type CodexFeedbackSubmission,
-} from "@t3tools/client-runtime/state/threads";
 import { resolveThreadWorkingStartedAt } from "@t3tools/client-runtime/state/models";
 import { upgradeLegacyContextMessage } from "@t3tools/shared/composerContextLegacy";
 import { composerContextSendBlockReason, reidentifyComposerContext } from "../lib/composerContext";
@@ -74,8 +69,6 @@ import {
 import { useThreadSelection } from "../state/use-thread-selection";
 import { enqueueThreadOutboxMessage } from "./thread-outbox";
 import { dispatchingQueuedMessageIdAtom, useThreadOutboxMessages } from "./use-thread-outbox";
-import { threadEnvironment } from "./threads";
-import { useAtomCommand } from "./use-atom-command";
 
 export function appendReviewCommentToDraft(input: {
   readonly environmentId: EnvironmentId;
@@ -136,12 +129,6 @@ export function useThreadComposerState() {
   const acknowledgedMessages = useAtomValue(acknowledgedThreadMessagesAtom);
   const queuedMessagesByThreadKey = useThreadOutboxMessages();
   const dispatchingQueuedMessageId = useAtomValue(dispatchingQueuedMessageIdAtom);
-  const [feedbackSubmissionsByThreadKey, setFeedbackSubmissionsByThreadKey] = useState<
-    Record<string, ReadonlyArray<CodexFeedbackSubmission>>
-  >({});
-  const uploadThreadFeedback = useAtomCommand(threadEnvironment.uploadFeedback, {
-    reportFailure: false,
-  });
 
   useEffect(() => {
     ensureComposerDraftsLoaded();
@@ -160,20 +147,6 @@ export function useThreadComposerState() {
           )
         : [],
     [queuedMessagesByThreadKey, selectedThreadKey],
-  );
-  const feedbackSubmissions = useMemo(
-    () => (selectedThreadKey ? (feedbackSubmissionsByThreadKey[selectedThreadKey] ?? []) : []),
-    [feedbackSubmissionsByThreadKey, selectedThreadKey],
-  );
-  const dismissFeedback = useCallback(
-    (id: MessageId) => {
-      if (!selectedThreadKey) return;
-      setFeedbackSubmissionsByThreadKey((current) => ({
-        ...current,
-        [selectedThreadKey]: (current[selectedThreadKey] ?? []).filter((entry) => entry.id !== id),
-      }));
-    },
-    [selectedThreadKey],
   );
   const selectedThreadMessages = selectedThreadProjection?.projection.messages;
   const selectedThreadAttempts = selectedThreadProjection?.projection.attempts;
@@ -366,43 +339,6 @@ export function useThreadComposerState() {
     const provider = serverConfig?.providers.find(
       (entry) => entry.instanceId === modelSelection.instanceId,
     );
-    const feedbackCommand =
-      attachments.length === 0 && provider?.driver === "codex"
-        ? parseCodexFeedbackCommand(text)
-        : null;
-    if (feedbackCommand) {
-      if (thread.activeProviderThreadId === null) {
-        Alert.alert("Start a Codex thread first", "Send a message before you submit feedback.");
-        return null;
-      }
-      const metadata = makeQueuedMessageMetadata();
-      await submitCodexFeedback({
-        submission: {
-          id: MessageId.make(metadata.messageId),
-          command: text,
-          createdAt: metadata.createdAt,
-        },
-        clearDraft: () => clearComposerDraftContent(threadKey),
-        onUpdate: (submission) => {
-          setFeedbackSubmissionsByThreadKey((current) => {
-            const existing = current[threadKey] ?? [];
-            const found = existing.some((entry) => entry.id === submission.id);
-            return {
-              ...current,
-              [threadKey]: found
-                ? existing.map((entry) => (entry.id === submission.id ? submission : entry))
-                : [...existing, submission],
-            };
-          });
-        },
-        upload: () =>
-          uploadThreadFeedback({
-            environmentId: thread.environmentId,
-            input: { threadId: thread.id, ...feedbackCommand },
-          }),
-      });
-      return null;
-    }
 
     const metadata = makeQueuedMessageMetadata();
     const messageId = MessageId.make(metadata.messageId);
@@ -452,7 +388,6 @@ export function useThreadComposerState() {
     selectedEnvironmentRuntime?.serverConfig,
     selectedThreadCreation,
     selectedThreadShell,
-    uploadThreadFeedback,
   ]);
 
   const onChangeDraftMessage = useCallback(
@@ -639,8 +574,6 @@ export function useThreadComposerState() {
   );
 
   return {
-    feedbackSubmissions,
-    dismissFeedback,
     selectedThreadFeed,
     selectedThreadActivityRun,
     selectedThreadQueueCount,

@@ -21,7 +21,7 @@ const invocation = (capabilities: ReadonlyArray<McpInvocationContext.McpCapabili
   environmentId,
   threadId,
   providerSessionId: "provider-session-device-test",
-  providerInstanceId: ProviderInstanceId.make("codex"),
+  providerInstanceId: ProviderInstanceId.make("claudeAgent"),
   capabilities: new Set(capabilities),
   issuedAt: 1,
 });

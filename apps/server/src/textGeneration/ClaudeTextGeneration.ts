@@ -1,9 +1,9 @@
 /**
  * ClaudeTextGeneration – Text generation layer using the Claude CLI.
  *
- * Implements the same TextGeneration service contract as CodexTextGeneration but
- * delegates to the `claude` CLI (`claude -p`) with structured JSON output
- * instead of the `codex exec` CLI.
+ * Implements the same TextGeneration service contract as the other provider
+ * backends but delegates to the `claude` CLI (`claude -p`) with structured
+ * JSON output instead of a provider-specific exec CLI.
  *
  * @module ClaudeTextGeneration
  */

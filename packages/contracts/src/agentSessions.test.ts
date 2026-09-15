@@ -8,7 +8,7 @@ const decodeScanResult = Schema.decodeUnknownSync(AgentSessionScanResult);
 const candidate = {
   path: "/projects/repo",
   title: "repo",
-  sources: ["codex"],
+  sources: ["claudeAgent"],
   threadCount: 3,
   lastActiveAt: "2026-08-20T12:00:00.000Z",
   alreadyImported: false,

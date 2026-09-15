@@ -41,8 +41,8 @@ it("stamps authoritative provenance on commands that create threads or messages"
     projectId: ProjectId.make("project:thread-management"),
     title: "Thread management",
     modelSelection: {
-      instanceId: ProviderInstanceId.make("codex"),
-      model: "gpt-5-codex",
+      instanceId: ProviderInstanceId.make("claudeAgent"),
+      model: "claude-sonnet-4-6",
     },
     runtimeMode: "full-access",
     interactionMode: "default",
@@ -92,8 +92,8 @@ it("identifies every existing thread that must be hydrated before dispatch", () 
       projectId: ProjectId.make("project:thread-management"),
       title: "Created thread",
       modelSelection: {
-        instanceId: ProviderInstanceId.make("codex"),
-        model: "gpt-5-codex",
+        instanceId: ProviderInstanceId.make("claudeAgent"),
+        model: "claude-sonnet-4-6",
       },
       runtimeMode: "full-access",
       interactionMode: "default",
@@ -170,8 +170,8 @@ it("identifies every existing thread that must be hydrated before dispatch", () 
       parentNodeId: NodeId.make("node:thread-management:parent"),
       task: "Inspect the migration",
       modelSelection: {
-        instanceId: ProviderInstanceId.make("codex"),
-        model: "gpt-5-codex",
+        instanceId: ProviderInstanceId.make("claudeAgent"),
+        model: "claude-sonnet-4-6",
       },
       runtimeMode: "full-access",
       interactionMode: "default",

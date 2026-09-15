@@ -1055,10 +1055,10 @@ private class DiffCanvasView(context: Context) : View(context) {
       size = style.hunkFontSizePx,
       weight = style.hunkFontWeight,
     )
-    drawScrollableCode(canvas, top, bottom) { codeX ->
+    drawScrollableCode(canvas, top, bottom) { contentX ->
       canvas.drawText(
         row.text.ifEmpty { row.content },
-        codeX,
+        contentX,
         centeredBaseline(top, bottom, textPaint),
         textPaint,
       )
@@ -1192,13 +1192,13 @@ private class DiffCanvasView(context: Context) : View(context) {
     }
 
     val tokens = tokensByRowId[row.id]
-    drawScrollableCode(canvas, top, bottom) { codeX ->
+    drawScrollableCode(canvas, top, bottom) { contentX ->
       drawing.configureCodePaint(theme.text, 0, style)
-      drawing.drawWordDiffRanges(canvas, row, codeX, top, bottom)
+      drawing.drawWordDiffRanges(canvas, row, contentX, top, bottom)
       if (tokens.isNullOrEmpty()) {
-        canvas.drawText(row.content, codeX, centeredBaseline(top, bottom, textPaint), textPaint)
+        canvas.drawText(row.content, contentX, centeredBaseline(top, bottom, textPaint), textPaint)
       } else {
-        var x = codeX
+        var x = contentX
         tokens.forEach { token ->
           drawing.configureCodePaint(token.color ?: theme.text, token.fontStyle, style)
           canvas.drawText(token.content, x, centeredBaseline(top, bottom, textPaint), textPaint)

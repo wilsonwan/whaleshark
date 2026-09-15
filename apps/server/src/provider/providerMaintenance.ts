@@ -75,7 +75,7 @@ export interface ProviderMaintenanceCommandAction {
   /**
    * Extra environment for the spawned updater, on top of the server's own.
    * A native updater finds its install through the same variables the
-   * provider runs with (e.g. `CODEX_HOME`), so an instance with a custom home
+   * provider runs with (e.g. `CLAUDE_CONFIG_DIR`), so an instance with a custom home
    * must update that home and not the default one.
    */
   readonly env?: NodeJS.ProcessEnv;

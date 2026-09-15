@@ -85,12 +85,12 @@ describe("ACP Registry wizard", () => {
 
   it("only marks matching ACP Registry instances as already added", () => {
     const instances = {
-      codex: { driver: "codex", config: { agentId: "gemini" } },
+      claudeAgent: { driver: "claudeAgent", config: { agentId: "gemini" } },
       registry: { driver: "acpRegistry", config: { agentId: "gemini" } },
     };
 
     expect(isConfiguredAcpRegistryAgent(instances, "gemini")).toBe(true);
-    expect(isConfiguredAcpRegistryAgent(instances, "codex")).toBe(false);
+    expect(isConfiguredAcpRegistryAgent(instances, "claudeAgent")).toBe(false);
   });
 
   it("keeps registry-prefilled identity separate from other drivers", () => {
@@ -99,15 +99,15 @@ describe("ACP Registry wizard", () => {
       instanceIdOverride: "acpRegistry_gemini_cli",
     });
 
-    expect(getProviderIdentityDraft(registryDrafts, "codex")).toEqual({
+    expect(getProviderIdentityDraft(registryDrafts, "claudeAgent")).toEqual({
       label: "",
       accentColor: "",
       instanceIdOverride: null,
     });
 
-    const drafts = updateProviderIdentityDraft(registryDrafts, "codex", {
+    const drafts = updateProviderIdentityDraft(registryDrafts, "claudeAgent", {
       label: "Work",
-      instanceIdOverride: "codex_work",
+      instanceIdOverride: "claude_work",
     });
     expect(getProviderIdentityDraft(drafts, "acpRegistry")).toMatchObject({
       label: "Gemini CLI",

@@ -182,7 +182,7 @@ function asUsage(value: unknown): SubagentUsage | undefined {
 
 /**
  * Provider-specific usage merge (#4779 semantics, verbatim):
- * - max-merge (Codex-style cumulative frames): field-wise maximum, idempotent
+ * - max-merge (cumulative frames): field-wise maximum, idempotent
  *   under duplicate or late frames. Cumulative totals never shrink.
  * - accumulate (Claude-style activation deltas): not needed at this layer —
  *   Claude's task_progress usage is itself cumulative per task, so the fold
@@ -459,7 +459,7 @@ function asRuntimeStatus(value: unknown): RuntimeSubagentStatus | undefined {
  * provider session, so agents whose terminal rows were lost (server
  * restart, crash) must not read as running forever (review finding: a dead
  * session left a panel full of "Working" agents while the sidebar showed
- * nothing). Idle is preserved — a resumable Codex child stays resumable.
+ * nothing). Idle is preserved — a resumable child stays resumable.
  */
 export function foldSubagentActivities(
   activities: ReadonlyArray<OrchestrationThreadActivity>,
@@ -844,7 +844,7 @@ export function deriveAgentPanelModel({
         .slice()
         .sort((a, b) => (a.agentIndex ?? 0) - (b.agentIndex ?? 0));
       const activeCount = phaseMembers.filter(
-        // Idle members count as active for phase-liveness: a resumable Codex
+        // Idle members count as active for phase-liveness: a resumable
         // member has not finished the phase.
         (member) => isActiveSubagentStatus(member.status) || member.status === "idle",
       ).length;

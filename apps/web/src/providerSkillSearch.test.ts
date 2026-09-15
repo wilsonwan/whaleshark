@@ -85,13 +85,13 @@ describe("searchProviderSkills", () => {
 
   it("returns the first enabled definition for each skill name", () => {
     const skills = [
-      makeSkill({ name: "branch-audit", path: "/Users/matt/.codex/skills/branch-audit/SKILL.md" }),
+      makeSkill({ name: "branch-audit", path: "/Users/matt/.claude/skills/branch-audit/SKILL.md" }),
       makeSkill({ name: "browser" }),
       makeSkill({ name: "branch-audit", path: "/Users/matt/.agents/skills/branch-audit/SKILL.md" }),
     ];
 
     expect(searchProviderSkills(skills, "").map((skill) => skill.path)).toEqual([
-      "/Users/matt/.codex/skills/branch-audit/SKILL.md",
+      "/Users/matt/.claude/skills/branch-audit/SKILL.md",
       "/tmp/browser/SKILL.md",
     ]);
   });

@@ -8,8 +8,8 @@ It verifies that:
 3. The final recall prompt does not contain either marker, so the response must
    come from provider conversation state.
 
-Both `codex_transcript.ndjson` and `claude_transcript.ndjson` record the same
-logical scenario using each provider's native thread or session mechanism.
+`claude_transcript.ndjson` records the logical scenario using the provider's native
+session mechanism.
 
 ## Conversation Graph
 

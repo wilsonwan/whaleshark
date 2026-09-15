@@ -54,6 +54,15 @@ const decodeUserInputRequestedPayload = Schema.decodeUnknownOption(UserInputRequ
 const threadPullRequestLinksEqual = Schema.toEquivalence(Schema.NullOr(ThreadLinkedPullRequest));
 
 /**
+ * Provider-agnostic wording for a `provider.user-input.respond.failed` detail
+ * that marks the request gone: `<stale|unknown> pending [<provider>] user-input
+ * request`. Provider names may appear between `pending` and the request kind,
+ * so the pattern matches them rather than enumerating each provider's wording.
+ */
+const PENDING_USER_INPUT_FAILURE_DETAIL =
+  /(?:stale|unknown) pending (?:[a-z0-9_-]+ )*user[ -]input request/;
+
+/**
  * Blocked-on-you work derived from the thread's retained activities: an
  * approval or user-input request with no later resolution for the same
  * requestId. The server-side twin of the shell's hasPendingApprovals /
@@ -70,10 +79,7 @@ function isStaleRequestFailureDetail(payload: Record<string, unknown> | null): b
     detail.includes("stale pending approval request") ||
     detail.includes("unknown pending approval request") ||
     detail.includes("unknown pending permission request") ||
-    detail.includes("stale pending user-input request") ||
-    detail.includes("unknown pending user-input request") ||
-    detail.includes("unknown pending user input request") ||
-    detail.includes("unknown pending codex user input request")
+    PENDING_USER_INPUT_FAILURE_DETAIL.test(detail)
   );
 }
 

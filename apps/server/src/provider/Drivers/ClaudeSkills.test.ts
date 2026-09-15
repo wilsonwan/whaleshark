@@ -30,11 +30,11 @@ it.layer(NodeServices.layer)("discoverClaudeSkills", (it) => {
 
       yield* writeSkill(
         path.join(configDir, "skills"),
-        "codex-review",
+        "release-review",
         [
           "---",
-          "name: codex-review",
-          "description: Ask Codex for a review.",
+          "name: release-review",
+          "description: Ask for a release review.",
           "---",
           "",
           "# Body",
@@ -50,18 +50,18 @@ it.layer(NodeServices.layer)("discoverClaudeSkills", (it) => {
 
       assert.deepEqual(skills, [
         {
-          name: "codex-review",
-          path: path.join(configDir, "skills", "codex-review", "SKILL.md"),
-          enabled: true,
-          scope: "user",
-          description: "Ask Codex for a review.",
-        },
-        {
           name: "deploy",
           path: path.join(workspace, ".claude", "skills", "deploy", "SKILL.md"),
           enabled: true,
           scope: "project",
           description: "Deploy the app.",
+        },
+        {
+          name: "release-review",
+          path: path.join(configDir, "skills", "release-review", "SKILL.md"),
+          enabled: true,
+          scope: "user",
+          description: "Ask for a release review.",
         },
       ]);
     }),

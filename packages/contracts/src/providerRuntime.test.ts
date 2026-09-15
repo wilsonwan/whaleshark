@@ -18,7 +18,7 @@ describe("ProviderRuntimeEvent", () => {
     const completeEvent = {
       type: "turn.completed",
       eventId: "event-complete-usage",
-      provider: "codex",
+      provider: "claudeAgent",
       createdAt: "2026-02-28T00:00:00.000Z",
       threadId: "thread-1",
       turnId: "turn-1",
@@ -107,7 +107,7 @@ describe("ProviderRuntimeEvent", () => {
     const parsed = decodeRuntimeEvent({
       type: "turn.proposed.completed",
       eventId: "event-proposed-plan-1",
-      provider: "codex",
+      provider: "claudeAgent",
       createdAt: "2026-02-28T00:00:00.000Z",
       threadId: "thread-1",
       turnId: "turn-1",
@@ -189,7 +189,7 @@ describe("ProviderRuntimeEvent", () => {
       decodeRuntimeEvent({
         type: "message.delta",
         eventId: "event-4",
-        provider: "codex",
+        provider: "claudeAgent",
         sessionId: "runtime-session-3",
         createdAt: "2026-02-28T00:00:03.000Z",
         payload: { delta: "legacy" },
@@ -202,7 +202,7 @@ describe("ProviderRuntimeEvent", () => {
       decodeRuntimeEvent({
         type: "runtime.error",
         eventId: "event-5",
-        provider: "codex",
+        provider: "claudeAgent",
         sessionId: "runtime-session-3",
         createdAt: "2026-02-28T00:00:03.000Z",
         threadId: "   ",

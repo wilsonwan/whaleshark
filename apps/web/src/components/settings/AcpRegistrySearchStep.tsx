@@ -21,7 +21,7 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { isConfiguredAcpRegistryAgent } from "./AddProviderInstanceDialog.logic";
 import { AcpRegistryAgentIcon } from "./AcpRegistryIcon";
 
-const SUGGESTED_SEARCHES = ["Codex", "Copilot", "Kimi"] as const;
+const SUGGESTED_SEARCHES = ["Copilot", "Kimi"] as const;
 function errorMessage(error: unknown): string {
   return error instanceof Error && error.message.trim()
     ? error.message

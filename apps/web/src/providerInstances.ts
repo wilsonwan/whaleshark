@@ -2,7 +2,7 @@
  * Instance-aware view over the wire `ServerProvider[]`.
  *
  * The wire carries one `ServerProvider` per *configured instance* — the
- * default built-in codex instance, a user-authored `codex_personal`, an
+ * default built-in pi instance, a user-authored `pi_personal`, an
  * unavailable shadow for a fork driver, etc. Legacy UI code collapsed these
  * into a single bucket per built-in driver via `.find((p) => p.driver === kind)`,
  * which silently dropped every custom instance after the first. This module

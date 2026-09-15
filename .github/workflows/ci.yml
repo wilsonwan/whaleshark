@@ -29,7 +29,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Reject repository-owned PR assets
@@ -84,7 +83,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       # Ubuntu runner images ship gcc, but ACP process-tree live tests compile a
@@ -134,7 +132,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
@@ -197,7 +194,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Rust
@@ -216,7 +212,6 @@ jobs:
           for crate in resource-monitor kde-snap-shot hyprland-snap-shot; do
             cargo test --locked --manifest-path "native/$crate/Cargo.toml"
           done
-
   release_smoke:
     name: Release Smoke
     runs-on: ubuntu-24.04
@@ -227,7 +222,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+

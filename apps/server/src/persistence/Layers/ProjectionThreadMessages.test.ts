@@ -19,7 +19,7 @@ layer("ProjectionThreadMessageRepository", (it) => {
       assert.isNull(yield* repository.getLatestUserMessageAt({ threadId }));
 
       yield* repository.upsert({
-        messageId: MessageId.make("import:codex:latest-user-message:000000"),
+        messageId: MessageId.make("import:claude:latest-user-message:000000"),
         threadId,
         turnId: null,
         role: "user",

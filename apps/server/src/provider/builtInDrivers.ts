@@ -22,7 +22,6 @@
  */
 import { AcpRegistryDriver, type AcpRegistryDriverEnv } from "./Drivers/AcpRegistryDriver.ts";
 import { ClaudeDriver, type ClaudeDriverEnv } from "./Drivers/ClaudeDriver.ts";
-import { CodexDriver, type CodexDriverEnv } from "./Drivers/CodexDriver.ts";
 import { OpenCodeDriver, type OpenCodeDriverEnv } from "./Drivers/OpenCodeDriver.ts";
 import { PiDriver, type PiDriverEnv } from "./Drivers/PiDriver.ts";
 import type { AnyProviderDriver } from "./ProviderDriver.ts";
@@ -35,7 +34,6 @@ import type { AnyProviderDriver } from "./ProviderDriver.ts";
 export type BuiltInDriversEnv =
   | AcpRegistryDriverEnv
   | ClaudeDriverEnv
-  | CodexDriverEnv
   | OpenCodeDriverEnv
   | PiDriverEnv;
 
@@ -45,7 +43,6 @@ export type BuiltInDriversEnv =
  * iteration order has no functional effect on instance lookup.
  */
 export const BUILT_IN_DRIVERS: ReadonlyArray<AnyProviderDriver<BuiltInDriversEnv>> = [
-  CodexDriver,
   ClaudeDriver,
   OpenCodeDriver,
   PiDriver,

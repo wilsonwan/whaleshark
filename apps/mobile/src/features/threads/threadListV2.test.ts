@@ -135,8 +135,8 @@ describe("resolveThreadListV2Status", () => {
       runtime: {
         status: "running",
         activeRunId: RunId.make("run-t"),
-        providerName: "Codex",
-        providerInstanceId: ProviderInstanceId.make("codex"),
+        providerName: "Claude",
+        providerInstanceId: ProviderInstanceId.make("claudeAgent"),
         lastError: null,
         updatedAt: NOW,
       },
@@ -150,12 +150,12 @@ describe("resolveThreadListV2Status", () => {
         makeThread({
           id: ThreadId.make("t"),
           title: "t",
-          pendingBackgroundTasks: [{ taskId: "bg-1", description: "Run Codex review" }],
+          pendingBackgroundTasks: [{ taskId: "bg-1", description: "Run Claude review" }],
           runtime: {
             status: "idle",
             activeRunId: null,
-            providerInstanceId: ProviderInstanceId.make("codex"),
-            providerName: "Codex",
+            providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+            providerName: "Claude",
             lastError: null,
             updatedAt: NOW,
           },

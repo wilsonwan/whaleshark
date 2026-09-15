@@ -12,8 +12,8 @@ import {
 } from "./providerSkills.ts";
 
 const provider = {
-  instanceId: ProviderInstanceId.make("codex"),
-  driver: ProviderDriverKind.make("codex"),
+  instanceId: ProviderInstanceId.make("claudeAgent"),
+  driver: ProviderDriverKind.make("claudeAgent"),
   enabled: true,
   installed: true,
   version: "1.0.0",
@@ -56,7 +56,7 @@ describe("dedupeProviderSkillsByName", () => {
   it("keeps the first resolved skill and preserves unrelated skill order", () => {
     const firstSkill = {
       name: "branch-audit",
-      path: "/Users/matt/.codex/skills/branch-audit/SKILL.md",
+      path: "/Users/matt/.claude/skills/branch-audit/SKILL.md",
       enabled: true,
     };
     const otherSkill = {
@@ -93,7 +93,7 @@ describe("getProviderSkillsForSlashMenu", () => {
     const skills = [
       {
         name: "babysit-pr",
-        path: "/Users/matt/.codex/skills/babysit-pr/SKILL.md",
+        path: "/Users/matt/.claude/skills/babysit-pr/SKILL.md",
         enabled: true,
       },
       {
@@ -123,7 +123,7 @@ describe("getProviderSkillsForSlashMenu", () => {
     const skills = [
       {
         name: "babysit-pr",
-        path: "/Users/matt/.codex/skills/babysit-pr/SKILL.md",
+        path: "/Users/matt/.claude/skills/babysit-pr/SKILL.md",
         enabled: false,
       },
       enabledSkill,
@@ -189,7 +189,7 @@ describe("resolveProviderSkillSourceKind", () => {
   it("marks plugin-backed skills as app installs", () => {
     expect(
       resolveProviderSkillSourceKind({
-        path: "/Users/julius/.codex/plugins/cache/openai-curated/github/skills/gh-fix-ci/SKILL.md",
+        path: "/Users/julius/.agents/plugins/cache/acp-curated/github/skills/gh-fix-ci/SKILL.md",
         scope: "user",
       }),
     ).toBe("app");
@@ -198,13 +198,13 @@ describe("resolveProviderSkillSourceKind", () => {
   it("maps standard scopes to source kinds", () => {
     expect(
       resolveProviderSkillSourceKind({
-        path: "/workspace/.codex/skills/review-follow-up/SKILL.md",
+        path: "/workspace/.claude/skills/review-follow-up/SKILL.md",
         scope: "repo",
       }),
     ).toBe("repo");
     expect(
       resolveProviderSkillSourceKind({
-        path: "/workspace/.codex/skills/review-follow-up/SKILL.md",
+        path: "/workspace/.claude/skills/review-follow-up/SKILL.md",
         scope: "project",
       }),
     ).toBe("project");
@@ -216,7 +216,7 @@ describe("resolveProviderSkillSourceKind", () => {
     ).toBe("personal");
     expect(
       resolveProviderSkillSourceKind({
-        path: "/usr/local/share/codex/skills/imagegen/SKILL.md",
+        path: "/usr/local/share/claude/skills/imagegen/SKILL.md",
         scope: "system",
       }),
     ).toBe("system");

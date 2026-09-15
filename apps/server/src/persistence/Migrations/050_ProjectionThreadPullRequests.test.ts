@@ -66,7 +66,7 @@ layer("050_ProjectionThreadPullRequests", (it) => {
             'thread-github',
             'project-1',
             'GitHub link',
-            '{"instanceId":"codex","model":"gpt-5.4"}',
+            '{"instanceId":"claudeAgent","model":"gpt-5.4"}',
             '{"projectId":"project-1","repository":"PingDotGG/T3Code","number":42,"url":"https://GitHub.com/pingdotgg/t3code/pull/42"}',
             '2026-03-01T00:00:01.000Z',
             '2026-03-02T00:00:00.000Z'
@@ -75,7 +75,7 @@ layer("050_ProjectionThreadPullRequests", (it) => {
             'thread-bad-url',
             'project-1',
             'Unparseable URL',
-            '{"instanceId":"codex","model":"gpt-5.4"}',
+            '{"instanceId":"claudeAgent","model":"gpt-5.4"}',
             '{"projectId":"project-1","repository":"acme/widgets","number":7,"url":"not a url"}',
             '2026-03-01T00:00:02.000Z',
             '2026-03-03T00:00:00.000Z'
@@ -84,7 +84,7 @@ layer("050_ProjectionThreadPullRequests", (it) => {
             'thread-malformed',
             'project-1',
             'Malformed JSON',
-            '{"instanceId":"codex","model":"gpt-5.4"}',
+            '{"instanceId":"claudeAgent","model":"gpt-5.4"}',
             '{"repository":"acme/widgets"}',
             '2026-03-01T00:00:03.000Z',
             '2026-03-04T00:00:00.000Z'
@@ -93,7 +93,7 @@ layer("050_ProjectionThreadPullRequests", (it) => {
             'thread-unlinked',
             'project-1',
             'No link',
-            '{"instanceId":"codex","model":"gpt-5.4"}',
+            '{"instanceId":"claudeAgent","model":"gpt-5.4"}',
             NULL,
             '2026-03-01T00:00:04.000Z',
             '2026-03-05T00:00:00.000Z'
@@ -164,7 +164,7 @@ it.layer(Layer.fresh(NodeSqliteClient.layerMemory()))("050 Azure legacy links", 
       for (const organization of ["org-a", "org-b"]) {
         yield* sql`
           INSERT INTO projection_threads (thread_id, project_id, title, model_selection_json, linked_pull_request_json, created_at, updated_at)
-          VALUES (${organization}, ${organization}, 'Azure', '{"instanceId":"codex","model":"gpt-5.4"}',
+          VALUES (${organization}, ${organization}, 'Azure', '{"instanceId":"claudeAgent","model":"gpt-5.4"}',
             ${encodeJson({ projectId: organization, repository: "web", number: 7, url: `https://dev.azure.com/${organization}/project/_git/web/pullrequest/7` })},
             '2026-03-01T00:00:00.000Z', '2026-03-01T00:00:00.000Z')
         `;

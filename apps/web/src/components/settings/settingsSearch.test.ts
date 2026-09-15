@@ -30,7 +30,7 @@ const ITEMS: ReadonlyArray<SettingsSearchItem> = [
     id: "providers",
     title: "Providers",
     to: "/settings/providers",
-    searchTerms: ["claude codex agents"],
+    searchTerms: ["claude claudeAgent agents"],
   },
   {
     id: "provider-updates",
