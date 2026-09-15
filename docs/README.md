@@ -41,8 +41,6 @@ source alone does not explain. Most code changes do not need an internal documen
 - [Resource telemetry](./internals/resource-telemetry.md)
 - [Environment auth](./internals/environment-auth.md)
 - [Assistant citations](./internals/assistant-citations.md)
-- [Mobile navigation](./internals/mobile-navigation.md)
-- [Mobile development lifecycle](./internals/mobile-development.md)
 - [Terminal runtime](./internals/terminal-runtime.md)
 - [Devices](./internals/devices.md)
 - [Voice input](./internals/voice-input.md)
@@ -52,4 +50,3 @@ source alone does not explain. Most code changes do not need an internal documen
 - [Development and local builds](./operations/development.md)
 - [Release](./operations/release.md)
 - [Observability](./operations/observability.md)
-- [Mobile app store screenshots](./operations/mobile-app-store-screenshots.md)
