@@ -13,10 +13,6 @@ const hostArch = NodeOS.arch();
 
 function getPlatformPath() {
   switch (hostPlatform) {
-    case "darwin":
-      return "Electron.app/Contents/MacOS/Electron";
-    case "freebsd":
-    case "openbsd":
     case "linux":
       return "electron";
     case "win32":
@@ -44,36 +40,7 @@ function repairPathFile(electronDir, platformPath) {
 }
 
 function getRequiredRuntimePaths(electronDir, platformPath) {
-  const paths = [NodePath.join(electronDir, "dist", platformPath)];
-
-  if (hostPlatform === "darwin") {
-    paths.push(
-      NodePath.join(electronDir, "dist", "Electron.app", "Contents", "Info.plist"),
-      NodePath.join(
-        electronDir,
-        "dist",
-        "Electron.app",
-        "Contents",
-        "Frameworks",
-        "Electron Framework.framework",
-        "Electron Framework",
-      ),
-    );
-  }
-
-  return paths;
-}
-
-function isMachO(filePath) {
-  if (hostPlatform !== "darwin") {
-    return true;
-  }
-
-  const result = NodeChildProcess.spawnSync("file", ["-b", filePath], {
-    encoding: "utf8",
-  });
-
-  return result.status === 0 && result.stdout.includes("Mach-O");
+  return [NodePath.join(electronDir, "dist", platformPath)];
 }
 
 function missingRuntimePaths(electronDir, platformPath) {
@@ -83,22 +50,7 @@ function missingRuntimePaths(electronDir, platformPath) {
 }
 
 function invalidRuntimePaths(electronDir, platformPath) {
-  if (hostPlatform !== "darwin") {
-    return [];
-  }
-
-  return [
-    NodePath.join(electronDir, "dist", platformPath),
-    NodePath.join(
-      electronDir,
-      "dist",
-      "Electron.app",
-      "Contents",
-      "Frameworks",
-      "Electron Framework.framework",
-      "Electron Framework",
-    ),
-  ].filter((runtimePath) => NodeFS.existsSync(runtimePath) && !isMachO(runtimePath));
+  return [];
 }
 
 function runChecked(command, args) {
@@ -127,16 +79,12 @@ function installElectronRuntime(electronDir, version) {
       "-o",
       zipPath,
     ]);
-    if (hostPlatform === "darwin") {
-      runChecked("ditto", ["-x", "-k", zipPath, NodePath.join(electronDir, "dist")]);
-    } else {
-      runChecked("python3", [
-        "-c",
-        "import os, sys, zipfile; os.makedirs(sys.argv[2], exist_ok=True); zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])",
-        zipPath,
-        NodePath.join(electronDir, "dist"),
-      ]);
-    }
+    runChecked("python3", [
+      "-c",
+      "import os, sys, zipfile; os.makedirs(sys.argv[2], exist_ok=True); zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])",
+      zipPath,
+      NodePath.join(electronDir, "dist"),
+    ]);
   } finally {
     NodeFS.rmSync(tempDir, { recursive: true, force: true });
   }
