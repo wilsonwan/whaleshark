@@ -43,7 +43,7 @@ function makeEnvironmentLayer(baseDir: string, appVersion = "0.0.17") {
   return DesktopEnvironment.layer({
     dirname: "/repo/apps/desktop/src",
     homeDirectory: baseDir,
-    platform: "darwin",
+    platform: "linux",
     processArch: "x64",
     appVersion,
     appPath: "/repo",

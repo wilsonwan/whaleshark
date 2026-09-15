@@ -81,18 +81,6 @@ export const getSnapShotState = DesktopIpc.makeIpcMethod({
   }),
 });
 
-export const requestSnapShotPermissions = DesktopIpc.makeIpcMethod({
-  channel: IpcChannels.REQUEST_SNAP_SHOT_PERMISSIONS_CHANNEL,
-  payload: Schema.Boolean,
-  result: Schema.Void,
-  handler: Effect.fn("desktop.ipc.snapShot.requestPermissions")(
-    function* (includeAccessibility, event) {
-      yield* ensureTrustedSnapShotSender(event);
-      yield* (yield* DesktopSnapShot.DesktopSnapShot).requestPermissions(includeAccessibility);
-    },
-  ),
-});
-
 export const setupSnapShot = DesktopIpc.makeIpcMethod({
   channel: IpcChannels.SETUP_SNAP_SHOT_CHANNEL,
   payload: DesktopSnapShotSetupAction,

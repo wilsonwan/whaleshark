@@ -114,29 +114,6 @@ const normalizePosition = (
 /** @public Service construction is part of the canonical Effect module API. */
 export const make = Effect.gen(function* () {
   const platform = yield* HostProcessPlatform;
-  let destructiveMenuIconCache: Option.Option<Electron.NativeImage> | undefined;
-
-  const getDestructiveMenuIcon = (): Option.Option<Electron.NativeImage> => {
-    if (platform !== "darwin") {
-      return Option.none();
-    }
-    if (destructiveMenuIconCache !== undefined) {
-      return destructiveMenuIconCache;
-    }
-
-    try {
-      const icon = Electron.nativeImage.createFromNamedImage("trash").resize({
-        width: 12,
-        height: 12,
-      });
-      icon.setTemplateImage(true);
-      destructiveMenuIconCache = icon.isEmpty() ? Option.none() : Option.some(icon);
-    } catch {
-      destructiveMenuIconCache = Option.none();
-    }
-
-    return destructiveMenuIconCache;
-  };
 
   const buildTemplate = (
     entries: readonly ContextMenuItem[],
@@ -174,13 +151,6 @@ export const make = Effect.gen(function* () {
       } else {
         itemOption.click = () => complete(Option.some(item.id));
       }
-      if (item.destructive && (!item.children || item.children.length === 0)) {
-        const destructiveIcon = getDestructiveMenuIcon();
-        if (Option.isSome(destructiveIcon)) {
-          itemOption.icon = destructiveIcon.value;
-        }
-      }
-
       template.push(itemOption);
     }
 

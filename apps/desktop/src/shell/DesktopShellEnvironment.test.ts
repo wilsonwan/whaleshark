@@ -100,7 +100,7 @@ function runShellEnvironment(input: {
 }
 
 describe("DesktopShellEnvironment", () => {
-  it.effect("hydrates PATH and missing SSH_AUTH_SOCK from the login shell on macOS", () =>
+  it.effect("hydrates PATH and missing SSH_AUTH_SOCK from the login shell on linux", () =>
     Effect.gen(function* () {
       const env: NodeJS.ProcessEnv = {
         SHELL: "/bin/zsh",
@@ -110,7 +110,7 @@ describe("DesktopShellEnvironment", () => {
 
       yield* runShellEnvironment({
         env,
-        platform: "darwin",
+        platform: "linux",
         handler: (command) => {
           commands.push(command);
           return envOutput({
@@ -139,7 +139,7 @@ describe("DesktopShellEnvironment", () => {
 
       yield* runShellEnvironment({
         env,
-        platform: "darwin",
+        platform: "linux",
         handler: () =>
           envOutput({
             PATH: "/opt/homebrew/bin:/usr/bin",
@@ -152,7 +152,7 @@ describe("DesktopShellEnvironment", () => {
     }),
   );
 
-  it.effect("hydrates the locale from the login shell on macOS", () =>
+  it.effect("does not hydrate locale categories from the login shell on linux", () =>
     Effect.gen(function* () {
       const env: NodeJS.ProcessEnv = {
         SHELL: "/bin/zsh",
@@ -161,7 +161,7 @@ describe("DesktopShellEnvironment", () => {
 
       yield* runShellEnvironment({
         env,
-        platform: "darwin",
+        platform: "linux",
         handler: () =>
           envOutput({
             PATH: "/opt/homebrew/bin:/usr/bin",
@@ -169,11 +169,11 @@ describe("DesktopShellEnvironment", () => {
           }),
       });
 
-      assert.equal(env.LANG, "de_DE.UTF-8");
+      assert.equal(env.LANG, undefined);
     }),
   );
 
-  it.effect("preserves an inherited locale over the login shell on macOS", () =>
+  it.effect("preserves an inherited locale over the login shell on linux", () =>
     Effect.gen(function* () {
       const env: NodeJS.ProcessEnv = {
         SHELL: "/bin/zsh",
@@ -183,7 +183,7 @@ describe("DesktopShellEnvironment", () => {
 
       yield* runShellEnvironment({
         env,
-        platform: "darwin",
+        platform: "linux",
         handler: () =>
           envOutput({
             PATH: "/opt/homebrew/bin:/usr/bin",
@@ -195,7 +195,7 @@ describe("DesktopShellEnvironment", () => {
     }),
   );
 
-  it.effect("does not mix login-shell locale categories into an inherited locale", () =>
+  it.effect("does not mix login-shell locale categories into an inherited locale on linux", () =>
     Effect.gen(function* () {
       const env: NodeJS.ProcessEnv = {
         SHELL: "/bin/zsh",
@@ -205,7 +205,7 @@ describe("DesktopShellEnvironment", () => {
 
       yield* runShellEnvironment({
         env,
-        platform: "darwin",
+        platform: "linux",
         handler: () =>
           envOutput({
             PATH: "/opt/homebrew/bin:/usr/bin",
@@ -218,7 +218,7 @@ describe("DesktopShellEnvironment", () => {
     }),
   );
 
-  it.effect("falls back to a UTF-8 LC_CTYPE when no locale is available on macOS", () =>
+  it.effect("does not add a locale fallback on linux", () =>
     Effect.gen(function* () {
       const env: NodeJS.ProcessEnv = {
         SHELL: "/bin/zsh",
@@ -227,13 +227,13 @@ describe("DesktopShellEnvironment", () => {
 
       yield* runShellEnvironment({
         env,
-        platform: "darwin",
+        platform: "linux",
         handler: () => envOutput({ PATH: "/opt/homebrew/bin:/usr/bin" }),
       });
 
       assert.equal(env.LANG, undefined);
       assert.equal(env.LC_ALL, undefined);
-      assert.equal(env.LC_CTYPE, "en_US.UTF-8");
+      assert.equal(env.LC_CTYPE, undefined);
     }),
   );
 
@@ -276,7 +276,7 @@ describe("DesktopShellEnvironment", () => {
     }),
   );
 
-  it.effect("falls back to launchctl PATH on macOS when shell probing does not return one", () =>
+  it.effect("does not use launchctl when shell probing does not return a PATH", () =>
     Effect.gen(function* () {
       const env: NodeJS.ProcessEnv = {
         SHELL: "/opt/homebrew/bin/nu",
@@ -286,7 +286,7 @@ describe("DesktopShellEnvironment", () => {
 
       yield* runShellEnvironment({
         env,
-        platform: "darwin",
+        platform: "linux",
         handler: (command) => {
           if (command._tag !== "StandardCommand") return "";
           commands.push(command.command);
@@ -294,8 +294,8 @@ describe("DesktopShellEnvironment", () => {
         },
       });
 
-      assert.deepEqual(commands, ["/opt/homebrew/bin/nu", "/bin/zsh", "/bin/launchctl"]);
-      assert.equal(env.PATH, "/opt/homebrew/bin:/usr/bin");
+      assert.deepEqual(commands, ["/opt/homebrew/bin/nu", "/bin/bash"]);
+      assert.equal(env.PATH, "/usr/bin");
     }),
   );
 

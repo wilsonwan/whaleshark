@@ -64,7 +64,6 @@ describe("DesktopAssets", () => {
 
       assert.match(Option.getOrThrow(icons.ico), /assets\/dev\/blueprint-windows\.ico$/);
       assert.match(Option.getOrThrow(icons.png), /assets\/dev\/blueprint-universal-1024\.png$/);
-      assert.isTrue(Option.isNone(icons.icns));
     }),
   );
 

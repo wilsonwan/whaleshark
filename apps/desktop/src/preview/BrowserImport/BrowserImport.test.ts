@@ -1,10 +1,6 @@
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, describe, it } from "@effect/vitest";
-import {
-  HostProcessEnvironment,
-  HostProcessExecutablePath,
-  HostProcessPlatform,
-} from "@t3tools/shared/hostProcess";
+import { HostProcessEnvironment, HostProcessPlatform } from "@t3tools/shared/hostProcess";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Fiber from "effect/Fiber";
@@ -55,10 +51,10 @@ const withImporter = Effect.fnUntraced(function* () {
   const environment = Layer.succeed(HostProcessEnvironment, { HOME: home });
   const context = yield* sourcePathContext.pipe(
     Effect.provideService(HostProcessEnvironment, { HOME: home }),
-    Effect.provideService(HostProcessPlatform, "darwin"),
+    Effect.provideService(HostProcessPlatform, "linux"),
   );
   const root = helium.userDataDirectory(context);
-  if (root === undefined) throw new Error("Helium has no macOS user-data directory");
+  if (root === undefined) throw new Error("Helium has no Linux user-data directory");
   yield* fileSystem.makeDirectory(`${root}/Default`, { recursive: true });
   // The cookie database is what marks a source as installed, so a fixture
   // without one is reported as absent before any other check runs.
@@ -69,8 +65,7 @@ const withImporter = Effect.fnUntraced(function* () {
       BrowserImport.layer.pipe(
         Layer.provide(rejectedBeforeSession),
         Layer.provide(environment),
-        Layer.provide(Layer.succeed(HostProcessPlatform, "darwin")),
-        Layer.provide(Layer.succeed(HostProcessExecutablePath, "/Applications/T3 Code.app")),
+        Layer.provide(Layer.succeed(HostProcessPlatform, "linux")),
         Layer.provide(NodeServices.layer),
       ),
     ),

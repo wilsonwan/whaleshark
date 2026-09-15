@@ -78,7 +78,6 @@ import { playwrightInjectedRuntimeInstallExpression } from "./PlaywrightInjected
 import {
   makePreviewAutomationKeySequence,
   makePreviewAutomationNativeKeySequence,
-  previewAutomationEditingCommandExpression,
 } from "./PreviewKeyboard.ts";
 import { captureFavicon, safeHttpOrigin, selectFaviconCandidates } from "./FaviconCapture.ts";
 
@@ -558,13 +557,10 @@ export const isPreviewEditingShortcut = (
   input: Electron.Input,
   platform: NodeJS.Platform,
 ): boolean => {
-  const isMac = platform === "darwin";
-  if (isMac ? !input.meta || input.control : !input.control || input.meta) return false;
+  if (!input.control || input.meta) return false;
 
   const key = input.key.toLowerCase();
-  // Option changes the DOM key for macOS Paste and Match Style (for example, to ◊).
-  if (isMac && input.alt && input.shift && input.code === "KeyV") return true;
-  if (key === "v" && input.shift) return input.alt === isMac;
+  if (key === "v" && input.shift) return !input.alt;
   if (input.alt) return false;
   if (key === "z") return !input.shift || platform !== "win32";
   if (input.shift) return false;
@@ -3147,7 +3143,6 @@ const makeNativeOperations = Effect.fn("PreviewManager.makeOperations")(function
               resizable: true,
               skipTaskbar: true,
               backgroundColor: "#111111",
-              ...(hostPlatform === "darwin" ? { type: "panel" as const } : {}),
               webPreferences: {
                 preload: pictureInPicturePreloadPath,
                 backgroundThrottling: false,
@@ -3192,18 +3187,7 @@ const makeNativeOperations = Effect.fn("PreviewManager.makeOperations")(function
           },
           () => {
             pictureInPictureWindow.once("closed", onClosed);
-            pictureInPictureWindow.setAlwaysOnTop(
-              true,
-              hostPlatform === "darwin" ? "floating" : "normal",
-            );
-            if (hostPlatform === "darwin") {
-              pictureInPictureWindow.setVisibleOnAllWorkspaces(true, {
-                visibleOnFullScreen: true,
-                // Electron otherwise temporarily transforms the entire app into
-                // a UIElement process, which removes the owning app from the Dock.
-                skipTransformProcessType: true,
-              });
-            }
+            pictureInPictureWindow.setAlwaysOnTop(true, "normal");
             pipWebContents.on("did-finish-load", onDidFinishLoad);
           },
         ).pipe(
@@ -4110,14 +4094,12 @@ const makeNativeOperations = Effect.fn("PreviewManager.makeOperations")(function
     checkControl: Effect.Effect<void, PreviewManagerError>,
   ) {
     yield* prepareAutomationInput(send, false);
-    const keySequence = makePreviewAutomationNativeKeySequence(input, {
-      isMac: hostPlatform === "darwin",
-    });
+    const keySequence = makePreviewAutomationNativeKeySequence(input);
     // CDP keyboard dispatch follows the embedder's focused renderer, and
     // WebContents.focus() is a no-op for webview guests. Native input targets
     // this guest's widget directly, so Enter cannot submit the host composer.
     yield* Effect.gen(function* () {
-      const { sessionId, contextId } = yield* resolveKeyboardTarget(
+      const { sessionId } = yield* resolveKeyboardTarget(
         tabId,
         send,
         sendCleanup,
@@ -4125,7 +4107,7 @@ const makeNativeOperations = Effect.fn("PreviewManager.makeOperations")(function
       );
       // Only descendant renderer sessions bypass Chromium's desktop focus lookup.
       if (sessionId) {
-        const keys = makePreviewAutomationKeySequence(input, { isMac: hostPlatform === "darwin" });
+        const keys = makePreviewAutomationKeySequence(input);
         yield* Effect.acquireRelease(Effect.void, () =>
           sendCleanup("Emulation.setFocusEmulationEnabled", { enabled: false }, sessionId).pipe(
             Effect.ignore,
@@ -4136,86 +4118,6 @@ const makeNativeOperations = Effect.fn("PreviewManager.makeOperations")(function
           sendCleanup("Input.dispatchKeyEvent", keys.keyUp, sessionId).pipe(Effect.ignore),
         );
         yield* send("Input.dispatchKeyEvent", keys.keyDown, sessionId);
-        return;
-      }
-      if (keySequence.commands?.length) {
-        const context = {
-          operation: "automationPress.editFocusedFrame",
-          tabId,
-          webContentsId: wc.id,
-        };
-        const evaluate = (expression: string, cleanup = false) =>
-          evaluateWithDebugger(
-            tabId,
-            (method, params) =>
-              (cleanup ? sendCleanup : send)(method, {
-                ...params,
-                ...(contextId === undefined ? {} : { contextId }),
-              }),
-            expression,
-            true,
-          );
-        const clipboardData = keySequence.commands.includes("paste")
-          ? yield* attemptPromise(context, async () => {
-              const formats: Array<{ type: string; data: string }> = [];
-              for (const item of await clipboard.read()) {
-                for (const type of item.types) {
-                  if (type.startsWith("electron ")) continue;
-                  const blob = await item.getType(type);
-                  if (!("arrayBuffer" in blob)) continue;
-                  formats.push({
-                    type,
-                    data: type.startsWith("text/")
-                      ? await blob.text()
-                      : Buffer.from(await blob.arrayBuffer()).toString("base64"),
-                  });
-                }
-              }
-              return formats;
-            })
-          : [];
-        yield* checkControl;
-        const expression = previewAutomationEditingCommandExpression(
-          input,
-          keySequence,
-          clipboardData,
-        );
-        const selectionKey = yield* encodeJson(
-          context,
-          `__t3EditingSelection_${NodeCrypto.randomUUID()}`,
-        );
-        // Editing requires an active document. Preserve the target
-        // and selection across focus handlers without focusing the desktop.
-        yield* Effect.acquireUseRelease(
-          evaluate(`(() => {
-            let element = document.activeElement;
-            while (element?.shadowRoot?.activeElement) element = element.shadowRoot.activeElement;
-            const selection = document.getSelection();
-            const range = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
-            const backward = selection?.direction === "backward";
-            const start = element?.selectionStart;
-            const end = element?.selectionEnd;
-            const direction = element?.selectionDirection;
-            globalThis[${selectionKey}] = () => {
-              element?.focus({ preventScroll: true });
-              if (typeof start === "number") element.setSelectionRange(start, end, direction);
-              else {
-                selection?.removeAllRanges();
-                if (range && backward) selection.setBaseAndExtent(
-                  range.endContainer, range.endOffset, range.startContainer, range.startOffset,
-                );
-                else if (range) selection.addRange(range);
-              }
-            };
-          })()`),
-          () =>
-            Effect.gen(function* () {
-              yield* send("Emulation.setFocusEmulationEnabled", { enabled: true });
-              yield* evaluate(`globalThis[${selectionKey}]();${expression}`);
-            }),
-          () => evaluate(`delete globalThis[${selectionKey}]`, true).pipe(Effect.ignore),
-        );
-        yield* checkControl;
         return;
       }
       yield* send("Emulation.setFocusEmulationEnabled", { enabled: true });

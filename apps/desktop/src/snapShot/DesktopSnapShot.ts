@@ -40,9 +40,7 @@ import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopClientSettings from "../settings/DesktopClientSettings.ts";
 import * as DesktopWindow from "../window/DesktopWindow.ts";
 import { startGlobalShiftShortcutProcess } from "./GlobalShiftShortcutProcess.ts";
-import { startMacModifierPairShortcutProcess } from "./MacModifierPairShortcutProcess.ts";
 import { activeWindow, type ActiveWindow } from "./ActiveWindow.ts";
-import { captureMacWindowSnapshot, type MacSnapShotSource } from "./MacSnapShot.ts";
 import type { LinuxCaptureFeedback, LinuxWindowMetadata } from "./LinuxSnapShot.ts";
 import { niriSocketPath } from "./NiriSnapShot.ts";
 import { CaptureShortcutConfig, niriCaptureConfigPath } from "./CaptureShortcutConfig.ts";
@@ -76,8 +74,6 @@ import {
   type AccessibilityProcessPool,
   makeSnapShotAccessibilityProcessPool,
 } from "./SnapShotAccessibilityProcess.ts";
-import * as MacPermissions from "../permissions/MacPermissions.ts";
-import { MAC_PERMISSION_SETTINGS_URLS } from "../permissions/MacPermission.ts";
 import { showWindowsCaptureOverlay } from "./WindowsCaptureFeedback.ts";
 
 import {
@@ -98,18 +94,6 @@ const FLASH_ANIMATION_DURATION_MS = 180;
 const FLASH_STATIC_DURATION_MS = 60;
 const FLASH_FRAME_INTERVAL_MS = 16;
 const FLASH_PEAK_OPACITY = 0.08;
-const MAC_SCREEN_CAPTURE_SETTINGS_URL = MAC_PERMISSION_SETTINGS_URLS["screen-recording"];
-const MAC_SCREEN_CAPTURE_PERMISSION_MESSAGE =
-  "Allow Screen Recording in System Settings, then restart T3 Code.";
-const MAC_ACCESSIBILITY_PERMISSION_MESSAGE =
-  "Allow Accessibility in System Settings, then restart T3 Code.";
-const MAC_BOTH_PERMISSIONS_MESSAGE =
-  "Allow Accessibility and Screen Recording in System Settings, then restart T3 Code.";
-const MAC_PERMISSION_MESSAGES = new Set([
-  MAC_SCREEN_CAPTURE_PERMISSION_MESSAGE,
-  MAC_ACCESSIBILITY_PERMISSION_MESSAGE,
-  MAC_BOTH_PERMISSIONS_MESSAGE,
-]);
 
 const decodePendingCapture = Schema.decodeUnknownEffect(DesktopPendingSnapShot);
 
@@ -170,7 +154,6 @@ export class DesktopSnapShot extends Context.Service<
   {
     readonly initialize: Effect.Effect<void>;
     readonly configure: (settings: ClientSettings) => Effect.Effect<void>;
-    readonly requestPermissions: (includeAccessibility: boolean) => Effect.Effect<void>;
     readonly state: Effect.Effect<DesktopSnapShotState>;
     readonly setup: (
       action: DesktopSnapShotSetupAction,
@@ -247,7 +230,7 @@ type SnapShotSystemAnimationSettings = Pick<
 function captureMode(platform: NodeJS.Platform): DesktopSnapShotState["mode"] {
   if (platform === "linux")
     return isWaylandSession(platform, process.env) ? "portal" : "unavailable";
-  return platform === "darwin" || platform === "win32" ? "direct" : "unavailable";
+  return platform === "win32" ? "direct" : "unavailable";
 }
 
 export function shouldAnimateSnapShot(settings: SnapShotSystemAnimationSettings): boolean {
@@ -272,28 +255,16 @@ export function snapShotIconDataUrl(
   return icon.resize({ width: 64, height: 64, quality: "best" }).toDataURL({ scaleFactor: 2 });
 }
 
-async function appFileIcon(
-  path: string,
-  platform: NodeJS.Platform,
-): Promise<Electron.NativeImage | undefined> {
-  if (platform === "darwin") {
-    const thumbnail = await Electron.nativeImage
-      .createThumbnailFromPath(path, { width: 64, height: 64 })
-      .catch(() => undefined);
-    if (thumbnail && !thumbnail.isEmpty()) return thumbnail;
-  }
+async function appFileIcon(path: string): Promise<Electron.NativeImage | undefined> {
   return Electron.app.getFileIcon(path, { size: "normal" }).catch(() => undefined);
 }
 
 export async function iconDataUrl(
   source: { readonly appIcon?: Electron.NativeImage | null },
   active: ActiveWindow | undefined,
-  platform: NodeJS.Platform,
 ): Promise<string | undefined> {
   try {
-    const fileIcon = active?.owner.path
-      ? await appFileIcon(active.owner.path, platform)
-      : undefined;
+    const fileIcon = active?.owner.path ? await appFileIcon(active.owner.path) : undefined;
     return snapShotIconDataUrl(fileIcon, source.appIcon);
   } catch {
     return undefined;
@@ -309,73 +280,6 @@ function snapShotAppName(
     active?.owner.name.trim() || linuxWindow?.appName.trim() || sourceName.trim() || "Window";
   if (active?.platform !== "windows") return appName;
   return appName.replace(/\.exe$/i, "").trim() || appName;
-}
-
-async function requestMacScreenCapturePermission(): Promise<string | null> {
-  let status: ReturnType<typeof Electron.systemPreferences.getMediaAccessStatus>;
-  try {
-    status = Electron.systemPreferences.getMediaAccessStatus("screen");
-    if (status === "granted") return null;
-    if (status === "not-determined") {
-      try {
-        await Electron.desktopCapturer.getSources({
-          types: ["screen"],
-          thumbnailSize: { width: 1, height: 1 },
-        });
-      } catch {}
-      status = Electron.systemPreferences.getMediaAccessStatus("screen");
-      if (status === "granted") return null;
-    }
-  } catch {}
-  await Electron.shell.openExternal(MAC_SCREEN_CAPTURE_SETTINGS_URL).catch(() => undefined);
-  return MAC_SCREEN_CAPTURE_PERMISSION_MESSAGE;
-}
-
-function currentMacPermissions(): NonNullable<DesktopSnapShotState["macPermissions"]> {
-  return {
-    screenRecording: Electron.systemPreferences.getMediaAccessStatus("screen") === "granted",
-    accessibility: Electron.systemPreferences.isTrustedAccessibilityClient(false),
-  };
-}
-
-function macPermissionMessage(
-  permissions: NonNullable<DesktopSnapShotState["macPermissions"]>,
-  includeAccessibility: boolean,
-): string | null {
-  const accessibilityGranted = !includeAccessibility || permissions.accessibility;
-  if (!accessibilityGranted && !permissions.screenRecording) {
-    return MAC_BOTH_PERMISSIONS_MESSAGE;
-  }
-  if (!accessibilityGranted) {
-    return MAC_ACCESSIBILITY_PERMISSION_MESSAGE;
-  }
-  return permissions.screenRecording ? null : MAC_SCREEN_CAPTURE_PERMISSION_MESSAGE;
-}
-
-function currentMacSnapShotPermissionMessage(includeAccessibility: boolean): string | null {
-  return macPermissionMessage(
-    {
-      screenRecording: Electron.systemPreferences.getMediaAccessStatus("screen") === "granted",
-      accessibility:
-        !includeAccessibility || Electron.systemPreferences.isTrustedAccessibilityClient(false),
-    },
-    includeAccessibility,
-  );
-}
-
-async function requestMacSnapShotPermissions(
-  includeAccessibility: boolean,
-): Promise<string | null> {
-  const accessibilityGranted =
-    !includeAccessibility || Electron.systemPreferences.isTrustedAccessibilityClient(true);
-  const screenMessage = await requestMacScreenCapturePermission();
-  if (!accessibilityGranted && screenMessage) {
-    return MAC_BOTH_PERMISSIONS_MESSAGE;
-  }
-  if (!accessibilityGranted) {
-    return MAC_ACCESSIBILITY_PERMISSION_MESSAGE;
-  }
-  return screenMessage;
 }
 
 function snapShotImageSize(png: Buffer, fallback: Electron.Rectangle): Electron.Size {
@@ -396,7 +300,6 @@ async function captureSource({
   settings,
   flash,
   transition,
-  imageTempPath,
   linuxAppId,
   kdeCapturePaths,
   hyprlandCapturePaths,
@@ -411,7 +314,6 @@ async function captureSource({
   settings: ClientSettings;
   flash: SnapShotFlash;
   transition: SnapShotTransition;
-  imageTempPath: string;
   linuxAppId: string;
   kdeCapturePaths: KdeCapturePaths;
   hyprlandCapturePaths: HyprlandCapturePaths;
@@ -435,20 +337,9 @@ async function captureSource({
       active = await activeWindow(platform);
     }
 
-    let source: MacSnapShotSource | RegionSnapShotSource | Electron.DesktopCapturerSource;
+    let source: RegionSnapShotSource | Electron.DesktopCapturerSource;
     let png: Buffer;
-    let imageTempReady = false;
-    if (platform === "darwin") {
-      if (!active) {
-        throw new DesktopSnapShotError({ operation: "window-unavailable", captureId });
-      }
-      ({ source, png } = await captureMacWindowSnapshot(
-        active,
-        imageTempPath,
-        snapShotThumbnailSize(active),
-      ));
-      imageTempReady = true;
-    } else if (mode === "direct") {
+    if (mode === "direct") {
       if (!active) {
         throw new DesktopSnapShotError({ operation: "window-unavailable", captureId });
       }
@@ -547,7 +438,6 @@ async function captureSource({
       contextPromise,
       animationStarted,
       png,
-      imageTempReady,
     };
   }
 }
@@ -677,9 +567,9 @@ function observedPairMessage(
   platform: NodeJS.Platform,
 ): string {
   const modifier = snapShotShortcutModifierPair(shortcut);
-  const label = snapShotModifierPairLabel(modifier, platform === "darwin");
+  const label = snapShotModifierPairLabel(modifier, false);
   const base = `${label} is observed and cannot be reserved exclusively.`;
-  if (modifier === "meta" && platform !== "darwin") {
+  if (modifier === "meta") {
     return `${base} This key can also open the system's own menu.`;
   }
   if (modifier === "alt" && platform === "win32") {
@@ -705,7 +595,6 @@ function probeGlobalShortcut(accelerator: string): DesktopSnapShotShortcutAvaila
 
 export const make = Effect.gen(function* () {
   const environment = yield* DesktopEnvironment.DesktopEnvironment;
-  const permissions = yield* MacPermissions.MacPermissions;
   const clientSettings = yield* DesktopClientSettings.DesktopClientSettings;
   const desktopWindow = yield* DesktopWindow.DesktopWindow;
   const fileSystem = yield* FileSystem.FileSystem;
@@ -802,10 +691,7 @@ export const make = Effect.gen(function* () {
     modifier: SnapShotModifier,
     onTrigger: () => void,
     onFailure: (error: Error) => void,
-  ) =>
-    environment.platform === "darwin"
-      ? startMacModifierPairShortcutProcess(modifier, onTrigger, onFailure)
-      : startGlobalShiftShortcutProcess(shiftShortcutWorkerPath, modifier, onTrigger, onFailure);
+  ) => startGlobalShiftShortcutProcess(shiftShortcutWorkerPath, modifier, onTrigger, onFailure);
 
   const releaseShortcut = () => {
     shortcutGeneration++;
@@ -862,8 +748,6 @@ export const make = Effect.gen(function* () {
     if (mode === "unavailable") {
       return yield* new DesktopSnapShotError({ operation: "unsupported", captureId: id });
     }
-    const imageTempPath = path.join(captureDirectory, `${id}.tmp.png`);
-
     return yield* Effect.gen(function* () {
       // Retire feedback before reading screen pixels, so a rapid capture cannot
       // photograph the previous capture's overlay.
@@ -881,7 +765,6 @@ export const make = Effect.gen(function* () {
             settings,
             flash,
             transition,
-            imageTempPath,
             linuxAppId,
             kdeCapturePaths,
             hyprlandCapturePaths,
@@ -913,22 +796,16 @@ export const make = Effect.gen(function* () {
   const persistCapture = Effect.fn("desktop.snapShot.persistCapture")(function* (
     capture: Effect.Success<ReturnType<typeof prepareCapture>>,
   ) {
-    const { id, capturedAt, source, active, linuxWindow, contextPromise, png, imageTempReady } =
-      capture;
+    const { id, capturedAt, source, active, linuxWindow, contextPromise, png } = capture;
     const imagePath = path.join(captureDirectory, `${id}.png`);
     const imageTempPath = path.join(captureDirectory, `${id}.tmp.png`);
     const metadataPath = path.join(captureDirectory, `${id}.json`);
 
     yield* Effect.gen(function* () {
       const accessibilityContext = yield* Effect.promise(() => contextPromise);
-      const appIconDataUrl = yield* Effect.promise(() =>
-        iconDataUrl(source, active, environment.platform),
-      );
+      const appIconDataUrl = yield* Effect.promise(() => iconDataUrl(source, active));
       // Native labels are unbounded; keep a valid screenshot when its metadata is too long.
-      const appIdentifier = boundedSnapShotString(
-        active?.platform === "macos" ? active.owner.bundleId : linuxWindow?.appIdentifier,
-        255,
-      );
+      const appIdentifier = boundedSnapShotString(linuxWindow?.appIdentifier, 255);
       const pending = yield* decodePendingCapture({
         id,
         name: `window-${capturedAt.replaceAll(":", "-")}.png`,
@@ -955,7 +832,7 @@ export const make = Effect.gen(function* () {
           ...(appIconDataUrl ? { appIconDataUrl } : {}),
         },
       });
-      if (!imageTempReady) yield* fileSystem.writeFile(imageTempPath, png);
+      yield* fileSystem.writeFile(imageTempPath, png);
       yield* fileSystem.rename(imageTempPath, imagePath);
       yield* fileSystem.writeFileString(
         metadataPath + ".tmp",
@@ -1045,7 +922,7 @@ export const make = Effect.gen(function* () {
         available,
         message: available
           ? observedPairMessage(shortcut, environment.platform)
-          : snapShotShortcutRegistrationFailureMessage(shortcut, environment.platform),
+          : snapShotShortcutRegistrationFailureMessage(shortcut),
       };
     }
     const systemConflict = snapShotShortcutSystemConflict(shortcut);
@@ -1074,7 +951,6 @@ export const make = Effect.gen(function* () {
 
   const applySettings = Effect.fn("desktop.snapShot.applySettings")(function* (
     settings: ClientSettings,
-    requestedPermissionMessage: string | null,
     forceShortcut = false,
   ) {
     const previousSettings = yield* Ref.get(settingsRef);
@@ -1147,21 +1023,6 @@ export const make = Effect.gen(function* () {
       return;
     }
 
-    const permissionMessage =
-      requestedPermissionMessage ??
-      (environment.platform === "darwin"
-        ? currentMacSnapShotPermissionMessage(settings.snapShotIncludeAccessibility)
-        : null);
-    if (permissionMessage) {
-      yield* Ref.set(stateRef, {
-        mode,
-        shortcut,
-        shortcutRegistered: false,
-        shortcutMessage: null,
-        message: permissionMessage,
-      });
-      return;
-    }
     if (mode === "portal" && niriSocketPath()) {
       const registered = yield* Effect.tryPromise(async () => {
         const { startNiriCaptureShortcut } = await import("./NiriCaptureShortcut.ts");
@@ -1260,9 +1121,7 @@ export const make = Effect.gen(function* () {
       registered = yield* Effect.tryPromise(() =>
         startPairShortcutProcess(snapShotShortcutModifierPair(shortcut), onCurrentShortcut, () => {
           void runPromise(
-            setShortcutFailure(
-              snapShotShortcutRegistrationFailureMessage(shortcut, environment.platform),
-            ),
+            setShortcutFailure(snapShotShortcutRegistrationFailureMessage(shortcut)),
           ).catch(() => undefined);
         }),
       ).pipe(
@@ -1289,7 +1148,7 @@ export const make = Effect.gen(function* () {
         ? isModifierPairShortcut(shortcut)
           ? observedPairMessage(shortcut, environment.platform)
           : null
-        : snapShotShortcutRegistrationFailureMessage(shortcut, environment.platform),
+        : snapShotShortcutRegistrationFailureMessage(shortcut),
     });
   });
 
@@ -1299,58 +1158,11 @@ export const make = Effect.gen(function* () {
     });
 
   const configure = Effect.fn("desktop.snapShot.configure")(function* (settings: ClientSettings) {
-    yield* configurationMutex.withPermits(1)(applySettings(settings, null));
+    yield* configurationMutex.withPermits(1)(applySettings(settings));
   });
 
-  const requestPermissions = Effect.fn("desktop.snapShot.requestPermissions")(function* (
-    includeAccessibility: boolean,
-  ) {
-    if (environment.platform !== "darwin") return;
-    const owner = Electron.BrowserWindow.getFocusedWindow();
-    yield* Effect.promise(() => requestMacSnapShotPermissions(includeAccessibility));
-    if (Electron.systemPreferences.getMediaAccessStatus("screen") !== "granted") {
-      yield* permissions.showHelper("screen-recording", owner);
-    } else if (
-      includeAccessibility &&
-      !Electron.systemPreferences.isTrustedAccessibilityClient(false)
-    ) {
-      yield* Effect.promise(() =>
-        Electron.shell
-          .openExternal(MAC_PERMISSION_SETTINGS_URLS.accessibility)
-          .catch(() => undefined),
-      );
-      yield* permissions.showHelper("accessibility", owner);
-    }
-  }, configurationMutex.withPermits(1));
-
   const setup = Effect.fn("desktop.snapShot.setup")(function* (action: DesktopSnapShotSetupAction) {
-    if (action === "test-mac-capture") {
-      if (environment.platform !== "darwin")
-        return yield* new DesktopSnapShotSetupError({ action, reason: "unsupported-session" });
-      // Exercise the real capture path during setup without attaching a snapshot
-      // or running capture feedback. The temporary image is discarded on failure too.
-      yield* Effect.scoped(
-        Effect.gen(function* () {
-          const directory = yield* fileSystem.makeTempDirectoryScoped({
-            prefix: "t3-snapshot-test-",
-          });
-          yield* Effect.tryPromise(async () => {
-            const active = await activeWindow("darwin");
-            if (!active) throw new Error("No window is available to test capture.");
-            await captureMacWindowSnapshot(
-              active,
-              path.join(directory, "test.png"),
-              snapShotThumbnailSize(active),
-            );
-          });
-        }),
-      ).pipe(
-        Effect.mapError(
-          (cause) => new DesktopSnapShotSetupError({ action, reason: "setup-failed", cause }),
-        ),
-      );
-      return;
-    } else if (action === "install-kde-helper" || action === "remove-kde-helper") {
+    if (action === "install-kde-helper" || action === "remove-kde-helper") {
       if (captureMode(environment.platform) !== "portal" || !isKdeCaptureSession())
         return yield* new DesktopSnapShotSetupError({
           action,
@@ -1380,27 +1192,6 @@ export const make = Effect.gen(function* () {
             cause: error,
           }),
       });
-    } else if (action === "allow-screen-recording" || action === "allow-accessibility") {
-      if (environment.platform !== "darwin")
-        return yield* new DesktopSnapShotSetupError({
-          action,
-          reason: "unsupported-session",
-        });
-      const owner = Electron.BrowserWindow.getFocusedWindow();
-      if (action === "allow-accessibility") {
-        const granted = Electron.systemPreferences.isTrustedAccessibilityClient(true);
-        if (!granted && environment.isPackaged) {
-          yield* Effect.promise(() =>
-            Electron.shell
-              .openExternal(MAC_PERMISSION_SETTINGS_URLS.accessibility)
-              .catch(() => undefined),
-          );
-        }
-      } else yield* Effect.promise(requestMacScreenCapturePermission);
-      yield* permissions.showHelper(
-        action === "allow-accessibility" ? "accessibility" : "screen-recording",
-        owner,
-      );
     } else if (action !== "retry-shortcut") {
       if (!hasGnomeSetup())
         return yield* new DesktopSnapShotSetupError({
@@ -1438,7 +1229,7 @@ export const make = Effect.gen(function* () {
               }),
           ),
         );
-      } else yield* applySettings(yield* Ref.get(settingsRef), null, true);
+      } else yield* applySettings(yield* Ref.get(settingsRef), true);
     }
   }, configurationMutex.withPermits(1));
 
@@ -1506,16 +1297,12 @@ export const make = Effect.gen(function* () {
     initialize: configurationMutex.withPermits(1)(
       clientSettings.get.pipe(
         Effect.flatMap((stored) =>
-          applySettings(
-            Option.getOrElse(stored, () => DEFAULT_CLIENT_SETTINGS),
-            null,
-          ),
+          applySettings(Option.getOrElse(stored, () => DEFAULT_CLIENT_SETTINGS)),
         ),
         Effect.catch(() => Effect.void),
       ),
     ),
     configure,
-    requestPermissions,
     setup,
     previewConfig,
     applyConfig,
@@ -1537,29 +1324,7 @@ export const make = Effect.gen(function* () {
                 }),
               ),
             )
-          : environment.platform === "darwin"
-            ? Effect.gen(function* () {
-                // Permissions can change in System Settings at any time. Surface a
-                // revocation on every read, and re-register the shortcut once a
-                // previously missing permission is granted again.
-                const settings = yield* Ref.get(settingsRef);
-                const macPermissions = currentMacPermissions();
-                const message = settings.snapShotEnabled
-                  ? macPermissionMessage(macPermissions, settings.snapShotIncludeAccessibility)
-                  : null;
-                const recovered =
-                  message === null &&
-                  state.message !== null &&
-                  MAC_PERMISSION_MESSAGES.has(state.message)
-                    ? yield* configurationMutex
-                        .withPermits(1)(applySettings(settings, null, true))
-                        .pipe(Effect.andThen(Ref.get(stateRef)))
-                    : state;
-                return { ...recovered, macPermissions, ...(message ? { message } : {}) };
-              })
-            : Effect.succeed(
-                environment.platform === "win32" ? { ...state, windows: true } : state,
-              ),
+          : Effect.succeed(environment.platform === "win32" ? { ...state, windows: true } : state),
       ),
       Effect.flatMap((state) =>
         Effect.gen(function* () {

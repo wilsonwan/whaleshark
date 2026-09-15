@@ -1,11 +1,9 @@
-import { PermissionChecklist, PermissionContinueButton } from "../permissions/PermissionChecklist";
-import { usePermissionStatus } from "../permissions/usePermissionStatus";
 import {
   isModifierPairShortcut,
   type DesktopSnapShotSetupAction,
   type DesktopSnapShotState,
 } from "@t3tools/contracts";
-import { useId, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { CaptureShortcutConfig } from "./CaptureShortcutConfig";
 import { Button } from "../ui/button";
 import { Dialog, DialogDescription } from "../ui/dialog";
@@ -61,77 +59,11 @@ const GNOME_ACCESS_COPY = {
   },
 };
 
-function ScreenRecordingIcon() {
-  const gradientId = useId();
-  return (
-    <svg
-      viewBox="0 0 32 32"
-      className="size-8 shrink-0 drop-shadow-[0_1px_1px_#0005]"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={gradientId} x2="0" y2="1">
-          <stop stopColor="#ff6972" />
-          <stop offset="1" stopColor="#ff2938" />
-        </linearGradient>
-      </defs>
-      <rect
-        x="0.5"
-        y="0.5"
-        width="31"
-        height="31"
-        rx="7"
-        fill={`url(#${gradientId})`}
-        stroke="#ffffff40"
-      />
-      <circle cx="16" cy="16" r="10" fill="none" stroke="#fff" strokeWidth="2" />
-      <circle cx="16" cy="16" r="4.5" fill="#fff" />
-    </svg>
-  );
-}
-
-function AccessibilityPermissionIcon() {
-  const gradientId = useId();
-  return (
-    <svg
-      viewBox="0 0 32 32"
-      className="size-8 shrink-0 drop-shadow-[0_1px_1px_#0005]"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={gradientId} x2="0" y2="1">
-          <stop stopColor="#48b6ff" />
-          <stop offset="1" stopColor="#0085ff" />
-        </linearGradient>
-      </defs>
-      <rect
-        x="0.5"
-        y="0.5"
-        width="31"
-        height="31"
-        rx="7"
-        fill={`url(#${gradientId})`}
-        stroke="#ffffff40"
-      />
-      <circle cx="16" cy="16" r="10" fill="none" stroke="#fff" strokeWidth="1.75" />
-      <circle cx="16" cy="10" r="1.6" fill="#fff" />
-      <path
-        d="m10 13 6 1 6-1M16 14v4m0 0-2.5 6m2.5-6 2.5 6"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export function SnapShotSetupDialog({
   state,
   initialStep,
   wasEnabled,
-  includeAccessibility,
+
   busy: actionBusy,
   error,
   shortcutInput,
@@ -148,7 +80,7 @@ export function SnapShotSetupDialog({
   state: DesktopSnapShotState;
   initialStep: CaptureSetupStep;
   wasEnabled: boolean;
-  includeAccessibility: boolean;
+
   busy: boolean;
   error: string | null;
   shortcutInput: ReactNode;
@@ -176,21 +108,6 @@ export function SnapShotSetupDialog({
   const installHelper = backend === "hyprland" ? "install-hyprland-helper" : "install-kde-helper";
   const removeHelper = backend === "hyprland" ? "remove-hyprland-helper" : "remove-kde-helper";
   const accessReady = captureSetupAccessReady(state);
-  const permissionStatus = usePermissionStatus(
-    async () => {
-      const refreshed = await onRefresh();
-      if (!refreshed?.macPermissions) throw new Error("Permission status unavailable");
-      return refreshed.macPermissions;
-    },
-    state.macPermissions ?? { screenRecording: false, accessibility: false },
-    Boolean(state.macPermissions) && step === "access" && !busy,
-  );
-  const macPermissions = state.macPermissions ? permissionStatus.status : undefined;
-  const macPermissionsReady =
-    !macPermissions ||
-    permissionStatus.isReady(
-      includeAccessibility ? ["screenRecording", "accessibility"] : ["screenRecording"],
-    );
   const shortcutReady = captureSetupShortcutReady(state, shortcutChanged);
   const install = extension?.status === "not-installed" || extension?.status === "update-required";
   const enable = extension?.status === "disabled";
@@ -209,60 +126,55 @@ export function SnapShotSetupDialog({
       setChecking(false);
     }
   };
-  const accessCopy =
-    state.message && !macPermissions
-      ? {
-          title: "Let's try that again",
-          description: "Couldn't check snapshots. Try again to continue.",
-        }
-      : backend === "gnome" && extension
-        ? extension.status === "enabled" && !accessReady
+  const accessCopy = state.message
+    ? {
+        title: "Let's try that again",
+        description: "Couldn't check snapshots. Try again to continue.",
+      }
+    : backend === "gnome" && extension
+      ? extension.status === "enabled" && !accessReady
+        ? {
+            title: "Check capture access",
+            description: "The extension isn't ready yet. Try again in a moment.",
+          }
+        : GNOME_ACCESS_COPY[extension.status]
+      : helperBackend
+        ? helper?.status === "ready"
           ? {
-              title: "Check capture access",
-              description: "The extension isn't ready yet. Try again in a moment.",
+              title: "Capture is ready",
+              description: "Next, choose your shortcut.",
             }
-          : GNOME_ACCESS_COPY[extension.status]
-        : helperBackend
-          ? helper?.status === "ready"
+          : helper?.status === "error"
             ? {
-                title: "Capture is ready",
-                description: "Next, choose your shortcut.",
+                title: "Let's fix capture access",
+                description: "Try reinstalling the capture helper, then check again.",
               }
-            : helper?.status === "error"
-              ? {
-                  title: "Let's fix capture access",
-                  description: "Try reinstalling the capture helper, then check again.",
-                }
-              : {
-                  title:
-                    helper?.status === "update-required"
-                      ? "Update the capture helper"
-                      : "Allow snapshots",
-                  description:
-                    "T3 Code's capture helper lets you capture other apps and return to your draft. It's included with T3 Code.",
-                }
-          : backend === "niri"
+            : {
+                title:
+                  helper?.status === "update-required"
+                    ? "Update the capture helper"
+                    : "Allow snapshots",
+                description:
+                  "T3 Code's capture helper lets you capture other apps and return to your draft. It's included with T3 Code.",
+              }
+        : backend === "niri"
+          ? {
+              title: "Capture is ready",
+              description: "Next, choose your shortcut.",
+            }
+          : backend === "picker"
             ? {
-                title: "Capture is ready",
-                description: "Next, choose your shortcut.",
+                title: "Choose a window each time",
+                description:
+                  "Your desktop doesn't support automatic capture. You'll choose the window to capture instead.",
               }
-            : backend === "picker"
-              ? {
-                  title: "Choose a window each time",
-                  description:
-                    "Your desktop doesn't support automatic capture. You'll choose the window to capture instead.",
-                }
-              : {
-                  title: "Allow snapshots",
-                  description:
-                    backend === "portal"
-                      ? "Your desktop may ask for permission when you first capture."
-                      : macPermissions
-                        ? macPermissionsReady
-                          ? "Test a snapshot of the current window. If macOS asks to bypass its window picker, choose Allow. The test image is discarded."
-                          : "Allow each permission, then continue."
-                        : "Allow access when prompted to start capturing windows.",
-                };
+            : {
+                title: "Allow snapshots",
+                description:
+                  backend === "portal"
+                    ? "Your desktop may ask for permission when you first capture."
+                    : "Allow access when prompted to start capturing windows.",
+              };
   const title = step === "access" ? accessCopy.title : "Choose your shortcut";
   const description =
     step === "access"
@@ -327,36 +239,6 @@ export function SnapShotSetupDialog({
                 >
                   {checked && !busy && !error ? captureSetupCheckMessage(state) : null}
                 </p>
-                {macPermissions ? (
-                  <PermissionChecklist
-                    busy={busy}
-                    permissions={[
-                      {
-                        id: "screenRecording",
-                        icon: <ScreenRecordingIcon />,
-                        title: "Screen Recording",
-                        description: "Capture the window you're using.",
-                        granted: macPermissions.screenRecording,
-                        onAllow: () => void onAction("allow-screen-recording"),
-                      },
-                      {
-                        id: "accessibility",
-                        icon: <AccessibilityPermissionIcon />,
-                        title: "Accessibility",
-                        description: includeAccessibility
-                          ? "Include text and controls from the captured app."
-                          : "Optional. Include text and controls from the captured app.",
-                        granted: macPermissions.accessibility,
-                        onAllow: () => void onAction("allow-accessibility"),
-                      },
-                    ]}
-                  />
-                ) : null}
-                {permissionStatus.error && macPermissions ? (
-                  <p role="status" className="text-xs text-muted-foreground">
-                    {permissionStatus.error}
-                  </p>
-                ) : null}
                 {helperBackend && helper?.status === "error" ? (
                   <Button
                     size="xs"
@@ -504,23 +386,20 @@ export function SnapShotSetupDialog({
                         : "Check again"}
               </Button>
             ) : (
-              <PermissionContinueButton
-                ready={macPermissionsReady}
-                busy={busy}
+              <Button
+                disabled={busy || !accessReady}
                 onClick={async () => {
                   if (await onEnable()) changeStep("shortcut");
                 }}
               >
                 {busy
                   ? "Working…"
-                  : macPermissions
-                    ? "Test capture and continue"
-                    : backend === "direct"
-                      ? "Allow capture"
-                      : !accessReady && !macPermissions
-                        ? "Try again"
-                        : "Continue"}
-              </PermissionContinueButton>
+                  : backend === "direct"
+                    ? "Allow capture"
+                    : !accessReady
+                      ? "Try again"
+                      : "Continue"}
+              </Button>
             )
           ) : !configShortcut ? (
             <Button

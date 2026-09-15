@@ -24,7 +24,6 @@ interface WindowsProbeOptions {
 
 const DesktopShellEnvironmentProbe = Schema.Literals([
   "login-shell",
-  "launchctl-path",
   "powershell-profile",
   "powershell-no-profile",
 ]);
@@ -87,11 +86,8 @@ const LOGIN_SHELL_ENV_NAMES = [
   "WAYLAND_DISPLAY",
 ] as const;
 const WINDOWS_PROFILE_ENV_NAMES = ["PATH", "FNM_DIR", "FNM_MULTISHELL_PATH"] as const;
-const LOCALE_ENV_NAMES = ["LANG", "LC_ALL", "LC_CTYPE"] as const;
-const FALLBACK_LC_CTYPE = "en_US.UTF-8";
 const WINDOWS_SHELL_CANDIDATES = ["pwsh.exe", "powershell.exe"] as const;
 const LOGIN_SHELL_TIMEOUT = Duration.seconds(5);
-const LAUNCHCTL_TIMEOUT = Duration.seconds(2);
 const PROCESS_TERMINATE_GRACE = Duration.seconds(1);
 
 const trimNonEmpty = (value: string | null | undefined): Option.Option<string> =>
@@ -181,8 +177,7 @@ const mergePaths = (
 };
 
 const listLoginShellCandidates = (config: ShellEnvironmentConfig): ReadonlyArray<string> => {
-  const fallback =
-    config.platform === "darwin" ? "/bin/zsh" : config.platform === "linux" ? "/bin/bash" : "";
+  const fallback = config.platform === "linux" ? "/bin/bash" : "";
   const seen = new Set<string>();
   const candidates: string[] = [];
 
@@ -344,13 +339,6 @@ const readLoginShellEnvironment = (
         timeout: LOGIN_SHELL_TIMEOUT,
       }).pipe(Effect.map((output) => extractEnvironment(output, names)));
 
-const readLaunchctlPath = runCommandOutput({
-  probe: "launchctl-path",
-  command: "/bin/launchctl",
-  args: ["getenv", "PATH"],
-  timeout: LAUNCHCTL_TIMEOUT,
-}).pipe(Effect.map(trimNonEmpty));
-
 const readWindowsEnvironment = Effect.fn("desktop.shellEnvironment.readWindowsEnvironment")(
   function* (
     names: ReadonlyArray<string>,
@@ -437,12 +425,8 @@ const installPosixEnvironment = Effect.fn("desktop.shellEnvironment.installPosix
       if (shellEnvironment.PATH) break;
     }
 
-    const launchctlPath =
-      config.platform === "darwin" && !shellEnvironment.PATH
-        ? yield* readLaunchctlPath
-        : Option.none<string>();
     const mergedPath = mergePaths(config.platform, [
-      trimNonEmpty(shellEnvironment.PATH).pipe(Option.orElse(() => launchctlPath)),
+      trimNonEmpty(shellEnvironment.PATH),
       readEnvPath(config.env),
     ]);
 
@@ -480,29 +464,6 @@ const installPosixEnvironment = Effect.fn("desktop.shellEnvironment.installPosix
       }
     }
 
-    // Locale variables form one precedence group: LC_ALL can override an inherited
-    // LANG or LC_CTYPE, so only hydrate the group when the process has none of them.
-    if (
-      config.platform === "darwin" &&
-      LOCALE_ENV_NAMES.every((name) => Option.isNone(trimNonEmpty(config.env[name])))
-    ) {
-      for (const name of LOCALE_ENV_NAMES) {
-        const value = trimNonEmpty(shellEnvironment[name]);
-        if (Option.isSome(value)) {
-          config.env[name] = value.value;
-        }
-      }
-
-      // GUI launches inherit no locale from launchd, so spawned agents land in the C
-      // locale and pbcopy decodes their UTF-8 output as MacRoman. Older supported
-      // macOS releases do not provide C.UTF-8, so set only LC_CTYPE to a UTF-8 locale
-      // available on those releases. Leaving LANG unset keeps C-stable collation and
-      // formatting, so output parsing is unaffected.
-      if (LOCALE_ENV_NAMES.every((name) => Option.isNone(trimNonEmpty(config.env[name])))) {
-        config.env.LC_CTYPE = FALLBACK_LC_CTYPE;
-      }
-    }
-
     if (
       config.platform === "linux" &&
       Option.isNone(trimNonEmpty(config.env.DBUS_SESSION_BUS_ADDRESS))
@@ -527,7 +488,7 @@ const installShellEnvironment = (
   if (config.platform === "win32") {
     return installWindowsEnvironment(config);
   }
-  if (config.platform === "darwin" || config.platform === "linux") {
+  if (config.platform === "linux") {
     return installPosixEnvironment(config);
   }
   return Effect.void;

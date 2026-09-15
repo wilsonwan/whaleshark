@@ -81,16 +81,16 @@ const withSourceHome = Effect.fnUntraced(function* () {
   const home = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3code-sources-" });
   const context = yield* sourcePathContext.pipe(
     Effect.provideService(HostProcessEnvironment, { HOME: home }),
-    Effect.provideService(HostProcessPlatform, "darwin"),
+    Effect.provideService(HostProcessPlatform, "linux"),
   );
   yield* fileSystem.makeDirectory(userDataDirectory(context), { recursive: true });
   return context;
 });
 
-/** Every case here runs on darwin, where Helium always resolves a directory. */
+/** Every case here runs on linux, where Helium always resolves a directory. */
 const userDataDirectory = (context: BrowserImportPathContext) => {
   const root = helium.userDataDirectory(context);
-  if (root === undefined) throw new Error("Helium has no macOS user-data directory");
+  if (root === undefined) throw new Error("Helium has no Linux user-data directory");
   return root;
 };
 
@@ -544,13 +544,13 @@ Path=Profiles/wxyz.empty
         const fileSystem = yield* FileSystem.FileSystem;
         const context = yield* withSourceHome();
         const root = firefox.userDataDirectory(context)!;
-        yield* fileSystem.makeDirectory(`${root}/Profiles/filled.default`, { recursive: true });
-        yield* fileSystem.writeFileString(`${root}/Profiles/filled.default/cookies.sqlite`, "db");
-        yield* fileSystem.makeDirectory(`${root}/Profiles/empty.default`, { recursive: true });
+        yield* fileSystem.makeDirectory(`${root}/filled.default`, { recursive: true });
+        yield* fileSystem.writeFileString(`${root}/filled.default/cookies.sqlite`, "db");
+        yield* fileSystem.makeDirectory(`${root}/empty.default`, { recursive: true });
 
         assert.deepEqual(yield* listSourceProfiles(firefox, context), [
           {
-            directory: context.path.join("Profiles", "filled.default"),
+            directory: context.path.join("filled.default"),
             name: "filled.default",
           },
         ]);
@@ -613,13 +613,7 @@ describe("cookieDatabaseCandidatePaths", () => {
     run(
       Effect.gen(function* () {
         const context = yield* withSourceHome();
-        const profile = context.path.join(
-          context.home,
-          "Library",
-          "Application Support",
-          "net.imput.helium",
-          "Profile 1",
-        );
+        const profile = context.path.join(context.home, ".config", "net.imput.helium", "Profile 1");
         assert.deepEqual(cookieDatabaseCandidatePaths(helium, context, "Profile 1"), [
           context.path.join(profile, "Network", "Cookies"),
           context.path.join(profile, "Cookies"),
@@ -657,14 +651,11 @@ describe("cookieDatabaseCandidatePaths", () => {
         const path = yield* Path.Path;
         const context = yield* sourcePathContext.pipe(
           Effect.provideService(HostProcessEnvironment, { HOME: "/tmp/test" }),
-          Effect.provideService(HostProcessPlatform, "darwin"),
+          Effect.provideService(HostProcessPlatform, "linux"),
         );
         const candidates = cookieDatabaseCandidatePaths(firefox, context, "Profiles/abc.default");
         assert.deepEqual(candidates, [
-          path.join(
-            "/tmp/test",
-            "Library/Application Support/Firefox/Profiles/abc.default/cookies.sqlite",
-          ),
+          path.join("/tmp/test", ".mozilla/firefox/Profiles/abc.default/cookies.sqlite"),
         ]);
       }),
     ),
@@ -759,7 +750,6 @@ describe("Firefox Snap profiles", () => {
 describe("listSourceProfiles Firefox fallback", () => {
   const cases = [
     { platform: "linux" as const, profileDirectory: "linux.default" },
-    { platform: "darwin" as const, profileDirectory: NodePath.join("Profiles", "macos.default") },
     { platform: "win32" as const, profileDirectory: NodePath.join("Profiles", "windows.default") },
   ];
 
@@ -813,26 +803,24 @@ describe("listSourceProfiles Firefox fallback", () => {
         });
         const context = yield* sourcePathContext.pipe(
           Effect.provideService(HostProcessEnvironment, { HOME: home }),
-          Effect.provideService(HostProcessPlatform, "darwin"),
+          Effect.provideService(HostProcessPlatform, "linux"),
         );
         const root = firefox.userDataDirectory(context)!;
         // `profiles.ini` names a profile that was never launched (no cookie
         // database), while the real cookies sit in an undeclared one.
-        yield* fileSystem.makeDirectory(path.join(root, "Profiles", "stale.default"), {
-          recursive: true,
-        });
-        const realDirectory = path.join(root, "Profiles", "real.default");
+        yield* fileSystem.makeDirectory(path.join(root, "stale.default"), { recursive: true });
+        const realDirectory = path.join(root, "real.default");
         yield* fileSystem.makeDirectory(realDirectory, { recursive: true });
         yield* writeFirefoxCookieDatabase(path.join(realDirectory, "cookies.sqlite"), 3, 0);
         yield* fileSystem.writeFileString(
           path.join(root, "profiles.ini"),
-          ["[Profile0]", "Name=Stale", "IsRelative=1", "Path=Profiles/stale.default"].join("\n"),
+          ["[Profile0]", "Name=Stale", "IsRelative=1", "Path=stale.default"].join("\n"),
         );
 
         // Returning the empty declared list would hide the browser entirely.
         assert.deepEqual(yield* listSourceProfiles(firefox, context), [
           {
-            directory: path.join("Profiles", "real.default"),
+            directory: "real.default",
             name: "real.default",
             cookieCount: 3,
           },
@@ -852,40 +840,38 @@ describe("listSourceProfiles Firefox fallback", () => {
         });
         const context = yield* sourcePathContext.pipe(
           Effect.provideService(HostProcessEnvironment, { HOME: home }),
-          Effect.provideService(HostProcessPlatform, "darwin"),
+          Effect.provideService(HostProcessPlatform, "linux"),
         );
         const root = firefox.userDataDirectory(context)!;
-        const declaredDirectory = path.join(root, "Profiles", "declared.default");
+        const declaredDirectory = path.join(root, "declared.default");
         yield* fileSystem.makeDirectory(declaredDirectory, { recursive: true });
         yield* writeFirefoxCookieDatabase(path.join(declaredDirectory, "cookies.sqlite"), 2, 3);
         yield* fileSystem.writeFileString(
           path.join(root, "profiles.ini"),
-          ["[Profile0]", "Name=Declared", "IsRelative=1", "Path=Profiles/declared.default"].join(
-            "\n",
-          ),
+          ["[Profile0]", "Name=Declared", "IsRelative=1", "Path=declared.default"].join("\n"),
         );
 
         assert.deepEqual(yield* listSourceProfiles(firefox, context), [
           {
-            directory: path.join("Profiles", "declared.default"),
+            directory: "declared.default",
             name: "Declared",
             cookieCount: 2,
           },
         ]);
 
         yield* fileSystem.remove(path.join(root, "profiles.ini"));
-        const fallbackDirectory = path.join(root, "Profiles", "fallback.default");
+        const fallbackDirectory = path.join(root, "fallback.default");
         yield* fileSystem.makeDirectory(fallbackDirectory, { recursive: true });
         yield* writeFirefoxCookieDatabase(path.join(fallbackDirectory, "cookies.sqlite"), 1, 4);
 
         assert.deepEqual(yield* listSourceProfiles(firefox, context), [
           {
-            directory: path.join("Profiles", "declared.default"),
+            directory: "declared.default",
             name: "declared.default",
             cookieCount: 2,
           },
           {
-            directory: path.join("Profiles", "fallback.default"),
+            directory: "fallback.default",
             name: "fallback.default",
             cookieCount: 1,
           },
@@ -903,10 +889,10 @@ describe("isSourceRunning for Firefox", () => {
         const home = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3code-firefox-" });
         const context = yield* sourcePathContext.pipe(
           Effect.provideService(HostProcessEnvironment, { HOME: home }),
-          Effect.provideService(HostProcessPlatform, "darwin"),
+          Effect.provideService(HostProcessPlatform, "linux"),
         );
         const root = firefox.userDataDirectory(context)!;
-        const profile = `${root}/Profiles/abcd.default-release`;
+        const profile = `${root}/abcd.default-release`;
         yield* fileSystem.makeDirectory(profile, { recursive: true });
         yield* fileSystem.writeFileString(`${profile}/cookies.sqlite`, "db");
 
@@ -938,11 +924,9 @@ describe("isSourceRunning for Firefox", () => {
         const directory = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3code-lock-" });
         const lock = `${directory}/.parentlock`;
         yield* fileSystem.writeFileString(lock, "");
-        // A Mac without the developer tools has only Apple's shim, which
-        // refuses to run the script; a machine with no python at all has
-        // nothing. Either way the probe is unavailable, not the lock held —
-        // treating it as held would block Firefox import on that machine for
-        // good.
+        // A machine without a usable interpreter has nothing to run. Either
+        // way the probe is unavailable, not the lock held — treating it as
+        // held would block Firefox import on that machine for good.
         assert.isFalse(yield* posixLockIsHeld(lock, ["/nonexistent/python3"]));
         // And a fake "interpreter" that exits non-zero without a verdict, as
         // the shim does, is the same case.
@@ -953,7 +937,7 @@ describe("isSourceRunning for Firefox", () => {
 
   // Holds the lock with python3's fcntl, which does not exist on Windows.
   it.effect.skipIf(HostProcessPlatform.defaultValue() === "win32")(
-    "detects a live fcntl lock on .parentlock, as macOS Firefox leaves it",
+    "detects a live fcntl lock on Firefox's .parentlock",
     () =>
       run(
         Effect.gen(function* () {
@@ -962,10 +946,10 @@ describe("isSourceRunning for Firefox", () => {
           const home = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3code-firefox-" });
           const context = yield* sourcePathContext.pipe(
             Effect.provideService(HostProcessEnvironment, { HOME: home }),
-            Effect.provideService(HostProcessPlatform, "darwin"),
+            Effect.provideService(HostProcessPlatform, "linux"),
           );
           const root = firefox.userDataDirectory(context)!;
-          const profile = `${root}/Profiles/abcd.default-release`;
+          const profile = `${root}/abcd.default-release`;
           yield* fileSystem.makeDirectory(profile, { recursive: true });
           yield* fileSystem.writeFileString(`${profile}/cookies.sqlite`, "db");
           const parentLock = `${profile}/.parentlock`;
@@ -1089,109 +1073,6 @@ describe("listSourceProfiles hardening", () => {
           profiles.map((profile) => profile.directory),
           ["Default"],
         );
-      }),
-    ),
-  );
-});
-
-describe("Safari profiles", () => {
-  const safari = BROWSER_IMPORT_SOURCES.find((source) => source.id === "safari")!;
-  const workUuid = "C561D071-67AD-4537-866F-54F65FB8E8DD";
-  const otherUuid = "2875EB19-B938-4E38-BE92-5AE97C256BDD";
-
-  const fixture = Effect.fnUntraced(function* () {
-    const context = yield* withSourceHome();
-    const fileSystem = yield* FileSystem.FileSystem;
-    const root = safari.userDataDirectory(context)!;
-    const library = context.path.dirname(root);
-    yield* fileSystem.makeDirectory(root, { recursive: true });
-    yield* fileSystem.writeFileString(context.path.join(root, "Cookies.binarycookies"), "default");
-    const store = (uuid: string) =>
-      context.path.join(library, "WebKit", "WebsiteDataStore", uuid.toLowerCase(), "Cookies");
-    for (const uuid of [workUuid, otherUuid]) {
-      yield* fileSystem.makeDirectory(store(uuid), { recursive: true });
-      yield* fileSystem.writeFileString(
-        context.path.join(store(uuid), "Cookies.binarycookies"),
-        uuid,
-      );
-    }
-    yield* fileSystem.makeDirectory(context.path.join(library, "Safari"), { recursive: true });
-    const metadata = context.path.join(library, "Safari", "SafariTabs.db");
-    return { context, root, store, metadata };
-  });
-
-  it.effect("discovers named profiles and resolves only the selected profile's cookies", () =>
-    run(
-      Effect.gen(function* () {
-        const { context, root, store, metadata } = yield* fixture();
-        yield* Effect.sync(() => {
-          const database = new NodeSqlite.DatabaseSync(metadata);
-          try {
-            database.exec(`CREATE TABLE bookmarks (
-            title TEXT, external_uuid TEXT, parent INTEGER DEFAULT 0,
-            type INTEGER DEFAULT 1, subtype INTEGER DEFAULT 2,
-            deleted INTEGER DEFAULT 0, order_index INTEGER DEFAULT 0
-          )`);
-            const insert = database.prepare(
-              "INSERT INTO bookmarks (title, external_uuid, deleted) VALUES (?, ?, ?)",
-            );
-            insert.run("", "DefaultProfile", 0);
-            insert.run("Ping", workUuid, 0);
-            insert.run("Deleted", otherUuid, 1);
-            insert.run("Unsafe", "../../outside", 0);
-            database.exec(
-              "INSERT INTO bookmarks (title, external_uuid, subtype) VALUES ('Tab group', 'group', 1)",
-            );
-          } finally {
-            database.close();
-          }
-        });
-        const profiles = yield* listSourceProfiles(safari, context);
-        assert.deepEqual(profiles, [
-          { directory: ".", name: "Personal" },
-          { directory: store(workUuid), name: "Ping" },
-        ]);
-        assert.strictEqual(
-          yield* resolveCookieDatabase(safari, context, "."),
-          context.path.join(root, "Cookies.binarycookies"),
-        );
-        const selected = yield* resolveCookieDatabase(safari, context, profiles[1]!.directory);
-        assert.strictEqual(selected, context.path.join(store(workUuid), "Cookies.binarycookies"));
-        const fileSystem = yield* FileSystem.FileSystem;
-        assert.strictEqual(yield* fileSystem.readFileString(selected!), workUuid);
-        yield* fileSystem.remove(selected!);
-        assert.isUndefined(yield* resolveCookieDatabase(safari, context, profiles[1]!.directory));
-        assert.deepEqual(yield* listSourceProfiles(safari, context), profiles);
-      }),
-    ),
-  );
-
-  for (const metadataState of ["missing", "corrupt"] as const) {
-    it.effect(`recovers separate cookie stores when metadata is ${metadataState}`, () =>
-      run(
-        Effect.gen(function* () {
-          const { context, store, metadata } = yield* fixture();
-          const fileSystem = yield* FileSystem.FileSystem;
-          if (metadataState === "corrupt") yield* fileSystem.writeFileString(metadata, "invalid");
-          yield* fileSystem.remove(context.path.join(store(otherUuid), "Cookies.binarycookies"));
-          assert.deepEqual(yield* listSourceProfiles(safari, context), [
-            { directory: ".", name: "Safari" },
-            { directory: store(workUuid), name: workUuid.toLowerCase() },
-          ]);
-          assert.isTrue(yield* isSourceInstalled(safari, context));
-        }),
-      ),
-    );
-  }
-
-  it.effect("keeps Safari without profiles available", () =>
-    run(
-      Effect.gen(function* () {
-        const context = yield* withSourceHome();
-        assert.deepEqual(yield* listSourceProfiles(safari, context), [
-          { directory: ".", name: "Safari" },
-        ]);
-        assert.isFalse(yield* isSourceInstalled(safari, context));
       }),
     ),
   );

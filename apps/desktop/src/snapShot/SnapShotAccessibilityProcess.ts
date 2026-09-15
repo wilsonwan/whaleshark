@@ -49,8 +49,8 @@ export function startSnapShotAccessibilityProcess(workerPath: string): Accessibi
   let worker: NodeChildProcess.ChildProcess;
   try {
     worker = NodeChildProcess.fork(workerPath, ["read"], {
-      // Electron defaults to its Helper executable on macOS, which does not
-      // share the main app's Accessibility grant checked during setup.
+      // Use Electron's executable so the child loads the same native runtime as
+      // the main process and shares the packaged module resolution.
       execPath: process.execPath,
       env: {
         ...process.env,

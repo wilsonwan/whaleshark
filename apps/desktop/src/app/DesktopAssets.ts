@@ -9,7 +9,6 @@ import * as DesktopEnvironment from "./DesktopEnvironment.ts";
 
 export interface DesktopIconPaths {
   readonly ico: Option.Option<string>;
-  readonly icns: Option.Option<string>;
   readonly png: Option.Option<string>;
 }
 
@@ -76,7 +75,7 @@ function resolveSourceTreeIconPath(
   environment: DesktopEnvironment.DesktopEnvironment["Service"],
   ext: keyof DesktopIconPaths,
 ): string | undefined {
-  if (environment.isPackaged || ext === "icns") return undefined;
+  if (environment.isPackaged) return undefined;
   const brand = environment.isDevelopment ? "dev" : "prod";
   const fileNames = sourceTreeIconFileNames[brand];
   const fileName = ext === "ico" ? fileNames.ico : fileNames.universalPng;
@@ -117,11 +116,10 @@ export const make = Effect.gen(function* () {
   const context = yield* Effect.context<
     FileSystem.FileSystem | DesktopEnvironment.DesktopEnvironment
   >();
-  const [ico, icns, png] = yield* Effect.all(
-    [resolveIconPath("ico"), resolveIconPath("icns"), resolveIconPath("png")] as const,
-    { concurrency: "unbounded" },
-  );
-  const iconPaths = { ico, icns, png } satisfies DesktopIconPaths;
+  const [ico, png] = yield* Effect.all([resolveIconPath("ico"), resolveIconPath("png")] as const, {
+    concurrency: "unbounded",
+  });
+  const iconPaths = { ico, png } satisfies DesktopIconPaths;
 
   return DesktopAssets.of({
     iconPaths: Effect.succeed(iconPaths),

@@ -78,7 +78,7 @@ function makeLayer(baseDir: string) {
   const environmentLayer = DesktopEnvironment.layer({
     dirname: "/repo/apps/desktop/src",
     homeDirectory: baseDir,
-    platform: "darwin",
+    platform: "linux",
     processArch: "x64",
     appVersion: "1.2.3",
     appPath: "/repo",

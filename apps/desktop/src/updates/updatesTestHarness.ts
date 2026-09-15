@@ -145,7 +145,7 @@ export function makeHarness(options: UpdatesHarnessOptions = {}) {
   const environmentLayer = DesktopEnvironment.layer({
     dirname: "/repo/apps/desktop/src",
     homeDirectory: `/tmp/t3-desktop-updates-home-${process.pid}`,
-    platform: "darwin",
+    platform: "linux",
     processArch: "x64",
     appVersion: "1.2.3",
     appPath: "/repo",

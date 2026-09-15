@@ -420,9 +420,8 @@ export const make = Effect.gen(function* () {
   const desktopSettings = yield* DesktopAppSettings.DesktopAppSettings;
   const stateRef = yield* Ref.make(initialRuntimeState());
 
-  // Cache the `tailscale status` spawn for the TTL. On macOS, the Mac App
-  // Store Tailscale CLI lives inside Tailscale's sandbox container, so each
-  // spawn re-triggers the "Other apps" TCC prompt.
+  // Cache the `tailscale status` spawn for the TTL so repeated discovery does
+  // not repeat an expensive or permission-sensitive command.
   const cachedReadMagicDnsName = yield* Effect.cachedWithTTL(
     readTailscaleStatus.pipe(
       Effect.map((status) => status.magicDnsName),

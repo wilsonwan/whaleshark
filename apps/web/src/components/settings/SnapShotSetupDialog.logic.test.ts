@@ -6,7 +6,6 @@ import {
   captureSetupCheckMessage,
   captureSetupDesktopName,
   captureSetupInitialStep,
-  captureSetupMacPermissionsReady,
   captureSetupShortcutReady,
   captureSetupShouldDisableOnClose,
 } from "./SnapShotSetupDialog.logic";
@@ -309,25 +308,6 @@ it.each([
     expect(captureSetupShouldDisableOnClose(wasEnabled, completed)).toBe(disable);
   },
 );
-
-it("gates Continue on macOS permissions, requiring accessibility only when app text is on", () => {
-  const mac: DesktopSnapShotState = {
-    ...gnome,
-    mode: "direct",
-    linuxBackend: undefined,
-    gnomeExtension: undefined,
-    macPermissions: { screenRecording: true, accessibility: false },
-  };
-  expect(captureSetupMacPermissionsReady(mac, true)).toBe(false);
-  expect(captureSetupMacPermissionsReady(mac, false)).toBe(true);
-  expect(
-    captureSetupMacPermissionsReady(
-      { ...mac, macPermissions: { screenRecording: false, accessibility: true } },
-      false,
-    ),
-  ).toBe(false);
-  expect(captureSetupMacPermissionsReady({ ...mac, macPermissions: undefined }, true)).toBe(true);
-});
 
 it.each(["kde", "hyprland"] as const)("ignores errors from inactive helpers on %s", (backend) => {
   const state: DesktopSnapShotState = {

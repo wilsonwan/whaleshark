@@ -32,7 +32,7 @@ const request = {
     bounds: { x: 10, y: 20, width: 800, height: 600 },
     owner: { processId: 42 },
   },
-  platform: "darwin" as const,
+  platform: "linux" as const,
   sourceTitle: "Zoom Meeting",
   imageSize: { width: 1_600, height: 1_200 },
 };
