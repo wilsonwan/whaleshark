@@ -1200,9 +1200,9 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
     isActive: props.isActive,
     isSelected,
   });
-  // Status hues follow the system-wide convention set by sidebar v1 and the
-  // mobile Live Activity/widgets (amber approval, indigo input, sky working)
-  // so a thread reads the same color everywhere it surfaces.
+  // Status hues follow the system-wide convention set by sidebar v1
+  // (amber approval, indigo input, sky working) so a thread reads the same
+  // color everywhere it surfaces.
   const topStatus =
     status === "working"
       ? {
@@ -2635,8 +2635,8 @@ export default function Sidebar() {
     // One shared rule on every platform (see sortPinnedThreadsByOrderKey):
     // user-arranged keys first, keyless threads in creation order below.
     // Server capability only gates DRAGGING — it must not influence the
-    // sort, or mixed-version fleets would render different pinned orders on
-    // web and mobile from the same data.
+    // sort, or mixed-version fleets would render different pinned orders
+    // from the same data.
     const sortedPinned = sortPinnedThreadsForSidebar(pinned);
     const sortedActive = sortThreadsForSidebar(active);
     return {

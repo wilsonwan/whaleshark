@@ -100,8 +100,7 @@ resumed after it closed.
 Change these rules in **Settings → General**. They continue to run when your apps
 are closed. On web and desktop, choose an environment at the top to change only
 its rules, or **All environments** to update connected environments together.
-Mixed values show where the selected environments disagree. Mobile applies these
-rules to connected environments that support shared settings. Offline environments
+Mixed values show where the selected environments disagree. Offline environments
 and older servers keep their previous values. Changing a rule does not reopen
 already settled threads.
 
