@@ -28,7 +28,6 @@ or use a package manager:
 | Platform           | Install                         |
 | ------------------ | ------------------------------- |
 | Windows            | `winget install T3Tools.T3Code` |
-| macOS              | `brew install --cask t3-code`   |
 | Arch Linux         | `yay -S t3code-bin`             |
 | Arch Linux nightly | `yay -S t3code-nightly-bin`     |
 

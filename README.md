@@ -43,12 +43,6 @@ Install the latest version of the desktop app from [GitHub Releases](https://git
 winget install T3Tools.T3Code
 ```
 
-#### macOS (Homebrew)
-
-```bash
-brew install --cask t3-code
-```
-
 #### Arch Linux (AUR)
 
 Stable:
@@ -94,7 +88,7 @@ Building from source? Start at [docs/internals/overview.md](./docs/internals/ove
 
 T3 Code uses Vite+ so you'll need to install the global `vp` command-line tool.
 
-#### macOS / Linux
+#### Linux
 
 ```bash
 curl -fsSL https://vite.plus | bash
