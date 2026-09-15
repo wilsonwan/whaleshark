@@ -153,16 +153,6 @@ function makeProviderHandoffSummary(input: {
   ].join("\n");
 }
 
-export function providerMessageWithContextHandoff(input: {
-  readonly handoff: OrchestrationV2ContextHandoff;
-  readonly userText: string;
-}): string {
-  return providerMessageWithContextHandoffs({
-    handoffs: [input.handoff],
-    userText: input.userText,
-  });
-}
-
 export function providerMessageWithContextHandoffs(input: {
   readonly handoffs: ReadonlyArray<OrchestrationV2ContextHandoff>;
   readonly userText: string;
