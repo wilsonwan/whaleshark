@@ -7,7 +7,7 @@ import * as SqlClient from "effect/unstable/sql/SqlClient";
  * Existing databases are intentionally not upgraded by this migration. The
  * only supported starting point is an empty database.
  */
-export const currentBaselineStatements = [
+const currentBaselineStatements = [
   "CREATE TABLE auth_pairing_links (\n      id TEXT PRIMARY KEY,\n      credential TEXT NOT NULL UNIQUE,\n      method TEXT NOT NULL,\n      scopes TEXT NOT NULL,\n      subject TEXT NOT NULL,\n      label TEXT,\n      created_at TEXT NOT NULL,\n      expires_at TEXT NOT NULL,\n      consumed_at TEXT,\n      revoked_at TEXT\n    , proof_key_thumbprint TEXT)",
   "CREATE TABLE auth_sessions (\n      session_id TEXT PRIMARY KEY,\n      subject TEXT NOT NULL,\n      scopes TEXT NOT NULL,\n      method TEXT NOT NULL,\n      client_label TEXT,\n      client_ip_address TEXT,\n      client_user_agent TEXT,\n      client_device_type TEXT NOT NULL DEFAULT 'unknown',\n      client_os TEXT,\n      client_browser TEXT,\n      issued_at TEXT NOT NULL,\n      expires_at TEXT NOT NULL,\n      last_connected_at TEXT,\n      revoked_at TEXT\n    , client_surface TEXT, client_app_version TEXT)",
   "CREATE TABLE checkpoint_diff_blobs (\n      thread_id TEXT NOT NULL,\n      from_turn_count INTEGER NOT NULL,\n      to_turn_count INTEGER NOT NULL,\n      diff TEXT NOT NULL,\n      created_at TEXT NOT NULL,\n      UNIQUE (thread_id, from_turn_count, to_turn_count)\n    )",

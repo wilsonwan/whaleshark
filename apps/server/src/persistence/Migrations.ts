@@ -12,8 +12,6 @@ import CurrentBaseline from "./Migrations/001_CurrentBaseline.ts";
 
 export const migrationEntries = [[1, "CurrentBaseline", CurrentBaseline]] as const;
 
-export const migrationManifest = migrationEntries.map(([id, name]) => [id, name] as const);
-
 const run = Migrator.make({});
 
 export const runMigrations = Effect.fn("runMigrations")(function* () {
