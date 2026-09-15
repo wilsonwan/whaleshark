@@ -25,7 +25,7 @@ function WelcomeRouteView() {
   const [dismissed, setDismissed] = useState(false);
   const openNewThread = useNewThreadHandler();
   // An authenticated gate means a primary server is serving this app —
-  // desktop, `npx t3`, or a dev server — and that server is "this machine"
+  // desktop, a source-run server, or a dev server — and that server is "this machine"
   // no matter what hostname the browser used.
   const localAvailable = authGateState.status === "authenticated";
   return (

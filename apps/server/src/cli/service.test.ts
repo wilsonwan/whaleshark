@@ -54,7 +54,7 @@ it("still reports the installed version when the service needs a reinstall", () 
     {
       ...status,
       current: false,
-      installedVersion: "0.0.32-nightly.1",
+      installedVersion: "0.0.32-dev.1",
       problems: ["linger-disabled", "service-stopped"],
     },
     "0.0.29",

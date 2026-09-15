@@ -12,7 +12,7 @@ This app has three variants:
 
 - `development`: Expo dev client, installable side-by-side as `T3 Code Dev`
 - `preview`: persistent internal preview build, installable side-by-side as `T3 Code Preview`
-- `production`: store/release build as `T3 Code`
+- `production`: local full build as `T3 Code`
 
 Run commands from `apps/mobile`.
 
@@ -106,9 +106,9 @@ The native lint task runs SwiftLint for Swift plus ktlint and detekt for Kotlin.
 
 ## EAS Builds
 
-Preview and production variants use Expo fingerprinting so OTA updates only reach binaries with matching native dependencies, config plugins, and patches.
-
-The development variant uses `appVersion` to avoid recalculating the native fingerprint for each Metro launch manifest. `MOBILE_VERSION_POLICY` can override either default. If you distribute a custom Release build with the development identity and publish OTA updates to it, set `MOBILE_VERSION_POLICY=fingerprint` for both its build and updates. Changing the runtime policy requires a native rebuild for OTA matching; an existing dev client can still load local Metro bundles.
+EAS profiles build source-based development and internal preview clients. This
+fork does not publish mobile builds or OTA updates; install a newly built
+artifact manually when you need to move to another checkout revision.
 
 Create a PR preview dev-client build manually:
 

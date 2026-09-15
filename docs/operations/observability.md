@@ -82,10 +82,10 @@ The local trace file is always on. OTLP export is opt-in.
 
 You do not need any extra env vars. Just run the app normally and inspect `server.trace.ndjson`.
 
-Examples:
+Examples from the repository root:
 
 ```bash
-npx t3
+vp run dev
 ```
 
 ```bash
@@ -136,7 +136,7 @@ export T3CODE_TRACE_TIMING_ENABLED=true
 CLI:
 
 ```bash
-npx t3
+vp run dev
 ```
 
 Monorepo web/server dev:

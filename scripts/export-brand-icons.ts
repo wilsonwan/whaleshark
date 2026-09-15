@@ -217,20 +217,7 @@ const ICON_VARIANTS = [
       windowsIco: BRAND_ASSET_PATHS.developmentWindowsIconIco,
     },
   },
-  {
-    label: "preview",
-    source: BRAND_ASSET_PATHS.nightlyIconComposerProject,
-    outputs: {
-      ios: BRAND_ASSET_PATHS.nightlyIosIconPng,
-      macos: BRAND_ASSET_PATHS.nightlyMacIconPng,
-      universal: BRAND_ASSET_PATHS.nightlyLinuxIconPng,
-      appleTouch: BRAND_ASSET_PATHS.nightlyWebAppleTouchIconPng,
-      favicon16: BRAND_ASSET_PATHS.nightlyWebFavicon16Png,
-      favicon32: BRAND_ASSET_PATHS.nightlyWebFavicon32Png,
-      faviconIco: BRAND_ASSET_PATHS.nightlyWebFaviconIco,
-      windowsIco: BRAND_ASSET_PATHS.nightlyWindowsIconIco,
-    },
-  },
+
   {
     label: "production",
     source: BRAND_ASSET_PATHS.productionIconComposerProject,
@@ -797,9 +784,7 @@ export const exportBrandIconsCommand = Command.make(
   },
   ({ check }) => exportBrandIcons(check).pipe(Effect.scoped),
 ).pipe(
-  Command.withDescription(
-    "Export development, preview, and production assets from Icon Composer projects.",
-  ),
+  Command.withDescription("Export development and production assets from Icon Composer projects."),
 );
 
 if (import.meta.main) {

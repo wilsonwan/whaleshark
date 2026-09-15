@@ -4,8 +4,8 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackScreenOptions } from "../../native/StackHeader";
 import { SymbolView } from "../../components/AppSymbol";
 import { AsyncResult } from "effect/unstable/reactivity";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Platform, Pressable, ScrollView, View } from "react-native";
+import { useState } from "react";
+import { Platform, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AndroidScreenHeader } from "../../components/AndroidScreenHeader";
@@ -23,12 +23,7 @@ import {
 } from "@t3tools/contracts";
 import { supportsSharedSettingsSync } from "@t3tools/client-runtime/state/shared-settings";
 import { useThreadListV2Enabled } from "../threads/use-thread-list-v2-enabled";
-import {
-  type AppUpdateCheckState,
-  isAppUpdateCheckAvailable,
-  registerHiddenUpdateTap,
-  runAppUpdateCheck,
-} from "../updates/app-updates";
+
 import { useSavedRemoteConnections } from "../../state/use-remote-environment-registry";
 import { SettingsRow } from "./components/SettingsRow";
 import { SettingsSection } from "./components/SettingsSection";
@@ -277,69 +272,12 @@ function LegacySettingsSection() {
 }
 
 function AppSettingsSection() {
-  const [updateState, setUpdateState] = useState<AppUpdateCheckState>("idle");
-  const updateInFlight = useRef(false);
-  const hiddenUpdateTapCount = useRef(0);
-
   const version = Constants.expoConfig?.version ?? "0.0.0";
   // Fall back to "production" to match resolveAppVariant in app.config.ts, so a
   // missing variant never mislabels a production build as development.
   const variant = (Constants.expoConfig?.extra?.appVariant as string | undefined) ?? "production";
   const variantLabel = variant === "production" ? "" : capitalize(variant);
   const versionLabel = variantLabel ? `${version} · ${variantLabel}` : version;
-  const updateCheckAvailable = isAppUpdateCheckAvailable();
-  const busy =
-    updateState === "checking" || updateState === "downloading" || updateState === "restarting";
-
-  // "Up to date" is a transient acknowledgement, not a state worth persisting —
-  // return the version row to its normal, deliberately quiet state.
-  useEffect(() => {
-    if (updateState !== "current") return;
-    const timer = setTimeout(() => setUpdateState("idle"), 3000);
-    return () => clearTimeout(timer);
-  }, [updateState]);
-
-  const checkForUpdate = useCallback(async () => {
-    // `disabled={busy}` only takes effect on the next render, so two taps in the
-    // same frame would both get through. The ref closes that window.
-    if (updateInFlight.current) return;
-    updateInFlight.current = true;
-    try {
-      // The user asked for this restart by tapping the version row, so it may
-      // apply immediately instead of prompting.
-      await runAppUpdateCheck({
-        applyMode: "immediate",
-        onFailure: (message) => Alert.alert("Update failed", message),
-        onStateChange: setUpdateState,
-      });
-    } finally {
-      updateInFlight.current = false;
-    }
-  }, []);
-
-  const handleVersionPress = useCallback(() => {
-    if (!updateCheckAvailable || updateInFlight.current) return;
-    const tap = registerHiddenUpdateTap(hiddenUpdateTapCount.current);
-    hiddenUpdateTapCount.current = tap.nextCount;
-    if (tap.shouldCheck) {
-      void checkForUpdate();
-    }
-  }, [checkForUpdate, updateCheckAvailable]);
-
-  const statusLabel =
-    updateState === "checking"
-      ? "Checking…"
-      : updateState === "downloading"
-        ? "Downloading…"
-        : // "ready" appears only when this check joined an in-flight background-mode
-          // check; that download installs at the next backgrounding.
-          updateState === "ready"
-          ? "Update ready"
-          : updateState === "restarting"
-            ? "Restarting…"
-            : updateState === "current"
-              ? "Up to date"
-              : null;
 
   const versionRow = (
     <View className="flex-row items-center gap-4 p-4">
@@ -351,12 +289,7 @@ function AppSettingsSection() {
         weight="regular"
       />
       <Text className="flex-1 text-lg text-foreground">Version</Text>
-      <View className="items-end">
-        <Text className="text-lg text-foreground-muted">{versionLabel}</Text>
-        {statusLabel ? (
-          <Text className="text-xs text-foreground-muted/70">{statusLabel}</Text>
-        ) : null}
-      </View>
+      <Text className="text-lg text-foreground-muted">{versionLabel}</Text>
     </View>
   );
 
@@ -369,18 +302,7 @@ function AppSettingsSection() {
         target="SettingsOpenSourceLicenses"
       />
       <SettingsRow icon="doc.text" label="Legal" fullScreenTarget="SettingsLegal" />
-      {updateCheckAvailable ? (
-        <Pressable
-          accessibilityLabel={`Version ${versionLabel}`}
-          accessibilityRole="text"
-          disabled={busy}
-          onPress={handleVersionPress}
-        >
-          {versionRow}
-        </Pressable>
-      ) : (
-        versionRow
-      )}
+      {versionRow}
     </SettingsSection>
   );
 }

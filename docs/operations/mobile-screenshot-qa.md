@@ -1,4 +1,4 @@
-# Mobile app-store screenshot harness
+# Mobile screenshot QA harness
 
 > For maintainers. Using T3 Code? See [docs/user](../user/).
 
@@ -32,8 +32,8 @@ The command:
 6. Navigates to the real application route for every requested scene.
 7. Sets the requested system appearance and palette, normalizes status bars, converts captures to 24-bit RGB PNGs without alpha, and
    validates dimensions, aspect ratio, file size, and screenshot count before succeeding.
-8. Writes store-ready folders beneath `artifacts/app-store/screenshots/` that can be uploaded
-   directly to App Store Connect or Google Play Console.
+8. Writes the captures beneath the configured output directory for local inspection and
+   manual QA or bug reports.
 
 The servers, Metro, temporary root directory, and devices started by the runner are cleaned up after
 capture. Pass `--keep-running` to retain them for inspection; the runner prints the base-directory
@@ -63,32 +63,20 @@ multiplies the run by six; only the native build is shared.
 
 The default matrix is:
 
-| Output folder                         | Capture target            | Upload dimensions | Store slot                                |
-| ------------------------------------- | ------------------------- | ----------------- | ----------------------------------------- |
-| `apple/iphone-6.9/dark/t3-code/`      | iPhone 17 Pro Max         | 1320×2868         | App Store Connect iPhone 6.9-inch         |
-| `apple/iphone-6.5/dark/t3-code/`      | disposable iPhone 14 Plus | 1284×2778         | App Store Connect iPhone 6.5-inch         |
-| `apple/ipad-13/dark/t3-code/`         | iPad Pro 13-inch (M5)     | 2752×2064         | App Store Connect iPad 13-inch, landscape |
-| `google-play/phone/dark/t3-code/`     | Pixel AVD at 420 dpi      | 1080×1920         | Google Play phone, portrait 9:16          |
-| `google-play/tablet-7/dark/t3-code/`  | Pixel AVD at 600dp width  | 1080×1920         | Google Play 7-inch tablet, portrait 9:16  |
-| `google-play/tablet-10/dark/t3-code/` | Pixel AVD at 800dp width  | 1440×2560         | Google Play 10-inch tablet, portrait 9:16 |
+| Platform | Capture target            | Viewport  | Local QA focus              |
+| -------- | ------------------------- | --------- | --------------------------- |
+| iOS      | iPhone 17 Pro Max         | 1320×2868 | Phone layout and safe areas |
+| iOS      | disposable iPhone 14 Plus | 1284×2778 | Smaller phone layout        |
+| iOS      | iPad Pro 13-inch (M5)     | 2752×2064 | Landscape and tablet layout |
+| Android  | Pixel AVD at 420 dpi      | 1080×1920 | Phone layout and density    |
+| Android  | Pixel AVD at 600dp width  | 1080×1920 | Medium tablet layout        |
+| Android  | Pixel AVD at 800dp width  | 1440×2560 | Large tablet layout         |
 
-Each target captures thread, terminal, review, thread list, and environments. Each palette folder's
-five screenshots satisfy the configured Apple limit of 1–10, Google
-phone requirement of 2–8, and Google tablet recommendation/slot minimum of 4 with a maximum of 8.
-Every palette gets its own leaf folder so one upload slot never mixes themes and each folder keeps a
-store-legal screenshot count.
-
-The generated tree is deliberately aligned with the store upload fields:
-
-    artifacts/app-store/screenshots/
-    ├── apple/
-    │   ├── iphone-6.9/dark/t3-code/{thread,terminal,review,threads,environments}.png
-    │   ├── iphone-6.5/dark/t3-code/{thread,terminal,review,threads,environments}.png
-    │   └── ipad-13/dark/t3-code/{thread,terminal,review,threads,environments}.png
-    └── google-play/
-        ├── phone/dark/t3-code/{thread,terminal,review,threads,environments}.png
-        ├── tablet-7/dark/t3-code/{thread,terminal,review,threads,environments}.png
-        └── tablet-10/dark/t3-code/{thread,terminal,review,threads,environments}.png
+Each target captures thread, terminal, review, thread list, and environments. Each
+appearance and theme gets its own leaf folder, making it straightforward to compare
+the same route across devices without mixing unrelated captures. The exact output
+directory and device subdirectories are configured in
+[mobile-showcase.config.ts](../../scripts/mobile-showcase.config.ts).
 
 A light-only run writes the same tree under `light/`; `--appearance both` writes both appearance
 folders, and each requested theme adds a sibling folder next to `t3-code/`.
@@ -174,7 +162,7 @@ remote-first while the harness retains reliable loopback connections to its ephe
   `$HOME/Library/Android/sdk` on macOS or `$HOME/Android/Sdk` on other platforms. The resolved SDK
   must provide `adb` and `emulator`, and the configured AVD must exist.
 
-The harness is the source of truth for upload dimensions; do not resize its output. If store rules
-change, update the target's `storeAsset` specification. Capture fails when a PNG is the wrong size,
-has alpha, is not 8-bit RGB, exceeds the configured file-size limit, violates Google Play's 9:16
-shape/bounds, or leaves a full output set below its store minimum.
+The harness validates the configured viewport dimensions; do not resize its output before
+inspection. If local device targets change, update the target specification. Capture fails
+when a PNG has the wrong size, has alpha, is not 8-bit RGB, exceeds the configured file-size
+limit, violates the target aspect-ratio bounds, or leaves an output set missing a requested scene.

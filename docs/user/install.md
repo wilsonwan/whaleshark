@@ -72,10 +72,10 @@ and try again.
 
 ## Mobile app
 
-Install T3 Code from the
-[App Store](https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824) or
-[Google Play](https://play.google.com/store/apps/details?id=com.t3tools.t3code).
-The phone connects to a server on another machine. Follow
+The mobile client is source-only in this fork. Build and install a local
+development or full build from this checkout; see the
+[mobile README](../../apps/mobile/README.md) for the native prerequisites and
+commands. The client connects to a server on another machine. Follow
 [remote access](./remote-access.md) to link it with a pairing URL.
 
 ## Providers

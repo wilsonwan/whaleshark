@@ -1,8 +1,8 @@
 # Server updates and the service launcher
 
 This fork has no release channel, so a server never replaces itself. The
-[launcher](../../apps/server/src/serviceLauncher.ts) is written by `t3 service
-install` from the checkout that ran it and starts the entry recorded in service
+[launcher](../../apps/server/src/serviceLauncher.ts) is written by
+`node apps/server/dist/bin.mjs service install` from the checkout that ran it and starts the entry recorded in service
 state (`<T3 home>/runtime/service-state.json`): the built or source CLI of that
 checkout. It never downloads a package, never swaps runtimes, and owns no
 rollback. When the child dies, the launcher exits and systemd's or launchd's
@@ -17,10 +17,10 @@ move the service.
   exists without the launcher's IPC channel. A foreground server has no context
   and is unmanaged, which is what keeps a terminal run from claiming service
   mode.
-- `t3 service status` calls the install current only when the rendered unit, the
+- `node apps/server/dist/bin.mjs service status` calls the install current only when the rendered unit, the
   installed launcher, the recorded entry, and the recorded version all match the
   CLI asking. A moved or deleted entry makes the service not current, and
-  `t3 service install` is the repair.
+  `node apps/server/dist/bin.mjs service install` is the repair.
 - Install stops the running service before rewriting the launcher, state, and
   unit, then starts it again, so a partial rewrite cannot leave a unit pointing at
   an entry that is gone. A failed rewrite restarts the previous service.
@@ -37,13 +37,11 @@ manager that cannot run it is worse than a stale one. macOS launch agents cannot
 start before the user logs in; installing over SSH while nobody is logged in can
 fail at the final start step and is documented as such.
 
-## Desktop app updates
+## Desktop app packaging
 
-Desktop app updates are separate from service maintenance: the app's own update
-feed decides what it downloads, and installing it stops the bundled backend.
-That is why the handoff is two-phase — preparation returns a token while the
-connection is alive, and the client commits it only after receiving it, so a
-backend shutdown cannot lose the only successful RPC result.
+Desktop artifacts are rebuilt from the checkout and relaunched manually. There
+is no desktop update feed or client-side installer handoff; the bundled backend
+therefore always comes from the artifact's source checkout.
 
 ## Recovering interrupted threads
 

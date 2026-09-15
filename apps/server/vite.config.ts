@@ -2,7 +2,6 @@ import "vite-plus/test/config";
 import { defineConfig, mergeConfig } from "vite-plus";
 
 import baseConfig from "../../vite.config.ts";
-import packageJson from "./package.json" with { type: "json" };
 
 // The bundle used to inline only workspace packages, leaving every third-party
 // runtime dep external. External deps must exist on the real filesystem (the WSL
@@ -18,8 +17,6 @@ import {
 } from "../../scripts/lib/cli-external-packages.ts";
 
 export { shouldBundleCliDependency };
-
-const cliBuildChannel = packageJson.version.includes("-nightly.") ? "nightly" : "latest";
 
 export default mergeConfig(
   baseConfig,
@@ -51,9 +48,6 @@ export default mergeConfig(
       },
       banner: {
         js: "#!/usr/bin/env node\n",
-      },
-      define: {
-        __T3CODE_BUILD_CHANNEL__: JSON.stringify(cliBuildChannel),
       },
     },
     test: {

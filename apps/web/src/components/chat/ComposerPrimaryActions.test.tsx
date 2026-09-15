@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const stageArtworkState = vi.hoisted(() => ({
   mode: "none" as "artwork" | "none",
-  variant: null as "nightly" | "dev" | null,
+  variant: null as "dev" | null,
 }));
 
 vi.mock("~/hooks/useSettings", () => ({
@@ -88,18 +88,18 @@ describe("ComposerPrimaryActions", () => {
 
   it("renders stage artwork inside the send button when artwork identification is active", () => {
     stageArtworkState.mode = "artwork";
-    stageArtworkState.variant = "nightly";
+    stageArtworkState.variant = "dev";
 
     const markup = renderSendButton();
 
-    expect(markup).toContain("stage-nightly");
+    expect(markup).toContain("stage-dev");
   });
 
   it("hides stage artwork when artwork identification is inactive", () => {
-    stageArtworkState.variant = "nightly";
+    stageArtworkState.variant = "dev";
 
     const markup = renderSendButton();
 
-    expect(markup).not.toContain("stage-nightly");
+    expect(markup).not.toContain("stage-dev");
   });
 });

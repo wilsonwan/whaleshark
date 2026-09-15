@@ -20,7 +20,7 @@ Prefer a container? See [Dev container](../internals/devcontainer.md) for VS Cod
 There is no release channel: the checkout is the distribution. `main` is what
 runs, the background service runs the checkout it was installed from, and
 keeping a server current means pulling, rebuilding with `vp run build`, and
-running `t3 service install` again. Nothing in this repository publishes a
+running `node apps/server/dist/bin.mjs service install` again. Nothing in this repository publishes a
 package, a desktop update feed, or an AUR package. See
 [Desktop artifacts and signing](./release.md) for local builds and the
 unresolved remote CLI package source.
@@ -68,17 +68,14 @@ The workarounds live in the [web entry](../../apps/web/src/bootstrap.ts) and
 
 ## Checks
 
-This fork temporarily runs the pull-request CI and mobile fingerprint checks on
-GitHub-hosted `ubuntu-24.04` and `macos-26` runners because its Blacksmith
-runner labels are not configured. Restore `blacksmith-8vcpu-ubuntu-2404` for
-the Ubuntu CI and fingerprint jobs, `blacksmith-4vcpu-ubuntu-2404` for Rust,
-`blacksmith-2vcpu-ubuntu-2404` for mobile change detection, and
-`blacksmith-6vcpu-macos-26` for native analysis when that capacity is
-available, together with the `setup-apt-mirrors` step and apt source rewrite
-that only work on Blacksmith's images. The label-gated preview workflows still
-name Blacksmith runners; they never run for an ordinary pull request. Until
-then, the local commands below are the fallback validation path and should
-cover the packages and files being changed.
+This fork temporarily runs pull-request CI on GitHub-hosted `ubuntu-24.04` and
+`macos-26` runners because its Blacksmith runner labels are not configured.
+Restore `blacksmith-8vcpu-ubuntu-2404` for Ubuntu CI,
+`blacksmith-4vcpu-ubuntu-2404` for Rust, and `blacksmith-6vcpu-macos-26` for
+native analysis when that capacity is available, together with the
+`setup-apt-mirrors` step and apt source rewrite that only work on Blacksmith's
+images. Until then, the local commands below are the fallback validation path
+and should cover the packages and files being changed.
 
 Run checks for the files and packages you changed:
 
@@ -173,7 +170,7 @@ rustup target add aarch64-pc-windows-msvc
 ```
 
 NSIS is downloaded by electron-builder. WSL support additionally needs a Linux node-pty prebuild;
-see the [desktop artifact notes](./release.md#windows-payload-topology-and-update-validation).
+see the [desktop artifact notes](./release.md#windows-payload-topology-and-packaging-validation).
 
 ### Signing
 

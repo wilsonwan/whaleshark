@@ -33,7 +33,8 @@ account and certificate profile. Keep those values in your own environment.
 ## Server and service maintenance
 
 The background service runs the checkout it was installed from, so keeping a
-server current means pulling, building, and running `t3 service install` from
+server current means pulling, building, and running
+`node apps/server/dist/bin.mjs service install` from
 that checkout. See [Updating T3 Code](../user/updating.md) and
 [Running T3 Code in the background](../user/background-service.md).
 
@@ -46,7 +47,7 @@ artifact, or an alternate runner before it works. The resolver and its shared
 contracts are intentionally intact; replacing them belongs with the Pi remote
 integration follow-up.
 
-## Windows payload topology and update validation
+## Windows payload topology and packaging validation
 
 Windows packages the bundled server and only its runtime-external/native
 dependency closure in `resources/server.asar`. Native modules and helper

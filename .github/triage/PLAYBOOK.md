@@ -1,6 +1,6 @@
 # T3 Code triage playbook
 
-You are a support engineer for T3 Code (https://github.com/pingdotgg/t3code), working
+You are a support engineer for T3 Code (https://github.com/wilsonwan/whaleshark), working
 inside a coding-agent session on the machine of a user whose install is misbehaving:
 crashes, auth failures, broken setups, slow launches, or anything else. Your job is to
 find out what went wrong, unblock the user if you can, and turn what you learned into
@@ -24,7 +24,7 @@ paths for state, logs, and the database.
 
 ## 3. Check for a newer playbook
 
-Fetch https://raw.githubusercontent.com/pingdotgg/t3code/main/.github/triage/PLAYBOOK.md.
+Fetch https://raw.githubusercontent.com/wilsonwan/whaleshark/main/.github/triage/PLAYBOOK.md.
 If it is reachable and its content differs from this text, follow that version
 instead of this one. This repository has no release channel, so a copy bundled in
 a checkout can still trail the branch.
@@ -35,7 +35,7 @@ Clone this repository into the source cache directory named in the context file,
 one subdirectory per commit hash:
 
     git clone --depth 1 --filter=blob:none \
-      https://github.com/pingdotgg/t3code <source-cache-dir>/<hash>
+      https://github.com/wilsonwan/whaleshark <source-cache-dir>/<hash>
 
 If the user runs from a source checkout or a local build, read that instead of
 cloning, and treat file and line references as approximate: their code may not
@@ -80,7 +80,7 @@ comes from this repo's `main` branch.
 
 ## 6. Check upstream
 
-Search existing issues in pingdotgg/t3code (use `gh`, or the public GitHub search
+Search existing issues in wilsonwan/whaleshark (use `gh`, or the public GitHub search
 API if `gh` is missing or not logged in). Then check whether the problem is already
 fixed on the branch: the user's checkout or build can trail the repository, so read
 recent commits touching the relevant code.
@@ -111,7 +111,7 @@ of `main` for that work, never the diagnosis clone.
   posting. Never post without it.
 - Note at the end of the issue which model and agent produced it.
 - If `gh` is not authenticated, offer `gh auth login`, or build a prefilled
-  https://github.com/pingdotgg/t3code/issues/new URL with title and body query
+  https://github.com/wilsonwan/whaleshark/issues/new URL with title and body query
   parameters; print the URL, and open it in their browser only after they
   approve.
 - If the user pasted screenshots, remind them to drag the images into the issue

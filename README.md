@@ -1,6 +1,6 @@
 # T3 Code
 
-T3 Code is an "agent harness control surface". It enables control of the agents on your machine with a best-in-class mobile app ([iOS](https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824), [Android](https://play.google.com/store/apps/details?id=com.t3tools.t3code)), a web app served by your own server, and an [Electron-based desktop app](https://t3.codes).
+T3 Code is an "agent harness control surface". It enables control of the agents on your machine with a best-in-class mobile client, a web app served by your own server, and an [Electron-based desktop app](https://t3.codes).
 
 Works with your subscriptions on Claude Code, Codex, OpenCode, and Pi. Agents from the [ACP Registry](https://agentclientprotocol.com/get-started/registry) work too. If they're set up on your computer, T3 Code can control them.
 

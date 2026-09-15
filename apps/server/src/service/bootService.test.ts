@@ -335,11 +335,11 @@ it.layer(NodeServices.layer)("boot service install", (it) => {
         for (const protocol of [SERVICE_LAUNCHER_PROTOCOL - 1, SERVICE_LAUNCHER_PROTOCOL + 1]) {
           yield* fs.writeFileString(
             statePath,
-            `{"protocol":${protocol},"activeVersion":"1.2.4-nightly.1","entryPath":"/opt/t3/bin.mjs"}`,
+            `{"protocol":${protocol},"activeVersion":"1.2.4-dev.1","entryPath":"/opt/t3/bin.mjs"}`,
           );
           expect(yield* service.status).toMatchObject({
             current: false,
-            installedVersion: "1.2.4-nightly.1",
+            installedVersion: "1.2.4-dev.1",
           });
         }
       }),

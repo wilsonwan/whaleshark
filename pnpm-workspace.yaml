@@ -70,7 +70,6 @@ minimumReleaseAgeExclude:
   - "@expo/metro-config@57.0.12"
   - expo-constants@57.0.16
   - expo-font@57.0.2
-  - expo-updates@57.0.19
   - expo@57.0.18
   - expo-widgets@57.0.15
   - electron@44.1.0

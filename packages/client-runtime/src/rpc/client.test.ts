@@ -1,9 +1,9 @@
 import {
   DEFAULT_SERVER_SETTINGS,
   EnvironmentId,
+  type GitActionProgressEvent,
   type ServerConfigStreamEvent,
   type ServerLifecycleStreamEvent,
-  type ServerSelfUpdateProgressEvent,
   WS_METHODS,
 } from "@t3tools/contracts";
 import { describe, expect, it } from "@effect/vitest";
@@ -44,13 +44,20 @@ const TARGET = new PrimaryConnectionTarget({
   wsBaseUrl: "wss://environment.example.test",
 });
 
-const UPDATE_DOWNLOADING: ServerSelfUpdateProgressEvent = {
-  type: "progress",
-  stage: "downloading",
+const GIT_ACTION_STARTED: GitActionProgressEvent = {
+  actionId: "action-1",
+  cwd: "/repo",
+  action: "commit",
+  kind: "action_started",
+  phases: ["commit"],
 };
-const UPDATE_INSTALLING: ServerSelfUpdateProgressEvent = {
-  type: "progress",
-  stage: "installing",
+const GIT_ACTION_PHASE_STARTED: GitActionProgressEvent = {
+  actionId: "action-2",
+  cwd: "/repo",
+  action: "commit",
+  kind: "phase_started",
+  phase: "commit",
+  label: "Committing",
 };
 
 function session(client: WsRpcProtocolClient): RpcSession.RpcSession {
@@ -156,19 +163,21 @@ describe("environment RPC", () => {
 
   it.effect("binds finite streaming commands to one active session", () =>
     Effect.gen(function* () {
-      const firstEvents = yield* Queue.unbounded<ServerSelfUpdateProgressEvent>();
-      const secondEvents = yield* Queue.unbounded<ServerSelfUpdateProgressEvent>();
+      const firstEvents = yield* Queue.unbounded<GitActionProgressEvent>();
+      const secondEvents = yield* Queue.unbounded<GitActionProgressEvent>();
       const firstClient = {
-        [WS_METHODS.serverUpdateServerWithProgress]: () => Stream.fromQueue(firstEvents),
+        [WS_METHODS.gitRunStackedAction]: () => Stream.fromQueue(firstEvents),
       } as unknown as WsRpcProtocolClient;
       const secondClient = {
-        [WS_METHODS.serverUpdateServerWithProgress]: () => Stream.fromQueue(secondEvents),
+        [WS_METHODS.gitRunStackedAction]: () => Stream.fromQueue(secondEvents),
       } as unknown as WsRpcProtocolClient;
       const { activeSession, supervisor } = yield* makeHarness();
 
       yield* SubscriptionRef.set(activeSession, Option.some(session(firstClient)));
-      const resultFiber = yield* runStream(WS_METHODS.serverUpdateServerWithProgress, {
-        targetVersion: "2026.6.0",
+      const resultFiber = yield* runStream(WS_METHODS.gitRunStackedAction, {
+        actionId: "action-1",
+        cwd: "/repo",
+        action: "commit",
       }).pipe(
         Stream.take(2),
         Stream.runCollect,
@@ -177,12 +186,15 @@ describe("environment RPC", () => {
       );
       yield* Effect.yieldNow;
 
-      yield* Queue.offer(firstEvents, UPDATE_DOWNLOADING);
+      yield* Queue.offer(firstEvents, GIT_ACTION_STARTED);
       yield* SubscriptionRef.set(activeSession, Option.some(session(secondClient)));
-      yield* Queue.offer(secondEvents, UPDATE_INSTALLING);
-      yield* Queue.offer(firstEvents, UPDATE_INSTALLING);
+      yield* Queue.offer(secondEvents, GIT_ACTION_PHASE_STARTED);
+      yield* Queue.offer(firstEvents, GIT_ACTION_PHASE_STARTED);
 
-      expect(yield* Fiber.join(resultFiber)).toEqual([UPDATE_DOWNLOADING, UPDATE_INSTALLING]);
+      expect(yield* Fiber.join(resultFiber)).toEqual([
+        GIT_ACTION_STARTED,
+        GIT_ACTION_PHASE_STARTED,
+      ]);
     }),
   );
 

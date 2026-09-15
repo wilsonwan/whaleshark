@@ -25,7 +25,7 @@ it("formats package runner commands from their cache entry paths", () => {
       "bunx t3 serve",
     ],
   ] as const) {
-    assert.equal(formatCliCommand({ subcommand: "serve", entryPath, version: "0.0.31" }), expected);
+    assert.equal(formatCliCommand({ subcommand: "serve", entryPath }), expected);
   }
 });
 
@@ -36,52 +36,6 @@ it("treats stable installs as direct invocations", () => {
     "/home/theo/.t3/runtime/0.0.31/node_modules/t3/dist/bin.mjs",
     "",
   ]) {
-    assert.equal(
-      formatCliCommand({ subcommand: "serve", entryPath, version: "0.0.31" }),
-      "t3 serve",
-    );
+    assert.equal(formatCliCommand({ subcommand: "serve", entryPath }), "t3 serve");
   }
-});
-
-it("re-suggests the nightly channel only for nightly builds", () => {
-  for (const [version, expected] of [
-    ["0.0.31-nightly.20260729", "npx t3@nightly serve"],
-    ["0.0.31", "npx t3 serve"],
-  ] as const) {
-    assert.equal(
-      formatCliCommand({
-        subcommand: "serve",
-        entryPath: "/home/theo/.npm/_npx/abc123/node_modules/t3/dist/bin.mjs",
-        version,
-      }),
-      expected,
-    );
-  }
-});
-
-it("formats serve suggestions to match the launching command", () => {
-  assert.equal(
-    formatCliCommand({
-      subcommand: "serve",
-      entryPath: "/home/theo/.npm/_npx/abc/node_modules/t3/dist/bin.mjs",
-      version: "0.0.31-nightly.20260729",
-    }),
-    "npx t3@nightly serve",
-  );
-  assert.equal(
-    formatCliCommand({
-      subcommand: "serve",
-      entryPath: "/tmp/bunx-1000-t3@latest/node_modules/t3/dist/bin.mjs",
-      version: "0.0.31",
-    }),
-    "bunx t3 serve",
-  );
-  assert.equal(
-    formatCliCommand({
-      subcommand: "serve",
-      entryPath: "/usr/local/lib/node_modules/t3/dist/bin.mjs",
-      version: "0.0.31-nightly.20260729",
-    }),
-    "t3 serve",
-  );
 });

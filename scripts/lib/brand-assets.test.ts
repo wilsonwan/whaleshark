@@ -4,8 +4,6 @@ import {
   BRAND_ASSET_PATHS,
   DEVELOPMENT_ICON_OVERRIDES,
   DEVELOPMENT_PUBLIC_ICON_OVERRIDES,
-  resolveWebAssetBrandForChannel,
-  resolveWebAssetBrandForPackageVersion,
   resolveWebIconOverrides,
 } from "./brand-assets.ts";
 
@@ -66,35 +64,12 @@ describe("brand-assets", () => {
     });
   });
 
-  it("maps hosted nightly web assets to nightly icons", () => {
-    expect(resolveWebIconOverrides("nightly", "apps/web/dist")).toContainEqual({
-      sourceRelativePath: BRAND_ASSET_PATHS.nightlyWebFaviconIco,
-      targetRelativePath: "apps/web/dist/favicon.ico",
-    });
-  });
-
-  it("maps hosted release channels to web asset brands", () => {
-    expect(resolveWebAssetBrandForChannel("latest")).toBe("production");
-    expect(resolveWebAssetBrandForChannel("nightly")).toBe("nightly");
-  });
-
-  it("maps package versions to web asset brands", () => {
-    expect(resolveWebAssetBrandForPackageVersion("0.0.29")).toBe("production");
-    expect(resolveWebAssetBrandForPackageVersion("0.0.29-nightly.20260723.882")).toBe("nightly");
-  });
-
-  it("keeps development, nightly, and production icon families separate", () => {
+  it("keeps development and production icon families separate", () => {
     expect([
       BRAND_ASSET_PATHS.developmentIconComposerProject,
-      BRAND_ASSET_PATHS.nightlyIconComposerProject,
       BRAND_ASSET_PATHS.productionIconComposerProject,
-    ]).toEqual([
-      "assets/dev/app-icon.icon",
-      "assets/nightly/app-icon.icon",
-      "assets/prod/app-icon.icon",
-    ]);
+    ]).toEqual(["assets/dev/app-icon.icon", "assets/prod/app-icon.icon"]);
     expect(BRAND_ASSET_PATHS.developmentDesktopIconPng).toMatch(/^assets\/dev\/blueprint-/);
-    expect(BRAND_ASSET_PATHS.nightlyMacIconPng).toMatch(/^assets\/nightly\/nightly-/);
     expect(BRAND_ASSET_PATHS.productionMacIconPng).toMatch(/^assets\/prod\/black-/);
   });
 });

@@ -30,9 +30,9 @@ the same checkout you built.
 Installing copies the launcher into your T3 home and points systemd or launchd
 at it. Running `service install` again repairs the service or switches it to the
 checkout and build you ran it from, restarting the server in the process. There
-is no `service update` command: `t3 service install` is the only way to install,
-repair, or move the service. Uninstalling leaves your projects, threads, and
-settings intact.
+is no `service update` command: `node apps/server/dist/bin.mjs service install`
+is the only way to install, repair, or move the service. Uninstalling leaves your
+projects, threads, and settings intact.
 
 Running from source instead of a build works the same way with
 `node apps/server/src/bin.ts service install`, but `vp run dev` is the better
@@ -54,9 +54,9 @@ Windows background services are not supported.
 
 ## Troubleshooting
 
-Start with `t3 service status` on the host. It prints the log path and, on Linux,
-checks whether the installed service is running, enabled, and allowed to survive
-logout.
+Start with `node apps/server/dist/bin.mjs service status` from the checkout on
+the host. It prints the log path and, on Linux, checks whether the installed
+service is running, enabled, and allowed to survive logout.
 
 If it stops when your SSH session closes, check for `linger-disabled`. An
 administrator can enable lingering with:
@@ -73,15 +73,15 @@ ssh -t your-server 'sudo loginctl enable-linger "$(id -un)"'
 
 Then retry service setup as your normal user. Run only the `loginctl` command
 with sudo; running T3 Code as root creates a separate installation and identity.
-Without administrator access, run `t3 serve` in a terminal and keep
-that session open.
+Without administrator access, run `node apps/server/src/bin.ts serve` in a
+terminal and keep that session open.
 
-| Status problem                          | Next step                                                                                                                         |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `linger-unavailable`                    | Run `loginctl show-user "$(id -un)" --property=Linger` and check that systemd-logind is available.                                |
-| `user-manager-unavailable`              | Run `systemctl --user status` in a login session for the service user; check your distribution's systemd user-session support.    |
-| `service-disabled` or `service-stopped` | Read the log and `systemctl --user status t3code.service`, then repair the service with `t3 service install`.                     |
-| Service needs a reinstall               | The install no longer matches this checkout, or a source entry moved. Run `t3 service install` from the checkout you want to run. |
+| Status problem                          | Next step                                                                                                                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `linger-unavailable`                    | Run `loginctl show-user "$(id -un)" --property=Linger` and check that systemd-logind is available.                                                           |
+| `user-manager-unavailable`              | Run `systemctl --user status` in a login session for the service user; check your distribution's systemd user-session support.                               |
+| `service-disabled` or `service-stopped` | Read the log and `systemctl --user status t3code.service`, then repair the service with `node apps/server/dist/bin.mjs service install`.                     |
+| Service needs a reinstall               | The install no longer matches this checkout, or a source entry moved. Run `node apps/server/dist/bin.mjs service install` from the checkout you want to run. |
 
 On macOS, check **System Settings → General → Login Items** if the service no
 longer starts at login. If agent work cannot access Desktop, Documents, or

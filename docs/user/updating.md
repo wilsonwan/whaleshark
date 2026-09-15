@@ -52,30 +52,23 @@ command, because there is no published package to install. A driver that keeps
 running an older checkout keeps serving older code until you reinstall from the
 checkout you want.
 
-The **Copy update command** action in an update notice still works: it names the
-command line for a foreground server, and you can replace its `npx t3` invocation
-with the built or source CLI path from your checkout.
-
-## Update a desktop or mobile client
+## Update a desktop client
 
 Build the desktop app from the same checkout with
 `vp run dist:desktop:dmg`, `vp run dist:desktop:linux`, or
 `vp run dist:desktop:win`; local artifacts are unsigned. See
 [Development](../operations/development.md) for prerequisites.
 
-Mobile apps are distributed through the App Store and Google Play and update
-there. The mobile app can also download updates in the background and apply them
-when you next leave the app. It saves drafts and queued messages before
-restarting. If you keep the app open for a long time, it may ask to install
-immediately; choosing **Later** leaves the update queued for the next suitable
-moment.
+This fork does not publish mobile builds or configure an OTA update service. For
+mobile development, build and install the app from the checkout using the
+commands in [the mobile README](../../apps/mobile/README.md).
 
 ## If an update fails
 
 Keep the client open until it reconnects or reports a failure. If the rebuilt
 server does not come back:
 
-1. Check the server log at the path printed by `t3 service status`.
+1. Check the server log at the path printed by `node apps/server/src/bin.ts service status`.
 2. Run `git status` and `git log` in the checkout; a failed build or a moved
    checkout is the usual cause.
 3. Reinstall the service from a known-good checkout, or start that checkout's CLI
