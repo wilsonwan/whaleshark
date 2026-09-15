@@ -8,9 +8,7 @@ import type { QuitConfirmationMode, QuitShortcutHintEvent } from "@t3tools/contr
 export const QUIT_HOLD_DURATION_MS = 1200;
 export const QUIT_DOUBLE_PRESS_MS = 500;
 // "Still held" is proven by auto-repeat keydowns, not by the absence of a
-// release: macOS suppresses a letter keyUp while the command key is down, so a
-// tap release can go completely unseen and a release-based timer would quit
-// anyway. Once held, quitting waits for Q keyUp or a quiet grace period after
+// release. Once held, quitting waits for Q keyUp or a quiet grace period after
 // repeats stop so they cannot reach the next app. Keyboards with
 // auto-repeat disabled must use a double press or the application menu Quit action.
 // Supporting holds without repeats requires a native physical key-state check.
@@ -30,7 +28,6 @@ export interface QuitHoldKeyInput {
 }
 
 export interface QuitShortcutOptions {
-  readonly platform: NodeJS.Platform;
   readonly getMode: () => Promise<QuitConfirmationMode>;
   readonly notify: (event: QuitShortcutHintEvent) => void;
   readonly concealWindow: () => void;
@@ -40,7 +37,7 @@ export interface QuitShortcutOptions {
 export function makeQuitShortcutHandler(
   options: QuitShortcutOptions,
 ): (event: { preventDefault: () => void }, input: QuitHoldKeyInput) => void {
-  const modifierKey = options.platform === "darwin" ? "meta" : "control";
+  const modifierKey = "control";
   let watchdog: NodeJS.Timeout | undefined;
   let holding = false;
   let mode: QuitConfirmationMode | undefined;
@@ -117,7 +114,7 @@ export function makeQuitShortcutHandler(
     }
     if (input.type !== "keyDown") return;
 
-    const modifierDown = options.platform === "darwin" ? input.meta : input.control;
+    const modifierDown = input.control;
     if (input.isAutoRepeat && modifierDown && key === "q") {
       const now = Date.now();
       repeatCadenceMs = now - (lastRepeatAt === 0 ? heldSince : lastRepeatAt);
@@ -138,7 +135,7 @@ export function makeQuitShortcutHandler(
 
       // Other keys cancel the hold and the first tap, even after release.
       // Keep this separate from release(), which also runs when a fresh Q
-      // keydown follows a keyUp that macOS did not deliver.
+      // keydown follows a keyUp that was not delivered.
       if (!input.isAutoRepeat) {
         lastPressAt = 0;
         release();

@@ -44,31 +44,6 @@ describe("preview keyboard packets", () => {
     expect(sequence.keyUp).not.toHaveProperty("text");
   });
 
-  it("suppresses text and uses raw key-down for shortcuts", () => {
-    expect(
-      makePreviewAutomationKeySequence({ key: "a", modifiers: ["Meta"] }, { isMac: true }).keyDown,
-    ).toEqual({
-      type: "rawKeyDown",
-      key: "a",
-      code: "KeyA",
-      modifiers: 4,
-      windowsVirtualKeyCode: 65,
-      location: 0,
-      isKeypad: false,
-      commands: ["selectAll"],
-    });
-  });
-
-  it("maps common macOS editing shortcuts without changing other platforms", () => {
-    expect(
-      makePreviewAutomationKeySequence({ key: "z", modifiers: ["Shift", "Meta"] }, { isMac: true })
-        .keyDown.commands,
-    ).toEqual(["redo"]);
-    expect(
-      makePreviewAutomationKeySequence({ key: "a", modifiers: ["Meta"] }).keyDown,
-    ).not.toHaveProperty("commands");
-  });
-
   it("resolves shifted printable keys to their browser values", () => {
     const sequence = makePreviewAutomationKeySequence({ key: "1", modifiers: ["Shift"] });
     expect(sequence.keyDown).toMatchObject({
@@ -109,19 +84,15 @@ describe("preview keyboard packets", () => {
     expect(sequence.keyUp).toEqual({ type: "keyUp", ...shared });
   });
 
-  it("suppresses text for shortcuts and retains macOS editing commands", () => {
-    const sequence = makePreviewAutomationNativeKeySequence(
-      { key: "a", modifiers: ["Meta"] },
-      { isMac: true },
-    );
+  it("suppresses text for shortcuts", () => {
+    const sequence = makePreviewAutomationNativeKeySequence({ key: "a", modifiers: ["Control"] });
     expect(sequence.keyDown).toEqual({
       type: "keyDown",
       keyCode: "a",
-      modifiers: ["meta"],
+      modifiers: ["control"],
       skipIfUnhandled: true,
     });
     expect(sequence.char).toBeUndefined();
-    expect(sequence.commands).toEqual(["selectAll"]);
   });
 
   it.each([
@@ -169,14 +140,10 @@ describe("preview keyboard packets", () => {
     const text = makePreviewAutomationKeySequence({ key: "é" });
     expect(text.keyDown).toMatchObject({ type: "keyDown", text: "é", key: "é" });
     expect(text.keyUp).toMatchObject({ type: "keyUp", key: "é" });
-    const shortcut = makePreviewAutomationKeySequence(
-      { key: "a", modifiers: ["Meta"] },
-      { isMac: true },
-    );
+    const shortcut = makePreviewAutomationKeySequence({ key: "a", modifiers: ["Control"] });
     expect(shortcut.keyDown).toMatchObject({
       type: "rawKeyDown",
-      modifiers: 4,
-      commands: ["selectAll"],
+      modifiers: 2,
     });
     expect(shortcut.keyDown).not.toHaveProperty("text");
     expect(shortcut.keyDown).not.toHaveProperty("nativeVirtualKeyCode");

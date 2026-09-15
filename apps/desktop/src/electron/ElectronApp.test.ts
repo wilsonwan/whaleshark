@@ -20,7 +20,6 @@ const {
   setAppUserModelIdMock,
   setAsDefaultProtocolClientMock,
   setDesktopNameMock,
-  setDockIconMock,
   setNameMock,
   setPathMock,
   requestSingleInstanceLockMock,
@@ -44,7 +43,6 @@ const {
   setAppUserModelIdMock: vi.fn(),
   setAsDefaultProtocolClientMock: vi.fn(() => true),
   setDesktopNameMock: vi.fn(),
-  setDockIconMock: vi.fn(),
   setNameMock: vi.fn(),
   setPathMock: vi.fn(),
   whenReadyMock: vi.fn(() => Promise.resolve()),
@@ -59,9 +57,6 @@ vi.mock("electron", () => ({
     commandLine: {
       appendSwitch: appendSwitchMock,
       removeSwitch: removeSwitchMock,
-    },
-    dock: {
-      setIcon: setDockIconMock,
     },
     getAppPath: getAppPathMock,
     getSystemLocale: getSystemLocaleMock,

@@ -45,48 +45,6 @@ function copyWorkspaceManifestFixture(targetRoot: string): void {
   }
 }
 
-function writeMacManifestFixtures(targetRoot: string): { arm64Path: string; x64Path: string } {
-  const assetDirectory = NodePath.resolve(targetRoot, "release-assets");
-  NodeFS.mkdirSync(assetDirectory, { recursive: true });
-
-  const arm64Path = NodePath.resolve(assetDirectory, "latest-mac.yml");
-  const x64Path = NodePath.resolve(assetDirectory, "latest-mac-x64.yml");
-
-  NodeFS.writeFileSync(
-    arm64Path,
-    `version: 9.9.9-smoke.0
-files:
-  - url: T3-Code-9.9.9-smoke.0-arm64.zip
-    sha512: arm64zip
-    size: 125621344
-  - url: T3-Code-9.9.9-smoke.0-arm64.dmg
-    sha512: arm64dmg
-    size: 131754935
-path: T3-Code-9.9.9-smoke.0-arm64.zip
-sha512: arm64zip
-releaseDate: '2026-03-08T10:32:14.587Z'
-`,
-  );
-
-  NodeFS.writeFileSync(
-    x64Path,
-    `version: 9.9.9-smoke.0
-files:
-  - url: T3-Code-9.9.9-smoke.0-x64.zip
-    sha512: x64zip
-    size: 132000112
-  - url: T3-Code-9.9.9-smoke.0-x64.dmg
-    sha512: x64dmg
-    size: 138148807
-path: T3-Code-9.9.9-smoke.0-x64.zip
-sha512: x64zip
-releaseDate: '2026-03-08T10:36:07.540Z'
-`,
-  );
-
-  return { arm64Path, x64Path };
-}
-
 function writeWindowsManifestFixtures(
   targetRoot: string,
   channel: string,
@@ -252,34 +210,6 @@ try {
     nightlyReleaseMetadata,
     "name=T3 Code Nightly 9.9.10-nightly.20260413.321 (abcdef123456)",
     "Expected nightly metadata to include the short commit SHA in the release name.",
-  );
-
-  const { arm64Path, x64Path } = writeMacManifestFixtures(tempRoot);
-  NodeChildProcess.execFileSync(
-    process.execPath,
-    [
-      NodePath.resolve(repoRoot, "scripts/merge-update-manifests.ts"),
-      "--platform",
-      "mac",
-      arm64Path,
-      x64Path,
-    ],
-    {
-      cwd: repoRoot,
-      stdio: "inherit",
-    },
-  );
-
-  const mergedManifest = NodeFS.readFileSync(arm64Path, "utf8");
-  assertContains(
-    mergedManifest,
-    "T3-Code-9.9.9-smoke.0-arm64.zip",
-    "Merged manifest is missing the arm64 asset.",
-  );
-  assertContains(
-    mergedManifest,
-    "T3-Code-9.9.9-smoke.0-x64.zip",
-    "Merged manifest is missing the x64 asset.",
   );
 
   const { arm64Path: winArm64Path, x64Path: winX64Path } = writeWindowsManifestFixtures(

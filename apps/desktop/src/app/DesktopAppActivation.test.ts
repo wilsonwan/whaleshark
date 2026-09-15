@@ -40,7 +40,7 @@ function request(requestId: string, platform: NodeJS.Platform): DesktopAppActiva
     requestId,
     type: "open-workspace",
     workspaceRoot: NodePath.join(NodeOS.tmpdir(), "project"),
-    platform: platform === "win32" ? "win32" : platform === "darwin" ? "darwin" : "linux",
+    platform: platform === "win32" ? "win32" : "linux",
   };
 }
 

@@ -11,7 +11,7 @@ import * as DesktopConfig from "./DesktopConfig.ts";
 const defaultInput = {
   dirname: "/repo/apps/desktop/dist-electron",
   homeDirectory: "/Users/alice",
-  platform: "darwin",
+  platform: "linux",
   processArch: "arm64",
   appVersion: "0.0.22",
   appPath: "/Applications/T3 Code.app/Contents/Resources/app.asar",
@@ -56,7 +56,7 @@ describe("DesktopEnvironment", () => {
       );
 
       assert.equal(environment.isDevelopment, true);
-      assert.equal(environment.appDataDirectory, "/Users/alice/Library/Application Support");
+      assert.equal(environment.appDataDirectory, "/Users/alice/.config");
       assert.equal(environment.baseDir, "/tmp/t3");
       assert.equal(environment.stateDir, "/tmp/t3/userdata");
       assert.equal(environment.desktopSettingsPath, "/tmp/t3/userdata/desktop-settings.json");

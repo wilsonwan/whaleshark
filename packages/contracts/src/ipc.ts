@@ -229,9 +229,6 @@ export const DesktopSnapShotSetupAction = Schema.Literals([
   "remove-kde-helper",
   "install-hyprland-helper",
   "remove-hyprland-helper",
-  "test-mac-capture",
-  "allow-screen-recording",
-  "allow-accessibility",
   "retry-shortcut",
 ]);
 export type DesktopSnapShotSetupAction = typeof DesktopSnapShotSetupAction.Type;
@@ -280,9 +277,7 @@ export const DesktopSnapShotState = Schema.Struct({
   gnomeExtension: Schema.optional(DesktopCaptureExtensionState),
   kdeHelper: Schema.optional(DesktopCaptureHelperState),
   hyprlandHelper: Schema.optional(DesktopCaptureHelperState),
-  macPermissions: Schema.optional(
-    Schema.Struct({ screenRecording: Schema.Boolean, accessibility: Schema.Boolean }),
-  ),
+
   shortcutVerified: Schema.optional(Schema.Boolean),
   message: Schema.NullOr(Schema.String),
 });
@@ -1196,13 +1191,6 @@ export const DesktopPreviewAutomationWaitForInputSchema = Schema.Struct({
   input: PreviewAutomationWaitForInput,
 });
 
-/**
- * A System Settings pane the app can deep-link to. The identifier crosses IPC
- * rather than a URL, so the renderer can only reach these known destinations.
- */
-export const SystemSettingsPaneSchema = Schema.Literals(["full-disk-access"]);
-export type SystemSettingsPane = typeof SystemSettingsPaneSchema.Type;
-
 export interface DesktopBridge {
   getAppBranding: () => DesktopAppBranding | null;
   /** The desktop client's OS platform, read from Electron's preload process. */
@@ -1227,7 +1215,7 @@ export interface DesktopBridge {
   discoverSshHosts: () => Promise<readonly DesktopDiscoveredSshHost[]>;
   /** Resolves a suggested SSH alias before populating the connection form. */
   resolveSshHost: (alias: string) => Promise<DesktopSshEnvironmentTarget>;
-  requestSnapShotPermissions?: (includeAccessibility: boolean) => Promise<void>;
+
   getSnapShotState?: () => Promise<DesktopSnapShotState>;
   setupSnapShot?: (action: DesktopSnapShotSetupAction) => Promise<void>;
   previewSnapShotConfig?: (
@@ -1288,12 +1276,7 @@ export interface DesktopBridge {
     position?: { x: number; y: number },
   ) => Promise<T | null>;
   openExternal: (url: string) => Promise<boolean>;
-  /**
-   * Open a System Settings pane by identifier. Optional: older desktop builds
-   * lack it, and callers no-op when it is missing.
-   */
-  openSystemSettings?: (pane: SystemSettingsPane) => Promise<boolean>;
-  checkSystemPermission?: (pane: SystemSettingsPane) => Promise<boolean>;
+
   /**
    * Probe this desktop machine for installed remote-capable editor CLIs
    * (used for remote open-in-editor deep links). Optional: older desktop
@@ -1307,8 +1290,6 @@ export interface DesktopBridge {
    * them.
    */
   onQuitShortcut?: (listener: (event: QuitShortcutHintEvent) => void) => () => void;
-  getWindowFullscreenState: () => boolean;
-  onWindowFullscreenStateChange: (listener: (fullscreen: boolean) => void) => () => void;
   getUpdateState: () => Promise<DesktopUpdateState>;
   setUpdateChannel: (channel: DesktopUpdateChannel) => Promise<DesktopUpdateState>;
   checkForUpdate: () => Promise<DesktopUpdateCheckResult>;
@@ -1443,8 +1424,6 @@ export interface LocalApi {
   };
   shell: {
     openExternal: (url: string) => Promise<void>;
-    /** Opens a known System Settings pane; no-ops outside the desktop app. */
-    openSystemSettings: (pane: SystemSettingsPane) => Promise<void>;
   };
   contextMenu: {
     show: <T extends string>(

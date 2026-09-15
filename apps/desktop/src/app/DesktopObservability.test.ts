@@ -40,7 +40,7 @@ const environmentInput = (baseDir: string) =>
   ({
     dirname: "/repo/apps/desktop/dist-electron",
     homeDirectory: baseDir,
-    platform: "darwin",
+    platform: "linux",
     processArch: "arm64",
     appVersion: "1.2.3",
     appPath: "/repo",

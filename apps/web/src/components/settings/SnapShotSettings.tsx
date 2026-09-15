@@ -14,11 +14,7 @@ import { cn } from "~/lib/utils";
 
 import { useClientSettings, useUpdateClientSettings } from "../../hooks/useSettings";
 import { getDesktopSnapShotBridge } from "../../lib/desktopSnapShot";
-import {
-  readSnapShotSetupResume,
-  saveSnapShotSetupResume,
-  clearSnapShotSetupResume,
-} from "../../lib/snapShotSetupResume";
+
 import { sameSnapShotShortcut, snapShotKeybindingConflict } from "../../lib/snapShotShortcut";
 import { playSnapShotSound } from "../../lib/snapShotSound";
 import { primaryServerKeybindingsAtom } from "../../state/server";
@@ -130,14 +126,6 @@ export function SnapShotSettings() {
       setSetupBusy(true);
       setSetupError(null);
       try {
-        if (
-          state?.macPermissions &&
-          wizard &&
-          (action === "allow-screen-recording" || action === "allow-accessibility")
-        ) {
-          // macOS can quit the app from its permission prompt.
-          saveSnapShotSetupResume(wizard.wasEnabled);
-        }
         await bridge.setupSnapShot(action);
         await refreshState();
       } catch (error) {
@@ -167,16 +155,9 @@ export function SnapShotSettings() {
   }, [setupError, wizard]);
 
   useEffect(() => {
-    let cancelled = false;
-    void refreshState().then((current) => {
-      const resume = readSnapShotSetupResume();
-      if (!cancelled && current?.macPermissions && resume) {
-        setWizard({ initialStep: "access", wasEnabled: resume.wasEnabled });
-      }
-    });
+    void refreshState();
     window.addEventListener("focus", refreshState);
     return () => {
-      cancelled = true;
       window.removeEventListener("focus", refreshState);
     };
   }, [refreshState]);
@@ -211,8 +192,6 @@ export function SnapShotSettings() {
   const saveIncludeAccessibility = useCallback(
     async (includeAccessibility: boolean) => {
       try {
-        if (includeAccessibility && settings.snapShotEnabled)
-          await bridge?.requestSnapShotPermissions(true);
         await save({ snapShotIncludeAccessibility: includeAccessibility });
       } catch (error) {
         setSetupError(captureSettingsError("Couldn't allow app text capture", error));
@@ -292,7 +271,6 @@ export function SnapShotSettings() {
     try {
       let current = await refreshState();
       if (!current) return;
-      if (current.macPermissions) requested = "access";
       if (!settings.snapShotEnabled && captureSetupInitialStep(current, requested) !== "access") {
         // Opening setup is the opt-in. Restore registration before resuming a
         // later step, just as Continue does on the access step.
@@ -318,13 +296,6 @@ export function SnapShotSettings() {
     setSetupBusy(true);
     setSetupError(null);
     try {
-      if (state?.macPermissions) {
-        saveSnapShotSetupResume(wizard?.wasEnabled ?? settings.snapShotEnabled);
-        if (!bridge?.setupSnapShot) throw new Error("Restart T3 Code to finish capture setup.");
-        await bridge.setupSnapShot("test-mac-capture");
-      }
-      if (state?.mode === "direct")
-        await bridge?.requestSnapShotPermissions(settings.snapShotIncludeAccessibility);
       const nextState =
         settings.snapShotEnabled && !state?.message
           ? await refreshState()
@@ -350,7 +321,6 @@ export function SnapShotSettings() {
       }
       stopRecording();
       setSetupError(null);
-      clearSnapShotSetupResume();
       setWizard(null);
     } catch (error) {
       setSetupError(captureSettingsError("Couldn't close capture setup", error));
@@ -386,8 +356,7 @@ export function SnapShotSettings() {
             }
             control={
               <>
-                {settings.snapShotEnabled &&
-                !snapShotSetupComplete(state, settings.snapShotIncludeAccessibility) ? (
+                {settings.snapShotEnabled && !snapShotSetupComplete(state) ? (
                   <Button
                     size="xs"
                     variant="outline"
@@ -597,7 +566,7 @@ export function SnapShotSettings() {
           state={state}
           initialStep={wizard.initialStep}
           wasEnabled={wizard.wasEnabled}
-          includeAccessibility={settings.snapShotIncludeAccessibility}
+
           busy={setupBusy}
           error={setupError?.message ?? null}
           shortcutInput={shortcutInput}
