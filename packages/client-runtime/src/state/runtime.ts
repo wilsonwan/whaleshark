@@ -396,7 +396,7 @@ export function createRuntimeCommand<R, ER, W, A, E>(
   };
 }
 
-export function reportAtomCommandResult(
+function reportAtomCommandResult(
   result: AtomCommandResult<unknown, unknown>,
   options: AtomCommandOptions = {},
   reporter: AtomCommandReporter = console,
