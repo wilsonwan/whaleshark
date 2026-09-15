@@ -1,5 +1,4 @@
 import {
-  AgentSessionImportSource,
   ApprovalRequestId,
   ChatAttachment,
   OrchestrationMessageContext,
@@ -78,21 +77,14 @@ import {
 const decodeReadModel = Schema.decodeUnknownEffect(OrchestrationReadModel);
 const decodeShellSnapshot = Schema.decodeUnknownEffect(OrchestrationShellSnapshot);
 const decodeThread = Schema.decodeUnknownEffect(OrchestrationThread);
-const decodeImportedTranscriptsPayload = Schema.decodeUnknownOption(
-  Schema.fromJsonString(
-    Schema.Struct({
-      importedTranscripts: Schema.Array(Schema.Unknown),
-    }),
-  ),
-);
-const decodeAgentSessionImportSource = Schema.decodeUnknownOption(AgentSessionImportSource);
+
 // Keep detail reads consistent with the in-memory projector's retained
 // activity window. Applying the limit in SQL avoids decoding an unbounded
 // payload_json set before the projector can enforce that invariant.
 const THREAD_DETAIL_ACTIVITY_LIMIT = 500;
 // Snapshot payloads are decoded and projected in small sequential batches so
 // one client read does not retain the raw payloads for the full activity window.
-const THREAD_DETAIL_ACTIVITY_PAYLOAD_BATCH_SIZE = 25;
+
 // SQLite trim defaults to spaces. Match the whitespace removed by String.trim.
 const MESSAGE_TRIM_WHITESPACE =
   "\t\n\v\f\r \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff";
@@ -181,10 +173,7 @@ const WorkspaceRootLookupInput = Schema.Struct({
 const ProjectIdLookupInput = Schema.Struct({
   projectId: ProjectId,
 });
-const ProjectionImportedAgentSessionSourcesRowSchema = Schema.Struct({
-  threadId: ThreadId,
-  runtimePayload: Schema.Unknown,
-});
+
 const ThreadIdLookupInput = Schema.Struct({
   threadId: ThreadId,
 });
@@ -1042,33 +1031,6 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
           AND archived_at IS NULL
         ORDER BY created_at ASC, thread_id ASC
         LIMIT 1
-      `,
-  });
-
-  const listImportedAgentSessionSourceRows = SqlSchema.findAll({
-    Request: ProjectIdLookupInput,
-    Result: ProjectionImportedAgentSessionSourcesRowSchema,
-    execute: ({ projectId }) =>
-      sql`
-        SELECT
-          threads.thread_id AS "threadId",
-          runtime.runtime_payload_json AS "runtimePayload"
-        FROM projection_threads AS threads
-        INNER JOIN projection_projects AS projects
-          ON projects.project_id = threads.project_id
-        INNER JOIN provider_session_runtime AS runtime
-          ON runtime.thread_id = threads.thread_id
-        WHERE threads.project_id = ${projectId}
-          AND threads.deleted_at IS NULL
-          AND threads.archived_at IS NULL
-          AND projects.deleted_at IS NULL
-          AND EXISTS (
-            SELECT 1
-            FROM projection_thread_messages AS messages
-            WHERE messages.thread_id = threads.thread_id
-              AND messages.message_id GLOB 'import:*'
-          )
-        ORDER BY threads.thread_id ASC
       `,
   });
 
@@ -2758,33 +2720,6 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
         Effect.map(Option.map((row) => row.threadId)),
       );
 
-  const getImportedAgentSessionSources: ProjectionSnapshotQueryShape["getImportedAgentSessionSources"] =
-    Effect.fn("ProjectionSnapshotQuery.getImportedAgentSessionSources")(function* (projectId) {
-      const rows = yield* listImportedAgentSessionSourceRows({ projectId }).pipe(
-        Effect.mapError(
-          toPersistenceSqlOrDecodeError(
-            "ProjectionSnapshotQuery.getImportedAgentSessionSources:query",
-            "ProjectionSnapshotQuery.getImportedAgentSessionSources:decodeRows",
-          ),
-        ),
-      );
-      return rows.flatMap((row) => {
-        const payload = decodeImportedTranscriptsPayload(row.runtimePayload);
-        if (Option.isNone(payload)) return [];
-        return payload.value.importedTranscripts.flatMap((entry) => {
-          const source = decodeAgentSessionImportSource(entry);
-          if (
-            Option.isNone(source) ||
-            row.threadId !==
-              `import:${source.value.providerInstanceId}:${source.value.providerSessionId}`
-          ) {
-            return [];
-          }
-          return [{ threadId: row.threadId, source: source.value }];
-        });
-      });
-    });
-
   const getThreadCheckpointContext: ProjectionSnapshotQueryShape["getThreadCheckpointContext"] = (
     threadId,
   ) =>
@@ -3265,7 +3200,7 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
           // range. The first page of a turnless thread stays unwindowed so
           // pre-turn content (e.g. a just-created thread) is not hidden. Once
           // paging reaches the oldest turn, include turnless messages before
-          // the first turn, such as history imported from a provider session.
+          // the first turn, such as activity from a prior provider session.
           const bounds: ThreadDetailBounds | undefined =
             oldest === undefined && cursor === null
               ? undefined
@@ -3347,7 +3282,7 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
     getProjectShells,
     getProjectShellsWithoutEnrichment,
     getFirstActiveThreadIdByProjectId,
-    getImportedAgentSessionSources,
+
     getThreadCheckpointContext,
     getFullThreadDiffContext,
     getThreadShellById,

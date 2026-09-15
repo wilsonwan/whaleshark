@@ -56,7 +56,6 @@ layer("052_OrchestrationV2", (it) => {
             'orchestration_v2_projection_metadata',
             'orchestration_v2_projection_provider_session_bindings',
             'orchestration_v2_thread_launch_workflows',
-            'orchestration_v2_legacy_imports',
             'scheduled_tasks'
           )
         ORDER BY name
@@ -65,7 +64,6 @@ layer("052_OrchestrationV2", (it) => {
         tables.map(({ name }) => name),
         [
           "orchestration_v2_effect_outbox",
-          "orchestration_v2_legacy_imports",
           "orchestration_v2_projection_metadata",
           "orchestration_v2_projection_provider_session_bindings",
           "orchestration_v2_projection_subagents",

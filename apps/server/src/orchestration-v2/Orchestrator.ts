@@ -533,16 +533,6 @@ function visibleDeltaRunOrdinals(
   };
 }
 
-export function shouldPrepareLegacyImportHandoff(input: {
-  readonly hasCompletedRun: boolean;
-  readonly historyOrigin: OrchestrationV2AppThread["historyOrigin"];
-  readonly legacyImportItemCount: number;
-}): boolean {
-  return (
-    input.historyOrigin === "v1_import" && !input.hasCompletedRun && input.legacyImportItemCount > 0
-  );
-}
-
 export function appendContextHandoffId(
   handoffIds: OrchestrationV2ProviderThread["handoffIds"],
   handoffId: OrchestrationV2ContextHandoff["id"] | null,
@@ -3799,10 +3789,6 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
       const ordinal = nextRunOrdinal(projection);
       const runId = idAllocator.derive.run({ threadId: command.threadId, ordinal });
       const latestCompletedRun = projection.runs.findLast((run) => run.status === "completed");
-      const legacyImportItems =
-        projection.thread.historyOrigin === "v1_import"
-          ? projection.turnItems.filter((item) => item.runId === null)
-          : [];
       const isProviderSwitch =
         activeProviderThread !== undefined &&
         activeProviderThread.providerInstanceId !== modelSelection.instanceId;
@@ -3857,22 +3843,6 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
             driver: adapter.driver,
             nativeThreadId: `pending:${runId}`,
           });
-        const legacyImportHandoff = shouldPrepareLegacyImportHandoff({
-          historyOrigin: projection.thread.historyOrigin,
-          hasCompletedRun: latestCompletedRun !== undefined,
-          legacyImportItemCount: legacyImportItems.length,
-        })
-          ? yield* contextHandoffService
-              .prepareLegacyImport({
-                threadId: command.threadId,
-                targetRunId: runId,
-                toProviderThreadId: providerThreadId,
-                toProviderInstanceId: modelSelection.instanceId,
-                items: legacyImportItems,
-                createdAt: now,
-              })
-              .pipe(mapDispatchError(command))
-          : null;
         const providerThread: OrchestrationV2ProviderThread =
           activeProviderThread === undefined
             ? {
@@ -3887,7 +3857,7 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
                 status: "not_loaded",
                 firstRunOrdinal: ordinal,
                 lastRunOrdinal: ordinal,
-                handoffIds: legacyImportHandoff === null ? [] : [legacyImportHandoff.id],
+                handoffIds: [],
                 forkedFrom: null,
                 createdAt: now,
                 updatedAt: now,
@@ -3896,10 +3866,7 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
                 ...activeProviderThread,
                 providerSessionId,
                 lastRunOrdinal: ordinal,
-                handoffIds: appendContextHandoffId(
-                  activeProviderThread.handoffIds,
-                  legacyImportHandoff?.id ?? null,
-                ),
+                handoffIds: activeProviderThread.handoffIds,
                 updatedAt: now,
               };
         const attemptId = idAllocator.derive.runAttempt({ runId, attemptOrdinal: 1 });
@@ -3945,7 +3912,7 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
           startedAt: null,
           completedAt: null,
           checkpointId: null,
-          contextHandoffId: legacyImportHandoff?.id ?? null,
+          contextHandoffId: null,
           ...(command.sourcePlanRef === undefined ? {} : { sourcePlanRef: command.sourcePlanRef }),
           ...(command.restartContinuationOfRunId === undefined
             ? {}
@@ -4061,16 +4028,6 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
           occurredAt: now,
           payload: providerThread,
         });
-        if (legacyImportHandoff !== null) {
-          yield* emitEvent({
-            type: "context-handoff.updated",
-            threadId: command.threadId,
-            runId,
-            providerInstanceId: modelSelection.instanceId,
-            occurredAt: now,
-            payload: legacyImportHandoff,
-          });
-        }
         yield* emitEvent({
           type: "run.created",
           threadId: command.threadId,
@@ -4322,7 +4279,6 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
           ? []
           : sourceProjection.turnItems.filter((item) =>
               isTurnItemAtOrBeforeRun({
-                historyOrigin: sourceProjection.thread.historyOrigin,
                 itemRunId: item.runId,
                 runOrdinalById: sourceRunOrdinalById,
                 sourceRunOrdinal: sourceRun.ordinal,
@@ -4376,16 +4332,11 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
       const providerSwitchItems =
         providerSwitchCoveredRuns.length === 0
           ? []
-          : [
-              ...(targetProviderThread === undefined || requiresFullProviderSwitchContext
-                ? legacyImportItems
-                : []),
-              ...projection.turnItems.filter(
-                (item) =>
-                  item.runId !== null &&
-                  providerSwitchCoveredRuns.some((run) => run.id === item.runId),
-              ),
-            ];
+          : projection.turnItems.filter(
+              (item) =>
+                item.runId !== null &&
+                providerSwitchCoveredRuns.some((run) => run.id === item.runId),
+            );
       const providerSwitchTransferId =
         providerSwitchCoveredRuns.length === 0 || latestCompletedRun === undefined
           ? null
@@ -4449,22 +4400,6 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
                     }),
                 ),
               );
-      const legacyImportRecoveryHandoff =
-        isProviderSwitch &&
-        !canResumeAcrossInstances &&
-        latestCompletedRun === undefined &&
-        legacyImportItems.length > 0
-          ? yield* contextHandoffService
-              .prepareLegacyImport({
-                threadId: command.threadId,
-                targetRunId: runId,
-                toProviderThreadId: ensuredProviderThread.id,
-                toProviderInstanceId: modelSelection.instanceId,
-                items: legacyImportItems,
-                createdAt: now,
-              })
-              .pipe(mapDispatchError(command))
-          : null;
       const providerThread: OrchestrationV2ProviderThread = {
         ...ensuredProviderThread,
         status: "active",
@@ -4472,8 +4407,8 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
         lastRunOrdinal: ordinal,
         handoffIds: [
           ...ensuredProviderThread.handoffIds,
-          ...[portableForkHandoff, providerSwitchHandoff, legacyImportRecoveryHandoff].flatMap(
-            (handoff) => (handoff === null ? [] : [handoff.id]),
+          ...[portableForkHandoff, providerSwitchHandoff].flatMap((handoff) =>
+            handoff === null ? [] : [handoff.id],
           ),
         ],
         updatedAt: now,
@@ -4617,11 +4552,7 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
         completedAt: null,
         checkpointId: null,
         contextHandoffId:
-          portableForkHandoff?.id ??
-          providerSwitchHandoff?.id ??
-          mergeBackHandoff?.id ??
-          legacyImportRecoveryHandoff?.id ??
-          null,
+          portableForkHandoff?.id ?? providerSwitchHandoff?.id ?? mergeBackHandoff?.id ?? null,
         ...(command.sourcePlanRef === undefined ? {} : { sourcePlanRef: command.sourcePlanRef }),
         ...(command.restartContinuationOfRunId === undefined
           ? {}
@@ -4835,16 +4766,6 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
           providerInstanceId: modelSelection.instanceId,
           occurredAt: now,
           payload: portableForkHandoff,
-        });
-      }
-      if (legacyImportRecoveryHandoff !== null) {
-        yield* emitEvent({
-          type: "context-handoff.updated",
-          threadId: command.threadId,
-          runId,
-          providerInstanceId: modelSelection.instanceId,
-          occurredAt: now,
-          payload: legacyImportRecoveryHandoff,
         });
       }
       if (

@@ -8,7 +8,6 @@ import { deriveProviderInstanceEntries, NO_PROVIDER_MODEL_SELECTION } from "../p
 import type { RightPanelSurface } from "../rightPanelStore";
 import {
   EnvironmentId,
-  EventId,
   MessageId,
   ProjectId,
   ProviderInstanceId,
@@ -19,10 +18,6 @@ import {
 } from "@t3tools/contracts";
 import * as DateTime from "effect/DateTime";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { Atom, AsyncResult } from "effect/unstable/reactivity";
-import { appAtomRegistry } from "../rpc/atomRegistry";
-import { environmentThreadDetails } from "../state/threads";
-
 import type { Thread, TurnDiffSummary } from "../types";
 import { makeThreadFixture } from "../test-fixtures";
 import {
@@ -30,7 +25,6 @@ import {
   ENVIRONMENT_RECONNECT_WARNING_GRACE_MS,
   resolveBackgroundDraftWorkspaceOptions,
   resolveComposerInteractionMode,
-  restorePlanFollowUpComposer,
   resolveComposerProviderSelection,
   resolveProactiveTurnDiffAction,
   resolveDraftHeroState,
@@ -74,8 +68,6 @@ import {
   shouldShowPlanFollowUpPrompt,
   shouldWriteThreadErrorToCurrentServerThread,
   toolGroupConsumesUpwardNavigation,
-  waitForRevertedMessage,
-  prepareRevertedMessageAttachments,
 } from "./ChatView.logic";
 
 describe("toolGroupConsumesUpwardNavigation", () => {
@@ -1444,7 +1436,7 @@ describe("resolveComposerProviderSelection", () => {
     ])[0]!;
   }
 
-  function importedThread(instanceId: ProviderInstanceId) {
+  function threadForInstance(instanceId: ProviderInstanceId) {
     return makeThread({
       modelSelection: { instanceId, model: "default" },
       itemCount: 1,
@@ -1454,10 +1446,10 @@ describe("resolveComposerProviderSelection", () => {
   it.each([
     ["claudeAgent", "claude_work"],
     ["ollama", "local_models"],
-  ])("keeps imported %s history selectable through its custom instance", (driver, instanceId) => {
-    const importedEntry = entry(driver, instanceId);
-    const entries = [entry("claudeAgent"), importedEntry];
-    const thread = importedThread(importedEntry.instanceId);
+  ])("keeps a %s thread selectable through its custom instance", (driver, instanceId) => {
+    const selectedEntry = entry(driver, instanceId);
+    const entries = [entry(driver === "claudeAgent" ? "ollama" : "claudeAgent"), selectedEntry];
+    const thread = threadForInstance(selectedEntry.instanceId);
     const lockedProvider = deriveLockedProvider({
       thread,
       selectedProvider: entries[0]!.instanceId,
@@ -1474,13 +1466,13 @@ describe("resolveComposerProviderSelection", () => {
         lockedProvider,
         lockedInstanceId: thread.modelSelection.instanceId,
       }).selectedProviderEntry?.instanceId,
-    ).toBe(importedEntry.instanceId);
+    ).toBe(selectedEntry.instanceId);
   });
 
   it("keeps the session driver authoritative over instance and draft selections", () => {
     const selected = entry("claudeAgent", "claude_work");
     const sessionEntry = entry("ollama", "local_models");
-    const thread = importedThread(selected.instanceId);
+    const thread = threadForInstance(selected.instanceId);
 
     expect(
       deriveLockedProvider({
@@ -1500,12 +1492,12 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it.each(["missing", "disabled"] as const)(
-    "does not move imported history to another driver when its instance is %s",
+    "does not move a thread to another driver when its instance is %s",
     (state) => {
-      const imported = entry("opencode", "opencode_work", { enabled: false });
+      const selected = entry("opencode", "opencode_work", { enabled: false });
       const other = entry("claudeAgent");
-      const entries = state === "missing" ? [other] : [other, imported];
-      const thread = importedThread(imported.instanceId);
+      const entries = state === "missing" ? [other] : [other, selected];
+      const thread = threadForInstance(selected.instanceId);
       const lockedProvider = deriveLockedProvider({
         thread,
         selectedProvider: other.instanceId,
@@ -1517,9 +1509,9 @@ describe("resolveComposerProviderSelection", () => {
       expect(
         resolveComposerProviderSelection({
           entries,
-          candidateInstanceIds: [other.instanceId, imported.instanceId],
+          candidateInstanceIds: [other.instanceId, selected.instanceId],
           lockedProvider,
-          lockedInstanceId: imported.instanceId,
+          lockedInstanceId: selected.instanceId,
         }).selectedProviderEntry,
       ).toBeUndefined();
     },

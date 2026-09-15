@@ -5,7 +5,6 @@ import ApplicationEventSequenceIndexes from "./OrchestrationV2/ApplicationEventS
 import ApplicationEventSource from "./OrchestrationV2/ApplicationEventSource.ts";
 import OrchestrationV2EffectCancellation from "./OrchestrationV2/EffectCancellation.ts";
 import OrchestrationV2Foundation from "./OrchestrationV2/Foundation.ts";
-import LegacyV1ImportState from "./OrchestrationV2/LegacyV1ImportState.ts";
 import OrchestrationV2ProviderSessionBindings from "./OrchestrationV2/ProviderSessionBindings.ts";
 import OrchestrationV2RecoveryIndexes from "./OrchestrationV2/RecoveryIndexes.ts";
 import ScheduledTasks from "./OrchestrationV2/ScheduledTasks.ts";
@@ -325,7 +324,6 @@ export default Effect.gen(function* () {
   yield* ApplicationEventSource;
   yield* OrchestrationV2EffectCancellation;
   yield* ScheduledTasks;
-  yield* LegacyV1ImportState;
   yield* ApplicationEventSequenceIndexes;
   yield* OrchestrationV2RecoveryIndexes;
   yield* OrchestrationV2ShellIndexes;
