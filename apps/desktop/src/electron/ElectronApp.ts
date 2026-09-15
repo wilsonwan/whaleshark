@@ -77,7 +77,6 @@ export class ElectronApp extends Context.Service<
       args?: readonly string[],
     ) => Effect.Effect<boolean>;
     readonly setDesktopName: (desktopName: string) => Effect.Effect<void>;
-    readonly setDockIcon: (iconPath: string) => Effect.Effect<void>;
     readonly appendCommandLineSwitch: (switchName: string, value?: string) => Effect.Effect<void>;
     readonly removeCommandLineSwitch: (switchName: string) => Effect.Effect<void>;
     readonly on: <Args extends ReadonlyArray<unknown>>(
@@ -130,9 +129,9 @@ export const make = ElectronApp.of({
     };
   }),
   name: Effect.sync(() => Electron.app.name),
-  // macOS derives this from NSLocale, which uses POSIX-style identifiers
-  // (`en_GB`). `Intl` rejects those outright rather than normalizing them, so
-  // the tag is normalized here rather than in the renderer that consumes it.
+  // Native locales can use POSIX-style identifiers (`en_GB`). `Intl` rejects
+  // those outright rather than normalizing them, so normalize them here rather
+  // than in the renderer that consumes the tag.
   systemLocale: Effect.sync(() => Electron.app.getSystemLocale().replace(/_/g, "-")),
   whenReady: Effect.gen(function* () {
     const isPackaged = Electron.app.isPackaged;
@@ -186,10 +185,7 @@ export const make = ElectronApp.of({
       };
       linuxApp.setDesktopName?.(desktopName);
     }),
-  setDockIcon: (iconPath) =>
-    Effect.sync(() => {
-      Electron.app.dock?.setIcon(iconPath);
-    }),
+
   appendCommandLineSwitch: (switchName, value) =>
     Effect.sync(() => {
       if (value === undefined) {

@@ -18,7 +18,7 @@
 - [Remote access](./user/remote-access.md)
 - [Running in the background](./user/background-service.md)
 - [Updating T3 Code](./user/updating.md)
-- Provider guides: [Codex](./user/providers-codex.md) · [Claude](./user/providers-claude.md) · [OpenCode](./user/providers-opencode.md) · [Pi](./user/providers-pi.md)
+- Provider guides: [Codex](./user/providers-codex.md) · [OpenCode](./user/providers-opencode.md) · [Pi](./user/providers-pi.md)
 
 ---
 
@@ -41,15 +41,11 @@ source alone does not explain. Most code changes do not need an internal documen
 - [Resource telemetry](./internals/resource-telemetry.md)
 - [Environment auth](./internals/environment-auth.md)
 - [Assistant citations](./internals/assistant-citations.md)
-- [Mobile navigation](./internals/mobile-navigation.md)
-- [Mobile development lifecycle](./internals/mobile-development.md)
 - [Terminal runtime](./internals/terminal-runtime.md)
 - [Devices](./internals/devices.md)
-- [Voice input](./internals/voice-input.md)
 
 ### Runbooks
 
 - [Development and local builds](./operations/development.md)
 - [Desktop artifacts and signing](./operations/release.md)
 - [Observability](./operations/observability.md)
-- [Mobile screenshot QA](./operations/mobile-screenshot-qa.md)

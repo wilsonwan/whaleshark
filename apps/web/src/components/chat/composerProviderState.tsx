@@ -10,7 +10,7 @@ import {
   buildExplicitProviderOptionSelectionsFromDescriptors,
   getProviderOptionCurrentValue,
   getProviderOptionDescriptors,
-  isClaudeUltrathinkPrompt,
+  isUltrathinkPrompt,
   normalizeModelSlug,
 } from "@t3tools/shared/model";
 import type { VariantProps } from "class-variance-authority";
@@ -61,7 +61,7 @@ type TraitsRenderInput = {
 };
 
 export function getComposerPromptInjectionState(prompt: string): ComposerPromptInjectionState {
-  return isClaudeUltrathinkPrompt(prompt) ? "ultrathink" : "none";
+  return isUltrathinkPrompt(prompt) ? "ultrathink" : "none";
 }
 
 /**

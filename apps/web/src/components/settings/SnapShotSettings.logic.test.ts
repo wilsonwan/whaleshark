@@ -10,7 +10,6 @@ import {
   snapShotFeedbackUnavailableMessage,
   snapShotSetupSummary,
   snapShotSetupButtonLabel,
-  snapShotSetupComplete,
   snapShotDescription,
   snapShotAccessibilityUnavailableMessage,
 } from "./SnapShotSettings.logic";
@@ -298,33 +297,4 @@ it("reports pending, denied, and assigned shortcuts without inferring consent fr
       shortcutMessage: "Permission wasn't granted",
     }),
   ).toBe("Permission wasn't granted");
-});
-
-it("hides macOS setup only while permissions and the shortcut are all in place", () => {
-  const ready: DesktopSnapShotState = {
-    mode: "direct",
-    shortcut: DEFAULT_CLIENT_SETTINGS.snapShotShortcut,
-    shortcutRegistered: true,
-    shortcutMessage: null,
-    message: null,
-    macPermissions: { screenRecording: true, accessibility: true },
-  };
-  expect(snapShotSetupComplete(ready, true)).toBe(true);
-  expect(snapShotSetupComplete({ ...ready, macPermissions: undefined }, true)).toBe(false);
-  expect(snapShotSetupComplete({ ...ready, shortcutRegistered: false }, true)).toBe(false);
-  const revoked = {
-    ...ready,
-    macPermissions: { screenRecording: true, accessibility: false },
-    message: "Allow Accessibility in System Settings, then restart T3 Code.",
-  };
-  expect(snapShotSetupComplete(revoked, true)).toBe(false);
-  expect(snapShotStatus(revoked, true)).toBe("Capture needs attention");
-  expect(snapShotSetupButtonLabel(revoked)).toBe("Continue setup");
-  expect(snapShotSetupComplete({ ...revoked, message: null }, false)).toBe(true);
-  expect(
-    snapShotSetupComplete(
-      { ...ready, windows: true, macPermissions: undefined, shortcutRegistered: false },
-      true,
-    ),
-  ).toBe(true);
 });

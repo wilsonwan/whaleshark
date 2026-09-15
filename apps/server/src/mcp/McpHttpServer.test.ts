@@ -30,7 +30,7 @@ const invocation = {
   environmentId,
   threadId,
   providerSessionId: "provider-session-mcp-test",
-  providerInstanceId: ProviderInstanceId.make("codex"),
+  providerInstanceId: ProviderInstanceId.make("pi"),
   capabilities: new Set(["preview"] as const),
   issuedAt: 1,
 };
@@ -407,7 +407,7 @@ it.effect("keeps the snapshot text under the agent's output ceiling", () =>
     Effect.gen(function* () {
       // Mirrors the real failure: a [role] container whose innerText is the whole
       // project list, repeated for several elements, plus a big AX tree.
-      const pageText = "/Users/theo/Code/project\nClaude, Codex · 79 threads\n".repeat(600);
+      const pageText = "/Users/theo/Code/project\nClaude, Pi · 79 threads\n".repeat(600);
       const element = (name: string, index: number) => ({
         tag: "div",
         role: "presentation",

@@ -1,11 +1,13 @@
 import {
   CommandId,
   DEFAULT_MODEL,
+  DEFAULT_MODEL_BY_PROVIDER,
   DEFAULT_PROVIDER_INTERACTION_MODE,
   DEFAULT_SERVER_SETTINGS,
   type ModelSelection,
   type Project,
   ProjectId,
+  ProviderDriverKind,
   ProviderInstanceId,
   ThreadId,
 } from "@t3tools/contracts";
@@ -30,7 +32,6 @@ import * as Keybindings from "./keybindings.ts";
 import * as ServiceLauncherClient from "./service/serviceLauncherClient.ts";
 import * as ExternalLauncher from "./process/externalLauncher.ts";
 import * as EffectWorker from "./orchestration-v2/EffectWorker.ts";
-import * as LegacyV1ThreadImporter from "./orchestration-v2/LegacyV1ThreadImporter.ts";
 import * as ProviderRuntimeRecovery from "./orchestration-v2/ProviderRuntimeRecoveryService.ts";
 import * as ProviderSessionManager from "./orchestration-v2/ProviderSessionManager.ts";
 import * as ThreadLaunch from "./orchestration-v2/ThreadLaunchService.ts";
@@ -139,9 +140,16 @@ export const makeCommandGate = Effect.gen(function* () {
   } satisfies CommandGate;
 });
 
+/**
+ * Auto-bootstrap creates a thread before the user has picked anything. Pi is
+ * this fork's default provider, so the thread starts on Pi's default model
+ * (the sentinel that defers to the user's own Pi settings).
+ */
+const AUTO_BOOTSTRAP_DRIVER_KIND = ProviderDriverKind.make("pi");
+
 export const getAutoBootstrapThreadModelSelection = (): ModelSelection => ({
-  instanceId: ProviderInstanceId.make("codex"),
-  model: DEFAULT_MODEL,
+  instanceId: ProviderInstanceId.make(AUTO_BOOTSTRAP_DRIVER_KIND),
+  model: DEFAULT_MODEL_BY_PROVIDER[AUTO_BOOTSTRAP_DRIVER_KIND] ?? DEFAULT_MODEL,
 });
 
 interface AutoBootstrapWelcomeTargets {
@@ -324,25 +332,20 @@ interface StartupOptions {
 }
 
 export function runOrderedV2StartupPhases<
-  Import,
   Recovery,
   Bootstrap,
-  ImportError,
   RecoveryError,
   WorkerError,
   BootstrapError,
-  ImportContext,
   RecoveryContext,
   WorkerContext,
   BootstrapContext,
 >(input: {
-  readonly importLegacyShells: Effect.Effect<Import, ImportError, ImportContext>;
   readonly recover: Effect.Effect<Recovery, RecoveryError, RecoveryContext>;
   readonly startEffectWorker: Effect.Effect<void, WorkerError, WorkerContext>;
   readonly autoBootstrap: Effect.Effect<Bootstrap, BootstrapError, BootstrapContext>;
 }) {
   return Effect.gen(function* () {
-    yield* input.importLegacyShells;
     const recovery = yield* input.recover;
     yield* input.startEffectWorker;
     const bootstrap = yield* input.autoBootstrap;
@@ -354,7 +357,6 @@ const make = (options?: StartupOptions) =>
   Effect.gen(function* () {
     const serverConfig = yield* ServerConfig.ServerConfig;
     const keybindings = yield* Keybindings.Keybindings;
-    const legacyV1ThreadImporter = yield* LegacyV1ThreadImporter.LegacyV1ThreadImporter;
     const providerRuntimeRecovery = yield* ProviderRuntimeRecovery.ProviderRuntimeRecoveryService;
     const providerSessions = yield* ProviderSessionManager.ProviderSessionManagerV2;
     const lifecycleEvents = yield* ServerLifecycleEvents.ServerLifecycleEvents;
@@ -434,28 +436,7 @@ const make = (options?: StartupOptions) =>
 
       const welcomeBase = yield* resolveWelcomeBase;
       const environment = yield* serverEnvironment.getDescriptor;
-      const legacyMigrationThreadCount = yield* legacyV1ThreadImporter.pendingThreadCount;
-      if (legacyMigrationThreadCount > 0) {
-        yield* lifecycleEvents.publish({
-          version: 1,
-          type: "legacyThreadMigration",
-          payload: {
-            status: "running",
-            totalThreadCount: legacyMigrationThreadCount,
-          },
-        });
-      }
       const { recovery, bootstrap: bootstrapTargets } = yield* runOrderedV2StartupPhases({
-        importLegacyShells: runStartupPhase(
-          "orchestration-v2.legacy-v1.import-shells",
-          legacyV1ThreadImporter.reconcileShells.pipe(
-            Effect.tap((summary) =>
-              summary.importedThreadCount === 0
-                ? Effect.void
-                : Effect.logInfo("Imported legacy v1 thread shells", summary),
-            ),
-          ),
-        ),
         recover: runStartupPhase("orchestration-v2.recovery", providerRuntimeRecovery.recover),
         startEffectWorker: runStartupPhase(
           "orchestration-v2.effect-worker.start",
@@ -482,30 +463,6 @@ const make = (options?: StartupOptions) =>
           yield* autoPullProjects(projects, settings);
         }),
       );
-
-      const importPendingTranscripts = legacyV1ThreadImporter.importPendingTranscripts.pipe(
-        Effect.tap((summary) =>
-          summary.importedThreadCount === 0
-            ? Effect.void
-            : Effect.logInfo("Hydrated legacy v1 thread transcripts", summary),
-        ),
-      );
-      yield* (
-        legacyMigrationThreadCount > 0
-          ? importPendingTranscripts.pipe(
-              Effect.tap(() =>
-                lifecycleEvents.publish({
-                  version: 1,
-                  type: "legacyThreadMigration",
-                  payload: {
-                    status: "complete",
-                    totalThreadCount: legacyMigrationThreadCount,
-                  },
-                }),
-              ),
-            )
-          : importPendingTranscripts
-      ).pipe(forkParked);
 
       yield* forkParked(
         Effect.gen(function* () {

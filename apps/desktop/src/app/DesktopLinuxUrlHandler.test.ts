@@ -216,7 +216,7 @@ describe("DesktopLinuxUrlHandler", () => {
     const unpackaged = emptyRecording();
 
     return Effect.gen(function* () {
-      yield* runRegister(nonLinux, { environment: { platform: "darwin" } });
+      yield* runRegister(nonLinux, { environment: { platform: "win32" } });
       yield* runRegister(unpackaged, {
         environment: {
           isPackaged: false,

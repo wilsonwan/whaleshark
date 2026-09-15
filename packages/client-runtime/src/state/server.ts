@@ -177,7 +177,7 @@ export function applyServerWelcomeEvent(
   current: EnvironmentServerWelcomeState,
   session: RpcSession,
   event: {
-    readonly type: "welcome" | "ready" | "legacyThreadMigration";
+    readonly type: "welcome" | "ready";
     readonly payload: unknown;
   },
 ): EnvironmentServerWelcomeState {
@@ -309,9 +309,9 @@ export function createServerEnvironmentAtoms<R, E>(
       environmentId: EnvironmentId,
     ) => Atom.Atom<ServerConfig | null>;
     /**
-     * Whether this surface renders themes the environment publishes. Mobile
-     * keeps its own appearance settings, so it neither asks for the stream nor
-     * receives the payload.
+     * Whether this surface renders themes the environment publishes. A surface
+     * with its own appearance settings neither asks for the stream nor receives
+     * the payload.
      */
     readonly environmentThemes?: boolean;
     /** Whether this surface renders quota from configured usage-limit sources. */
@@ -499,18 +499,7 @@ export function createServerEnvironmentAtoms<R, E>(
     }),
     configProjection,
     welcome,
-    legacyThreadMigration: createEnvironmentRpcSubscriptionAtomFamily(runtime, {
-      label: "environment-data:server:legacy-thread-migration",
-      tag: WS_METHODS.subscribeServerLifecycle,
-      transform: (stream) =>
-        stream.pipe(
-          Stream.filterMap((event) =>
-            event.type === "legacyThreadMigration"
-              ? Result.succeed(event.payload)
-              : Result.failVoid,
-          ),
-        ),
-    }),
+
     consumeResetCredit: createEnvironmentRpcCommand(runtime, {
       label: "environment-data:server:consume-reset-credit",
       tag: WS_METHODS.providerConsumeResetCredit,

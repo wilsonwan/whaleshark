@@ -797,8 +797,8 @@ describe("resolveSidebarThreadStatus", () => {
   const runtime = {
     status: "running" as const,
     activeRunId: null,
-    providerInstanceId: ProviderInstanceId.make("codex"),
-    providerName: "Codex",
+    providerInstanceId: ProviderInstanceId.make("pi"),
+    providerName: "Claude",
     lastError: null,
     updatedAt: "2026-03-09T10:00:00.000Z",
   };
@@ -1079,8 +1079,8 @@ describe("sortSettledThreadsForSidebar", () => {
 describe("resolveWorkingStartedAt", () => {
   const runtime = {
     status: "running" as const,
-    providerName: "Codex",
-    providerInstanceId: ProviderInstanceId.make("codex"),
+    providerName: "Claude",
+    providerInstanceId: ProviderInstanceId.make("pi"),
     activeRunId: RunId.make("turn-1"),
     lastError: null,
     updatedAt: "2026-03-09T10:02:00.000Z",
@@ -1182,8 +1182,8 @@ describe("resolveThreadStatusPill", () => {
     lastVisitedAt: undefined,
     runtime: {
       status: "running" as const,
-      providerName: "Codex",
-      providerInstanceId: ProviderInstanceId.make("codex"),
+      providerName: "Claude",
+      providerInstanceId: ProviderInstanceId.make("pi"),
       activeRunId: "turn-1" as never,
       lastError: null,
       updatedAt: "2026-03-09T10:00:00.000Z",
@@ -1434,7 +1434,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
     workspaceRoot: "/tmp/project",
     repositoryIdentity: null,
     defaultModelSelection: {
-      instanceId: ProviderInstanceId.make("codex"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5.4",
       ...defaultModelSelection,
     },
@@ -1452,7 +1452,7 @@ function makeThread(overrides: ThreadFixtureOverrides = {}): Thread {
     projectId: ProjectId.make("project-1"),
     title: "Thread",
     modelSelection: {
-      instanceId: ProviderInstanceId.make("codex"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5.4",
       ...overrides?.modelSelection,
     },

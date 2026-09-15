@@ -93,7 +93,7 @@ describe("withMetrics", () => {
       const counter = Metric.counter("with_metrics_lazy_total");
       const timer = Metric.timer("with_metrics_lazy_duration");
       let provider = ProviderDriverKind.make("unknown");
-      const lazyInittedProvider = ProviderDriverKind.make("codex");
+      const lazyInittedProvider = ProviderDriverKind.make("pi");
 
       yield* Effect.sync(() => {
         provider = lazyInittedProvider;

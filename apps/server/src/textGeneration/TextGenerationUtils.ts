@@ -8,7 +8,7 @@ const decodeJsonThreadTitle = Schema.decodeOption(
 );
 
 /** Convert an Effect Schema to a flat JSON Schema object, inlining `$defs` when present. */
-export function toJsonSchemaObject(schema: Schema.Top): unknown {
+function toJsonSchemaObject(schema: Schema.Top): unknown {
   const document = Schema.toJsonSchemaDocument(schema);
   if (document.definitions && Object.keys(document.definitions).length > 0) {
     return { ...document.schema, $defs: document.definitions };
@@ -70,7 +70,7 @@ export function sanitizeThreadTitle(raw: string): string {
   return `${normalized.slice(0, 47).trimEnd()}...`;
 }
 
-/** CLI name to human-readable label, e.g. "codex" → "Codex CLI (`codex`)" */
+/** CLI name to human-readable label, e.g. "claude" → "Claude CLI (`claude`)" */
 function cliLabel(cliName: string): string {
   const capitalized = cliName.charAt(0).toUpperCase() + cliName.slice(1);
   return `${capitalized} CLI (\`${cliName}\`)`;
@@ -78,8 +78,8 @@ function cliLabel(cliName: string): string {
 
 /**
  * Normalize an unknown error from a CLI text generation process into a
- * typed `TextGenerationError`. Parameterized by CLI name so both Codex
- * and Claude (and future providers) can share the same logic.
+ * typed `TextGenerationError`. Parameterized by CLI name so the CLI-based
+ * providers can share the same logic.
  */
 export function normalizeCliError(
   cliName: string,

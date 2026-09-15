@@ -36,7 +36,7 @@ it.effect("resolves the thread baseline after a second root run replaces scope o
     const firstNodeId = NodeId.make("node:audit-root-scope:1");
     const secondNodeId = NodeId.make("node:audit-root-scope:2");
     const providerThreadId = ProviderThreadId.make("provider-thread:audit-root-scope");
-    const providerInstanceId = ProviderInstanceId.make("codex");
+    const providerInstanceId = ProviderInstanceId.make("pi");
     const scopeId = yield* ids.allocate.checkpointScope({ threadId, name: "root" });
     const baselineId = CheckpointId.make("checkpoint:audit-root-scope:0");
     const firstCheckpointId = CheckpointId.make("checkpoint:audit-root-scope:1");

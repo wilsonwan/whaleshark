@@ -38,7 +38,7 @@ it.effect("stores only a token hash, resolves the bearer token, and revokes by t
     const threadId = ThreadId.make("thread-1");
     const issued = yield* registry.issue({
       threadId,
-      providerInstanceId: ProviderInstanceId.make("codex"),
+      providerInstanceId: ProviderInstanceId.make("pi"),
       capabilities: new Set(["preview"]),
     });
     expect(issued.config.endpoint).toBe("http://127.0.0.1:43123/mcp");
@@ -63,17 +63,17 @@ it.effect("always grants pull-requests and gates browser and device access indep
     const registry = yield* makeRegistry(() => 1_000);
     const withPreview = yield* registry.issue({
       threadId: ThreadId.make("thread-preview"),
-      providerInstanceId: ProviderInstanceId.make("codex"),
+      providerInstanceId: ProviderInstanceId.make("pi"),
       capabilities: new Set(["preview"]),
     });
     const withoutPreview = yield* registry.issue({
       threadId: ThreadId.make("thread-no-preview"),
-      providerInstanceId: ProviderInstanceId.make("codex"),
+      providerInstanceId: ProviderInstanceId.make("pi"),
       capabilities: new Set(),
     });
     const withDevice = yield* registry.issue({
       threadId: ThreadId.make("thread-device"),
-      providerInstanceId: ProviderInstanceId.make("codex"),
+      providerInstanceId: ProviderInstanceId.make("pi"),
       capabilities: new Set(["device"]),
     });
     const capabilitiesOf = (issued: typeof withPreview) =>
@@ -114,7 +114,7 @@ it.effect("builds MCP endpoints from the bound server host", () =>
       const registry = yield* makeRegistry(() => 1_000, makeFakeHttpServer(hostname));
       const issued = yield* registry.issue({
         threadId: ThreadId.make(`thread-${hostname}`),
-        providerInstanceId: ProviderInstanceId.make("codex"),
+        providerInstanceId: ProviderInstanceId.make("pi"),
         capabilities: new Set(["preview"]),
       });
       expect(issued.config.endpoint).toBe(expectedEndpoint);
@@ -166,7 +166,7 @@ it.effect("does not keep credentials of other threads alive", () =>
     const registry = yield* makeRegistry(() => timestamp);
     const issued = yield* registry.issue({
       threadId: ThreadId.make("thread-4"),
-      providerInstanceId: ProviderInstanceId.make("codex"),
+      providerInstanceId: ProviderInstanceId.make("pi"),
       capabilities: new Set(["preview"]),
     });
     const token = issued.config.authorizationHeader.replace(/^Bearer\s+/, "");

@@ -230,10 +230,10 @@ describe("GitHubCli.layer", () => {
             JSON.stringify([
               {
                 number: 2829,
-                title: "Codex turn mapping",
+                title: "Claude turn mapping",
                 url: "https://github.com/pingdotgg/codething-mvp/pull/2829",
                 baseRefName: "main",
-                headRefName: "t3code/codex-turn-mapping",
+                headRefName: "t3code/claude-turn-mapping",
                 state: "OPEN",
                 mergedAt: null,
                 isCrossRepository: false,
@@ -254,16 +254,16 @@ describe("GitHubCli.layer", () => {
       const gh = yield* GitHubCli.GitHubCli;
       const result = yield* gh.listOpenPullRequests({
         cwd: "/repo",
-        headSelector: "t3code/codex-turn-mapping",
+        headSelector: "t3code/claude-turn-mapping",
       });
 
       assert.deepStrictEqual(result, [
         {
           number: 2829,
-          title: "Codex turn mapping",
+          title: "Claude turn mapping",
           url: "https://github.com/pingdotgg/codething-mvp/pull/2829",
           baseRefName: "main",
-          headRefName: "t3code/codex-turn-mapping",
+          headRefName: "t3code/claude-turn-mapping",
           state: "open",
           closedAt: null,
           mergedAt: null,

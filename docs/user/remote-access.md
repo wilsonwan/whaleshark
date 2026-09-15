@@ -26,9 +26,8 @@ If a server is already running, generate a fresh link without restarting it:
 node apps/server/src/bin.ts pair
 ```
 
-Scan the QR code on your phone or paste the pairing URL into **Add environment**
-in the receiving app. Connection settings are under **Settings → Connections**
-on web and desktop and **Settings → Environments** on mobile. A loopback address
+Scan the QR code on your phone or paste the pairing URL into a browser. Connection
+settings are under **Settings → Connections** on web and desktop. A loopback address
 such as `127.0.0.1` reaches only the device opening the link.
 
 Pairing authorizes that device for future connections. Use a fresh one-time link
@@ -52,7 +51,6 @@ that choice stable. Choose **Auto balance** again to check current resources, or
 a specific machine to override it. Choosing a branch or worktree also keeps the draft
 on that machine. Existing threads stay where they started. If resource checks are
 unavailable or all eligible machines are full, choose a machine manually to continue.
-Mobile keeps its manual environment selection.
 
 ### Tailscale HTTPS
 
@@ -88,7 +86,7 @@ other pairing options.
 The web app connects directly to your server. A pairing link identifies an
 address you can reach; it does not make an unreachable backend reachable or
 convert HTTP to HTTPS. For a plain-HTTP LAN endpoint, open the direct pairing URL
-in a browser that can reach it, or pair from the desktop app. On mobile, an IP
+in a browser that can reach it, or pair from the desktop app. In a phone browser, an IP
 address entered without a scheme uses HTTP, so include `https://` when your
 server uses HTTPS.
 

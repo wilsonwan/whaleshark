@@ -31,10 +31,8 @@ See the [adapter](../../apps/server/src/orchestration-v2/Adapters/PiAdapterV2.ts
 
 ## Setup must not happen as a health-check side effect
 
-Opening a provider session can start MCP servers, run hooks, or launch a login browser.
-The [Claude capability probe](../../apps/server/src/provider/Layers/ClaudeProvider.ts) keeps
-filesystem setting sources for command discovery but disables hooks and MCP discovery, so a
-periodic health check cannot run the user's setup.
+Opening a provider session can start MCP servers, run hooks, or launch a login browser. A health
+check must probe availability without running the user's setup.
 
 ## Provider updates run only through the owning installer
 
@@ -61,7 +59,7 @@ Codex async questions arrive as notifications and are answered with a new user m
 no pending RPC response to send. The
 [adapter](../../apps/server/src/orchestration-v2/Adapters/CodexAdapterV2.ts) persists them as
 `user_input_request` turn items and runtime requests with `responseCapability: { type: "message" }`.
-Their execution nodes do not block the run. Web, desktop, and mobile use their normal question
+Their execution nodes do not block the run. Web and desktop use their normal question
 panels, and requests remain pending after a turn finishes, a provider exits, or the server restarts.
 
 `runtime-request.respond` reads the persisted request and question item, validates required

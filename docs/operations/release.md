@@ -10,7 +10,6 @@ not a distribution channel.
 ## Local builds
 
 ```sh
-vp run dist:desktop:dmg
 vp run dist:desktop:linux
 vp run dist:desktop:win
 ```
@@ -20,15 +19,13 @@ Builds are unsigned by default and write to `release/`. See
 
 ## Signing (optional)
 
-A signed, provisioned app is required for macOS notarization, so signing is only
-worth setting up when you need a signed local build. Export the certificate and
-provisioning profile yourself and pass `--signed`; the repository no longer
-carries the release credentials or the workflow that used them.
+Signing is only worth setting up for a local build: this fork publishes no
+artifacts, so a signed build has no distribution channel. Export the certificate
+and provisioning profile yourself and pass `--signed`; the repository carries no
+release credentials and no workflow that used them.
 
-macOS needs a `Developer ID Application` certificate plus an App Store Connect
-API key for notarization, and an explicit App ID for `com.t3tools.t3code` with
-Associated Domains enabled. Windows signing needs an Azure Trusted Signing
-account and certificate profile. Keep those values in your own environment.
+Windows signing uses Azure Trusted Signing, so it needs an account and a
+certificate profile. Keep those values in your own environment.
 
 ## Server and service maintenance
 
@@ -77,7 +74,7 @@ break:
 - A Windows build with a WSL node-pty prebuild omits the WSL archive or SHA-256
   sidecar, the sidecar digest does not match the emitted archive, or required
   Linux runtime members are absent.
-- The emitted WSL archive contains Windows/Darwin node-pty payloads, ConPTY,
+- The emitted WSL archive contains non-Linux node-pty payloads, ConPTY,
   pnpm install metadata, or Windows-only FFF, ffi-rs, or msgpackr bindings.
 - The external Windows resource monitor is absent.
 - The unpacked Windows application contains more than 80 files.

@@ -36,14 +36,11 @@ export const WINDOWS_MODIFIER_PAIR_VIRTUAL_KEYS: Record<
   meta: [0x5b, 0x5c],
 };
 
-export function snapShotShortcutRegistrationFailureMessage(
-  shortcut: SnapShotShortcut,
-  platform: NodeJS.Platform,
-): string {
+export function snapShotShortcutRegistrationFailureMessage(shortcut: SnapShotShortcut): string {
   return isModifierPairShortcut(shortcut)
     ? `${snapShotModifierPairLabel(
         snapShotShortcutModifierPair(shortcut),
-        platform === "darwin",
+        false,
       )} is not available on this system.`
     : "This shortcut is already used by the system or another app.";
 }

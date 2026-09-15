@@ -1,6 +1,6 @@
 # Architecture
 
-T3 Code keeps execution in the environment that owns the workspace. Web, desktop, and mobile
+T3 Code keeps execution in the environment that owns the workspace. Web and desktop
 clients control it over authenticated RPC. A remote client must never substitute its own filesystem,
 provider credentials, or machine state for the environment's. The desktop app bundles a server,
 but its renderer follows the same boundary.
@@ -10,7 +10,7 @@ but its renderer follows the same boundary.
 Provider processes, terminals, Git, and project files belong to the server. Shared connection and
 domain state belongs in `packages/client-runtime`; clients supply platform services and UI.
 Keeping that logic shared prevents reconnect and multi-environment behavior from diverging between
-web and mobile. See [connection runtime](./connection-runtime.md) and
+web and desktop. See [connection runtime](./connection-runtime.md) and
 [remote environments](./remote.md).
 
 The [RPC contract](../../packages/contracts/src/rpc.ts) is the boundary between independently
@@ -20,7 +20,7 @@ method on it. See [environment auth](./environment-auth.md).
 
 ### Pull request linking compatibility
 
-Web, desktop, mobile, and environments upgrade independently. Negotiate linking through the
+Web, desktop, and environments upgrade independently. Negotiate linking through the
 environment descriptor, never through a client version or an assumed coordinated release:
 
 | Environment capability                | Client behavior                                                                                                   |
@@ -115,8 +115,7 @@ an active binding.
 Native modules never load in the Electron main process on the startup path, and the two the
 snapshot feature keeps are isolated: `@crowecawcaw/xa11y` runs only in forked Node-mode children
 (`SnapShotAccessibilityWorker`, `RegionSnapShotWorker`) and a worker thread, and `ffi-rs` loads
-lazily inside `WindowsForeground.ts` for a handful of Win32 calls. macOS window lookup shells out
-to `osascript` instead of a native addon. A crash or stall in any of these must not take the app
+lazily inside `WindowsForeground.ts` for a handful of Win32 calls. A crash or stall in any of these must not take the app
 down, so new native capability goes in a child with a deadline, not an `import` in main.
 
 See the [glossary](./glossary.md) for shared terms and the

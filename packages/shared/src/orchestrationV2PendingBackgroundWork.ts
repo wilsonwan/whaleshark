@@ -127,7 +127,7 @@ function nativeTaskIdFromTurnItem(item: PendingBackgroundWorkTurnItem): string {
  * Derive one normalized pending-background-work list for post-settlement UI.
  *
  * Sources:
- * - Provider-thread roster (Claude SDK background tasks)
+ * - Provider-thread roster (provider background tasks)
  * - Nonterminal command_execution / dynamic_tool / subagent turn items
  *
  * Gated on latest root run settlement. Dedupes by native task ID. Excludes

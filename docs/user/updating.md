@@ -24,12 +24,7 @@ interrupted, and threads without saved provider resume state need a new message.
 If you previously enabled continuation for updates, enable this setting once
 to allow recovery without a connected client.
 
-Rebuilding keeps conversation transcripts, but it cannot carry
-every kind of runtime history forward across orchestration changes. Read
-[Threads from older T3 Code versions](./thread-migration.md)
-before continuing an important older thread.
-
-## Update a server
+## Update a connected server
 
 In the checkout the server runs from:
 
@@ -55,13 +50,8 @@ checkout you want.
 ## Update a desktop client
 
 Build the desktop app from the same checkout with
-`vp run dist:desktop:dmg`, `vp run dist:desktop:linux`, or
-`vp run dist:desktop:win`; local artifacts are unsigned. See
-[Development](../operations/development.md) for prerequisites.
-
-This fork does not publish mobile builds or configure an OTA update service. For
-mobile development, build and install the app from the checkout using the
-commands in [the mobile README](../../apps/mobile/README.md).
+`vp run dist:desktop:linux` or `vp run dist:desktop:win`; local artifacts are
+unsigned. See [Development](../operations/development.md) for prerequisites.
 
 ## If an update fails
 

@@ -19,7 +19,7 @@ function makeThread(overrides: ThreadFixtureOverrides = {}): Thread {
     environmentId: LOCAL_ENVIRONMENT_ID,
     projectId: PROJECT_ID,
     title: "Thread",
-    modelSelection: { instanceId: ProviderInstanceId.make("codex"), model: "gpt-5.4" },
+    modelSelection: { instanceId: ProviderInstanceId.make("pi"), model: "gpt-5.4" },
     runtimeMode: DEFAULT_RUNTIME_MODE,
     interactionMode: "default",
     runtime: null,

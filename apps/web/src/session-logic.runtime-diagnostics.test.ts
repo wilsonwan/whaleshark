@@ -9,9 +9,9 @@ import {
 } from "./components/chat/MessagesTimeline.logic";
 
 const retainedMessage =
-  "2026-03-14T16:11:12.550224Z ERROR codex_core::codex: failed to load skill /home/sebherrerabe/repos/devsuite/.agent/skills/monorepo-scaffolding/SKILL.md: invalid YAML: mapping va...";
+  "2026-03-14T16:11:12.550224Z ERROR claude_agent_core::pi: failed to load skill /home/sebherrerabe/repos/devsuite/.agent/skills/monorepo-scaffolding/SKILL.md: invalid YAML: mapping va...";
 const warningSummary =
-  "2026-03-14T16:11:12.550224Z ERROR codex_core::codex: failed to load skill /home/sebherrerabe/repos/devsuite/.agent/sk...";
+  "2026-03-14T16:11:12.550224Z ERROR claude_agent_core::pi: failed to load skill /home/sebherrerabe/repos/devsuite/.agent/sk...";
 const now = DateTime.makeUnsafe("2026-09-05T00:00:00.000Z");
 const baseItem = {
   id: TurnItemId.make("diagnostic"),

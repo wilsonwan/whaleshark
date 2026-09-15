@@ -55,7 +55,7 @@ const PROVIDER_ACCENT_SWATCHES = [
 /**
  * Normalize a user-provided label into a slug suffix for the instance id.
  * The full id is formed by prefixing the driver slug. For example, label "Work" on
- * driver "codex" becomes `codex_work`. Output is trimmed to 48 chars so the
+ * driver "pi" becomes `pi_work`. Output is trimmed to 48 chars so the
  * final composed id stays under the 64-char slug cap enforced by
  * `ProviderInstanceId` in `@t3tools/contracts`.
  */
@@ -74,7 +74,7 @@ function deriveInstanceId(driver: ProviderDriverKind, label: string): string {
 }
 
 const INSTANCE_ID_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
-const DEFAULT_DRIVER_KIND = ProviderDriverKind.make("codex");
+const DEFAULT_DRIVER_KIND = ProviderDriverKind.make("pi");
 const ACP_REGISTRY_DRIVER_KIND = ProviderDriverKind.make("acpRegistry");
 const DEFAULT_DRIVER_OPTION = DRIVER_OPTIONS[0]!;
 const EMPTY_CONFIG_DRAFT: Record<string, unknown> = {};
@@ -314,7 +314,7 @@ export function AddProviderInstanceDialog({
           description={
             <>
               Configure an additional provider instance on {environmentLabel}. For example, add a
-              second Codex install pointed at a different workspace.
+              second agent CLI install pointed at a different workspace.
             </>
           }
         >

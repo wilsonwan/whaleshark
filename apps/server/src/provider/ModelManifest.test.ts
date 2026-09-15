@@ -28,7 +28,7 @@ import {
  * synthetic models for resolver coverage.
  */
 
-const CODEX = ProviderDriverKind.make("codex");
+const MANIFEST_DRIVER = ProviderDriverKind.make("pi");
 const model = (overrides: Partial<ServerProviderModel>): ServerProviderModel => ({
   slug: "gpt-test",
   name: "GPT Test",
@@ -38,24 +38,10 @@ const model = (overrides: Partial<ServerProviderModel>): ServerProviderModel => 
 });
 
 describe("classifyModels", () => {
-  it("classifies qualified Codex families without changing their wire ids", () => {
-    const manifest: ModelManifestData = { version: 1, currentModels: { codex: ["gpt-test"] } };
-    const models = [
-      model({ slug: "openai.gpt-test", isLegacy: true }),
-      model({ slug: "openai.gpt-old" }),
-    ];
-    assert.deepStrictEqual(
-      classifyModels(models, manifest, CODEX).map((entry) => [entry.slug, entry.isLegacy ?? false]),
-      [
-        ["openai.gpt-test", false],
-        ["openai.gpt-old", true],
-      ],
-    );
-  });
   it("flags non-current models, clears stale flags, and skips custom models", () => {
     const manifest: ModelManifestData = {
       version: 1,
-      currentModels: { codex: ["current-a", "current-b"] },
+      currentModels: { pi: ["current-a", "current-b"] },
     };
     const models = [
       model({ slug: "current-a" }),
@@ -66,7 +52,10 @@ describe("classifyModels", () => {
       model({ slug: "my-own-model", isCustom: true }),
     ];
     assert.deepStrictEqual(
-      classifyModels(models, manifest, CODEX).map((entry) => [entry.slug, entry.isLegacy ?? false]),
+      classifyModels(models, manifest, MANIFEST_DRIVER).map((entry) => [
+        entry.slug,
+        entry.isLegacy ?? false,
+      ]),
       [
         ["current-a", false],
         ["current-b", false],
@@ -78,21 +67,6 @@ describe("classifyModels", () => {
 });
 
 describe("applyManifestDefault", () => {
-  it("resolves the manifest default to the qualified live model", () => {
-    const manifest: ModelManifestData = {
-      version: 1,
-      currentModels: {},
-      providers: { codex: { models: [], profiles: {}, defaults: { chat: "gpt-test" } } },
-    };
-    const models = [
-      model({ slug: "openai.gpt-old", isDefault: true }),
-      model({ slug: "openai.gpt-test" }),
-    ];
-    assert.strictEqual(
-      applyManifestDefault(models, manifest, CODEX).find((entry) => entry.isDefault)?.slug,
-      "openai.gpt-test",
-    );
-  });
   it("moves the default flag and its aliases to the manifest's chat default", () => {
     const driver = ProviderDriverKind.make("pi");
     const manifest: ModelManifestData = {
@@ -225,17 +199,16 @@ const REMOTE_MANIFEST: ModelManifestData = {
   version: 1,
   updatedAt: REMOTE_UPDATED_AT,
   currentModels: {
-    codex: ["remote-model"],
-    claudeAgent: ["remote-agent-model"],
+    pi: ["remote-agent-model"],
   },
 };
 
-const REMOTE_CLAUDE_MANIFEST: ModelManifestData = {
+const REMOTE_PROVIDER_MANIFEST: ModelManifestData = {
   version: 1,
   updatedAt: REMOTE_UPDATED_AT,
   currentModels: {},
   providers: {
-    claudeAgent: {
+    pi: {
       profiles: {
         synthetic: {
           adapter: { claudeCode: { effortMap: { extreme: "high" } } },
@@ -253,49 +226,23 @@ const REMOTE_CLAUDE_MANIFEST: ModelManifestData = {
   },
 };
 
-const remoteClaudeManifestWithCompatibility = (compatibility: unknown): ModelManifestData => ({
-  ...REMOTE_CLAUDE_MANIFEST,
-  providers: {
-    claudeAgent: {
-      profiles: REMOTE_CLAUDE_MANIFEST.providers!.claudeAgent!.profiles,
-      models: REMOTE_CLAUDE_MANIFEST.providers!.claudeAgent!.models.map((model) => ({
-        ...model,
-        adapter: { claudeCode: compatibility },
-      })),
-    },
-  },
-});
-
 const INVALID_REMOTE_MANIFESTS: ReadonlyArray<ModelManifestData> = [
   {
-    ...REMOTE_CLAUDE_MANIFEST,
+    ...REMOTE_PROVIDER_MANIFEST,
     providers: {
-      claudeAgent: {
-        profiles: {
-          synthetic: {
-            adapter: { claudeCode: { effortMap: { extreme: 123 } } },
-          },
-        },
-        models: REMOTE_CLAUDE_MANIFEST.providers!.claudeAgent!.models,
-      },
-    },
-  },
-  {
-    ...REMOTE_CLAUDE_MANIFEST,
-    providers: {
-      claudeAgent: {
+      pi: {
         profiles: {},
-        models: REMOTE_CLAUDE_MANIFEST.providers!.claudeAgent!.models,
+        models: REMOTE_PROVIDER_MANIFEST.providers!.pi!.models,
       },
     },
   },
   {
-    ...REMOTE_CLAUDE_MANIFEST,
+    ...REMOTE_PROVIDER_MANIFEST,
     providers: {
-      claudeAgent: {
-        profiles: REMOTE_CLAUDE_MANIFEST.providers!.claudeAgent!.profiles,
+      pi: {
+        profiles: REMOTE_PROVIDER_MANIFEST.providers!.pi!.profiles,
         models: [
-          ...REMOTE_CLAUDE_MANIFEST.providers!.claudeAgent!.models,
+          ...REMOTE_PROVIDER_MANIFEST.providers!.pi!.models,
           {
             slug: "remote-only-model",
             name: "Duplicate Remote Model",
@@ -307,21 +254,15 @@ const INVALID_REMOTE_MANIFESTS: ReadonlyArray<ModelManifestData> = [
     },
   },
   {
-    ...REMOTE_CLAUDE_MANIFEST,
+    ...REMOTE_PROVIDER_MANIFEST,
     providers: {
-      claudeAgent: {
+      pi: {
         defaults: { chat: "absent-model" },
-        profiles: REMOTE_CLAUDE_MANIFEST.providers!.claudeAgent!.profiles,
-        models: REMOTE_CLAUDE_MANIFEST.providers!.claudeAgent!.models,
+        profiles: REMOTE_PROVIDER_MANIFEST.providers!.pi!.profiles,
+        models: REMOTE_PROVIDER_MANIFEST.providers!.pi!.models,
       },
     },
   },
-  remoteClaudeManifestWithCompatibility({ minVersion: "2.x" }),
-  remoteClaudeManifestWithCompatibility({ maxVersionExclusive: "2.x" }),
-  remoteClaudeManifestWithCompatibility({
-    minVersion: "2.2",
-    maxVersionExclusive: "2.1",
-  }),
 ];
 
 const httpClientLayer = (handler: () => Response) =>
@@ -380,20 +321,20 @@ describe("ModelManifest service", () => {
 
   it.effect("preserves the last-good remote cache when later payloads are invalid", () => {
     let responseIndex = 0;
-    const responses = [REMOTE_CLAUDE_MANIFEST, ...INVALID_REMOTE_MANIFESTS];
+    const responses = [REMOTE_PROVIDER_MANIFEST, ...INVALID_REMOTE_MANIFESTS];
 
     return Effect.gen(function* () {
       const service = yield* make;
-      assert.deepStrictEqual(yield* service.refresh, REMOTE_CLAUDE_MANIFEST);
+      assert.deepStrictEqual(yield* service.refresh, REMOTE_PROVIDER_MANIFEST);
 
       for (const _invalid of INVALID_REMOTE_MANIFESTS) {
         yield* TestClock.adjust("1 hour");
         responseIndex += 1;
-        assert.deepStrictEqual(yield* service.refresh, REMOTE_CLAUDE_MANIFEST);
+        assert.deepStrictEqual(yield* service.refresh, REMOTE_PROVIDER_MANIFEST);
       }
 
       const rebooted = yield* make;
-      assert.deepStrictEqual(yield* rebooted.current, REMOTE_CLAUDE_MANIFEST);
+      assert.deepStrictEqual(yield* rebooted.current, REMOTE_PROVIDER_MANIFEST);
     }).pipe(
       Effect.scoped,
       Effect.provide(

@@ -113,27 +113,12 @@ function normalizeDesktopArch(arch: string): DesktopRuntimeArch {
   return "other";
 }
 
-function resolveDesktopRuntimeInfo(input: {
-  readonly platform: NodeJS.Platform;
-  readonly processArch: string;
-  readonly runningUnderArm64Translation: boolean;
-}): DesktopRuntimeInfo {
+function resolveDesktopRuntimeInfo(input: { readonly processArch: string }): DesktopRuntimeInfo {
   const appArch = normalizeDesktopArch(input.processArch);
-
-  if (input.platform !== "darwin") {
-    return {
-      hostArch: appArch,
-      appArch,
-      runningUnderArm64Translation: false,
-    };
-  }
-
-  const hostArch = appArch === "arm64" || input.runningUnderArm64Translation ? "arm64" : appArch;
-
   return {
-    hostArch,
+    hostArch: appArch,
     appArch,
-    runningUnderArm64Translation: input.runningUnderArm64Translation,
+    runningUnderArm64Translation: false,
   };
 }
 
@@ -150,9 +135,7 @@ const make = Effect.fn("desktop.environment.make")(function* (
       ? Option.getOrElse(config.appDataDirectory, () =>
           path.join(homeDirectory, "AppData", "Roaming"),
         )
-      : input.platform === "darwin"
-        ? path.join(homeDirectory, "Library", "Application Support")
-        : Option.getOrElse(config.xdgConfigHome, () => path.join(homeDirectory, ".config"));
+      : Option.getOrElse(config.xdgConfigHome, () => path.join(homeDirectory, ".config"));
   const baseDir = resolveDesktopBaseDir({
     homeDirectory,
     joinPath: path.join,
@@ -227,9 +210,7 @@ const make = Effect.fn("desktop.environment.make")(function* (
     legacyUserDataDirName,
     defaultDesktopSettings: DesktopAppSettings.resolveDefaultDesktopSettings(),
     runtimeInfo: resolveDesktopRuntimeInfo({
-      platform: input.platform,
       processArch: input.processArch,
-      runningUnderArm64Translation: input.runningUnderArm64Translation,
     }),
     resolvePickFolderDefaultPath: (rawOptions) => {
       if (typeof rawOptions !== "object" || rawOptions === null) {

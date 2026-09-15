@@ -20,7 +20,7 @@ const ENTRIES: ReadonlyArray<ThirdPartyLicenseEntry> = [
     version: "19.2.6",
   },
   {
-    bundles: ["assets", "mobile"],
+    bundles: ["assets", "web"],
     kind: "custom",
     license: "CC-BY-4.0",
     name: "sample-icons",
@@ -61,14 +61,14 @@ describe("third-party license manifests", () => {
 
   it("filters by package, license, version, and bundle", () => {
     expect(filterThirdPartyLicenseEntries(ENTRIES, "react 19.2")).toEqual([ENTRIES[0]]);
-    expect(filterThirdPartyLicenseEntries(ENTRIES, "cc-by mobile")).toEqual([ENTRIES[1]]);
+    expect(filterThirdPartyLicenseEntries(ENTRIES, "cc-by web")).toEqual([ENTRIES[1]]);
     expect(filterThirdPartyLicenseEntries(ENTRIES, "apache")).toEqual([]);
   });
 
   it("formats platform bundle names for display", () => {
-    expect(
-      formatLicenseBundles(["android", "assets", "ios", "mobile", "plugin", "constructor"]),
-    ).toBe("Android, Assets, iOS, Mobile, plugin, constructor");
+    expect(formatLicenseBundles(["assets", "desktop", "plugin", "constructor"])).toBe(
+      "Assets, Desktop, plugin, constructor",
+    );
   });
 
   it("finds an entry by its stable navigation key", () => {

@@ -29,7 +29,6 @@ unresolved remote CLI package source.
 
 Use `vp run dev` for server and web, or `vp run dev:desktop` for the Electron client.
 `dev:server` and `dev:web` start those processes separately.
-See the [mobile README](../../apps/mobile/README.md) for native builds and Metro.
 
 Flags go directly after the task name, for example `vp run dev --home-dir /tmp/t3code-dev`.
 Add `--browser` to open a browser automatically.
@@ -68,14 +67,13 @@ The workarounds live in the [web entry](../../apps/web/src/bootstrap.ts) and
 
 ## Checks
 
-This fork temporarily runs pull-request CI on GitHub-hosted `ubuntu-24.04` and
-`macos-26` runners because its Blacksmith runner labels are not configured.
-Restore `blacksmith-8vcpu-ubuntu-2404` for Ubuntu CI,
-`blacksmith-4vcpu-ubuntu-2404` for Rust, and `blacksmith-6vcpu-macos-26` for
-native analysis when that capacity is available, together with the
-`setup-apt-mirrors` step and apt source rewrite that only work on Blacksmith's
-images. Until then, the local commands below are the fallback validation path
-and should cover the packages and files being changed.
+This fork temporarily runs the pull-request CI on GitHub-hosted `ubuntu-24.04`
+runners because its Blacksmith runner labels are not configured. Restore
+`blacksmith-8vcpu-ubuntu-2404` for the Ubuntu CI and
+`blacksmith-4vcpu-ubuntu-2404` for Rust when that capacity is available,
+together with the `setup-apt-mirrors` step and apt source rewrite that only
+work on Blacksmith's images. Until then, the local commands below are the
+fallback validation path and should cover the packages and files being changed.
 
 Run checks for the files and packages you changed:
 
@@ -85,7 +83,7 @@ vp lint <files>
 vp run --filter <package> typecheck
 ```
 
-Use `vp run lint:mobile` for native mobile changes. CI owns the full suite; see
+CI owns the full suite; see
 [ci.yml](../../.github/workflows/ci.yml) for its current jobs.
 The [manual Windows lane](../../.github/workflows/windows-tests.yml) is available for focused
 Windows investigation while that suite is not a required gate.
@@ -113,14 +111,12 @@ Runtime-discovered entrypoints and dependency exceptions belong in [knip.jsonc](
 Local artifact builds are unsigned by default and write to `release/`:
 
 ```sh
-vp run dist:desktop:dmg
 vp run dist:desktop:linux
 vp run dist:desktop:win
 ```
 
-DMGs default to the host architecture. Use `--arch` to choose another target and `--keep-stage`
-to retain packaging files for inspection. Run `vp run dist:desktop:artifact --help` for other
-options.
+Use `--arch` to choose another target and `--keep-stage` to retain packaging files for inspection.
+Run `vp run dist:desktop:artifact --help` for other options.
 
 ### Linux AppImage prerequisites
 
@@ -148,15 +144,6 @@ sudo pacman -S rust base-devel libsecret pkgconf imagemagick
 
 The C toolchain, pkg-config, and libsecret headers are also needed for Linux desktop development.
 
-### macOS DMG prerequisites
-
-Install the Xcode Command Line Tools with `xcode-select --install` and install Rust.
-For a cross-architecture or universal build, add the requested Rust targets:
-
-```sh
-rustup target add aarch64-apple-darwin x86_64-apple-darwin
-```
-
 ### Windows installer prerequisites
 
 Install Rust, Python 3, and Visual Studio Build Tools with **Desktop development with C++**.
@@ -174,7 +161,5 @@ see the [desktop artifact notes](./release.md#windows-payload-topology-and-packa
 
 ### Signing
 
-Add `--signed` after configuring the platform credentials in your own
-environment; see [Signing](./release.md#signing-optional). A signed, provisioned
-app is required for macOS notarization, and this fork does not publish artifacts,
-so signing is only worth setting up for a local build.
+Add `--signed` after configuring the platform credentials in the
+[release runbook](./release.md) to enable Windows Trusted Signing.

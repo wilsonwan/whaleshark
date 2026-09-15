@@ -66,14 +66,14 @@ different code depending on it:
 - How is T3 Code running on this machine: the CLI from a checkout in a terminal, the
   background service, or the desktop app?
 - Which surface is the user connecting from: the desktop app against a local
-  server, the desktop app against a remote server, or the mobile app over the
-  LAN or Tailscale?
+  server, the desktop app against a remote server, or the web app over the LAN
+  or Tailscale?
 
 Then work from evidence, not assumption. In rough order of value:
 
 - The server log and the trace file (\`server.trace.ndjson\`) around the time of the
   problem. Recent failures usually leave a trail here.
-- The provider event log, for problems with claude/codex/pi sessions.
+- The provider event log, for problems with claude/pi/opencode sessions.
 - The SQLite database. Read it freely, but only write when a write is necessary
   to fix the problem the user described, and get their explicit permission
   before any write.

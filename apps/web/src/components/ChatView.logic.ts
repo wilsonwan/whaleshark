@@ -29,11 +29,6 @@ import {
   type AtomCommandResult,
 } from "@t3tools/client-runtime/state/runtime";
 import { videoMimeType } from "@t3tools/shared/video";
-import {
-  appendCodexArtifactTemplateUsePrompt,
-  codexArtifactTemplateUsePrompt,
-  type CodexArtifactTemplate,
-} from "@t3tools/client-runtime/codex-artifact-templates";
 import { presentThreadShell } from "@t3tools/client-runtime/state/shell";
 import {
   type ChatMessage,
@@ -191,15 +186,6 @@ export function resolveProactiveTurnDiffAction(input: {
     return "ignore";
   }
   return "open";
-}
-
-export function codexArtifactTemplatePromptToAppend(
-  currentDraft: string,
-  template: CodexArtifactTemplate,
-): string | null {
-  return appendCodexArtifactTemplateUsePrompt(currentDraft, template) === currentDraft
-    ? null
-    : codexArtifactTemplateUsePrompt(template);
 }
 
 export const LastInvokedScriptByProjectSchema = Schema.Record(ProjectId, Schema.String);

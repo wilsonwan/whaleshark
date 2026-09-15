@@ -195,7 +195,7 @@ const BACKGROUND_ACTIVITY_PROFILE_DESCRIPTIONS: Record<BackgroundActivityProfile
 
 const ADVANCED_BACKGROUND_ACTIVITY_DESCRIPTION = "Uses custom intervals.";
 
-const DEFAULT_DRIVER_KIND = ProviderDriverKind.make("codex");
+const DEFAULT_DRIVER_KIND = ProviderDriverKind.make("pi");
 const BACKGROUND_ACTIVITY_BOOLEAN_OVERRIDES: ReadonlyArray<{
   readonly key:
     | "pauseWhenHostLocked"
@@ -2662,8 +2662,8 @@ export function GeneralSettingsPanel() {
                     models={
                       // Use the exact instance's models (rather than the
                       // first-kind-match) so a custom text-gen instance like
-                      // `codex_personal` gets its own model list, not the
-                      // default Codex one.
+                      // `claude_personal` gets its own model list, not the
+                      // default Claude one.
                       textGenInstanceEntry?.models ?? []
                     }
                     model={textGenModel}

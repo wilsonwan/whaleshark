@@ -21,11 +21,11 @@ describe("expandHomePath", () => {
   });
 
   it("expands ~/ to a subpath of the home directory", () => {
-    expect(expandHomePath("~/.codex-work")).toBe(NodePath.join(NodeOS.homedir(), ".codex-work"));
+    expect(expandHomePath("~/.claude-work")).toBe(NodePath.join(NodeOS.homedir(), ".claude-work"));
   });
 
   it("expands a Windows-style ~\\ prefix", () => {
-    expect(expandHomePath("~\\.codex")).toBe(NodePath.join(NodeOS.homedir(), ".codex"));
+    expect(expandHomePath("~\\.claude")).toBe(NodePath.join(NodeOS.homedir(), ".claude"));
   });
 
   it("does not expand ~user paths", () => {

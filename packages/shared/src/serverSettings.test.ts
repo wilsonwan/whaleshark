@@ -191,11 +191,11 @@ describe("serverSettings helpers", () => {
 
   it("replaces and clears conversation model defaults without retaining old options", () => {
     const current = applyServerSettingsPatch(DEFAULT_SERVER_SETTINGS, {
-      defaultModelSelection: createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+      defaultModelSelection: createModelSelection(ProviderInstanceId.make("opencode"), "gpt-5.4", [
         { id: "reasoningEffort", value: "high" },
       ]),
     });
-    const selection = createModelSelection(ProviderInstanceId.make("claudeAgent"), "sonnet");
+    const selection = createModelSelection(ProviderInstanceId.make("pi"), "sonnet");
     const updated = applyServerSettingsPatch(current, { defaultModelSelection: selection });
     expect(updated.defaultModelSelection).toEqual(selection);
     expect(
@@ -245,7 +245,7 @@ describe("serverSettings helpers", () => {
     const current = {
       ...DEFAULT_SERVER_SETTINGS,
       textGenerationModelSelection: createModelSelection(
-        ProviderInstanceId.make("codex"),
+        ProviderInstanceId.make("opencode"),
         "gpt-5.4-mini",
         [
           { id: "reasoningEffort", value: "high" },
@@ -257,12 +257,12 @@ describe("serverSettings helpers", () => {
     expect(
       applyServerSettingsPatch(current, {
         textGenerationModelSelection: {
-          instanceId: ProviderInstanceId.make("codex"),
+          instanceId: ProviderInstanceId.make("opencode"),
           model: "gpt-5.4-mini",
         },
       }).textGenerationModelSelection,
     ).toEqual({
-      instanceId: "codex",
+      instanceId: "opencode",
       model: "gpt-5.4-mini",
     });
   });
@@ -271,7 +271,7 @@ describe("serverSettings helpers", () => {
     const current = {
       ...DEFAULT_SERVER_SETTINGS,
       textGenerationModelSelection: createModelSelection(
-        ProviderInstanceId.make("codex"),
+        ProviderInstanceId.make("opencode"),
         "gpt-5.4-mini",
         [
           { id: "reasoningEffort", value: "high" },
@@ -287,7 +287,7 @@ describe("serverSettings helpers", () => {
         },
       }).textGenerationModelSelection,
     ).toEqual({
-      instanceId: "codex",
+      instanceId: "opencode",
       model: "gpt-5.4-mini",
       options: [
         { id: "reasoningEffort", value: "high" },
@@ -300,7 +300,7 @@ describe("serverSettings helpers", () => {
     const current = {
       ...DEFAULT_SERVER_SETTINGS,
       textGenerationModelSelection: createModelSelection(
-        ProviderInstanceId.make("codex"),
+        ProviderInstanceId.make("opencode"),
         "gpt-5.4-mini",
         [
           { id: "reasoningEffort", value: "high" },
@@ -348,7 +348,7 @@ describe("serverSettings helpers", () => {
     const current = {
       ...DEFAULT_SERVER_SETTINGS,
       sourceControlWriterModelSelection: createModelSelection(
-        ProviderInstanceId.make("codex"),
+        ProviderInstanceId.make("opencode"),
         "gpt-5.4-mini",
         [{ id: "reasoningEffort", value: "high" }],
       ),
@@ -371,7 +371,7 @@ describe("serverSettings helpers", () => {
     const current = {
       ...DEFAULT_SERVER_SETTINGS,
       sourceControlWriterModelSelection: createModelSelection(
-        ProviderInstanceId.make("codex"),
+        ProviderInstanceId.make("opencode"),
         "gpt-5.4-mini",
       ),
     };
@@ -384,13 +384,13 @@ describe("serverSettings helpers", () => {
   });
 
   it("falls back from a disabled source control writer provider without clearing its selection", () => {
-    const instanceId = ProviderInstanceId.make("codex_writer");
+    const instanceId = ProviderInstanceId.make("opencode_writer");
     const sourceControlWriterModelSelection = createModelSelection(instanceId, "gpt-5.4-mini");
     const settings = {
       ...DEFAULT_SERVER_SETTINGS,
       providerInstances: {
         [instanceId]: {
-          driver: ProviderDriverKind.make("codex"),
+          driver: ProviderDriverKind.make("opencode"),
           enabled: false,
           config: {},
         },
@@ -478,16 +478,16 @@ describe("serverSettings helpers", () => {
   });
 
   it("replaces providerInstances maps so omitted instance fields are cleared", () => {
-    const codexId = ProviderInstanceId.make("codex");
+    const opencodeId = ProviderInstanceId.make("opencode");
     const current = {
       ...DEFAULT_SERVER_SETTINGS,
       providerInstances: {
-        [codexId]: {
-          driver: ProviderDriverKind.make("codex"),
-          displayName: "Codex Work",
+        [opencodeId]: {
+          driver: ProviderDriverKind.make("opencode"),
+          displayName: "OpenCode Work",
           accentColor: "#7c3aed",
           enabled: true,
-          config: { homePath: "~/.codex" },
+          config: { homePath: "~/.opencode" },
         },
       },
     };
@@ -495,19 +495,19 @@ describe("serverSettings helpers", () => {
     expect(
       applyServerSettingsPatch(current, {
         providerInstances: {
-          [codexId]: {
-            driver: ProviderDriverKind.make("codex"),
-            displayName: "Codex Work",
+          [opencodeId]: {
+            driver: ProviderDriverKind.make("opencode"),
+            displayName: "OpenCode Work",
             enabled: true,
-            config: { homePath: "~/.codex" },
+            config: { homePath: "~/.opencode" },
           },
         },
-      }).providerInstances[codexId],
+      }).providerInstances[opencodeId],
     ).toEqual({
-      driver: ProviderDriverKind.make("codex"),
-      displayName: "Codex Work",
+      driver: ProviderDriverKind.make("opencode"),
+      displayName: "OpenCode Work",
       enabled: true,
-      config: { homePath: "~/.codex" },
+      config: { homePath: "~/.opencode" },
     });
   });
 
@@ -606,7 +606,7 @@ describe("serverSettings helpers", () => {
 
     const next = applyServerSettingsPatch(current, {
       sourceControlWriterModelSelection: createModelSelection(
-        ProviderInstanceId.make("codex"),
+        ProviderInstanceId.make("opencode"),
         "gpt-5.4-mini",
       ),
     });

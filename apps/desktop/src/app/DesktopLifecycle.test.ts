@@ -47,7 +47,6 @@ function makeElectronAppLayer(
     isDefaultProtocolClient: () => Effect.succeed(false),
     setAsDefaultProtocolClient: () => Effect.succeed(true),
     setDesktopName: () => Effect.void,
-    setDockIcon: () => Effect.void,
     appendCommandLineSwitch: () => Effect.void,
     removeCommandLineSwitch: () => Effect.void,
     on: (eventName, listener) =>
@@ -131,7 +130,7 @@ describe("DesktopLifecycle", () => {
       });
 
       const environmentLayer = Layer.succeed(DesktopEnvironment.DesktopEnvironment, {
-        platform: "darwin",
+        platform: "linux",
         isDevelopment: false,
       } as DesktopEnvironment.DesktopEnvironment["Service"]);
 
@@ -173,7 +172,7 @@ describe("DesktopLifecycle", () => {
         activationCount += 1;
       });
       const environmentLayer = Layer.succeed(DesktopEnvironment.DesktopEnvironment, {
-        platform: "darwin",
+        platform: "linux",
         isDevelopment: false,
       } as DesktopEnvironment.DesktopEnvironment["Service"]);
       const layer = DesktopLifecycle.layer.pipe(

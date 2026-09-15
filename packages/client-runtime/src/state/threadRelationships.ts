@@ -200,9 +200,9 @@ function threadCreatedAtMillis(node: ThreadRelationshipNode | undefined): number
  *
  * Web-specific by design: the panel pins the parent row first and a distinct
  * merge-back target second so their actions stay where the user expects, and
- * only then falls back to newest-created-first. Mobile does not share that
- * exception, so this is not the canonical relationship order and should not be
- * reused as one.
+ * only then falls back to newest-created-first. That pinning is a presentation
+ * choice for this panel, not the canonical relationship order, so it should not
+ * be reused as one.
  *
  * Ordering below the pins is `createdAt` descending, which is immutable, so
  * rows never move when messages or status changes arrive on a related thread.

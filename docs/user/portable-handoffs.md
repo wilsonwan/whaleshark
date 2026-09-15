@@ -13,7 +13,3 @@ appear in the handoff.
 Text near the end of a long message can be omitted. Before switching providers or continuing a
 portable fork, put the current goal, hard constraints, and any unresolved failure in a short message.
 You can also paste the exact detail again after the new provider starts.
-
-This 240-character rule is different from migration of older threads. A migrated thread gives its
-first fresh provider session the newest transcript suffix within a separate 32,000-character budget.
-See [Threads from older T3 Code versions](./thread-migration.md) for that migration path.

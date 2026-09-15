@@ -2,7 +2,7 @@
  * `t3 triage` - hand a misbehaving install to the user's own coding agent.
  *
  * The command is deliberately thin: it writes a `context.md` with machine facts
- * (version, paths, server liveness), then launches claude or codex
+ * (version, paths, server liveness), then launches claude or pi
  * interactively, seeded with the playbook from `triagePrompt.ts`. The agent
  * asks the user what went wrong, investigates, and files the issue; the
  * harness's own permission prompts gate anything it wants to run. With no
@@ -39,14 +39,14 @@ import {
 } from "./triagePrompt.ts";
 
 interface TriageAgent {
-  readonly id: "claude" | "codex";
+  readonly id: "claude" | "pi";
   readonly command: string;
   readonly label: string;
 }
 
 const TRIAGE_AGENTS: ReadonlyArray<TriageAgent> = [
   { id: "claude", command: "claude", label: "Claude Code" },
-  { id: "codex", command: "codex", label: "Codex" },
+  { id: "pi", command: "pi", label: "Pi" },
 ];
 
 export class TriageAgentUnavailableError extends Schema.TaggedError<TriageAgentUnavailableError>()(
@@ -63,7 +63,7 @@ export class TriageAgentChoiceRequiredError extends Schema.TaggedError<TriageAge
   {},
 ) {
   override get message(): string {
-    return "Both claude and codex are installed and there is no terminal to ask which to use. Re-run with --agent claude or --agent codex.";
+    return "Both claude and pi are installed and there is no terminal to ask which to use. Re-run with --agent claude or --agent pi.";
   }
 }
 
@@ -142,7 +142,7 @@ const runInteractiveSession = (input: {
     child.once("exit", (code, signal) => resume(Effect.succeed(code ?? (signal === null ? 0 : 1))));
   });
 
-const agentFlag = Flag.choice("agent", ["claude", "codex"]).pipe(
+const agentFlag = Flag.choice("agent", ["claude", "pi"]).pipe(
   Flag.withDescription("Agent CLI to use. Default: ask when both are installed."),
   Flag.optional,
 );
@@ -158,7 +158,7 @@ export const triageCommand = Command.make("triage", {
   model: modelFlag,
 }).pipe(
   Command.withDescription(
-    "Investigate a T3 Code problem on this machine with claude or codex, and help file a good issue.",
+    "Investigate a T3 Code problem on this machine with claude or pi, and help file a good issue.",
   ),
   Command.withHandler((flags) =>
     Effect.gen(function* () {
@@ -244,7 +244,7 @@ export const triageCommand = Command.make("triage", {
       if (selected === undefined) {
         yield* Console.log(
           [
-            "No supported agent CLI (claude, codex) was found on this machine.",
+            "No supported agent CLI (claude, pi) was found on this machine.",
             "",
             "The triage prompt and machine context were written to:",
             `  ${promptFilePath}`,

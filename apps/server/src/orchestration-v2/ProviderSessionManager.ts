@@ -415,7 +415,7 @@ export const layerWithOptions = (
               threadId,
               Effect.gen(function* () {
                 // Reuse a still-valid credential for this thread instead of
-                // rotating: long-lived provider processes (codex app-server)
+                // rotating: long-lived provider processes (claude-agent-sdk query runner)
                 // build their MCP client once per conversation and keep using
                 // the credential it started with, so a thread that detaches and
                 // re-attaches across a workspace handoff must come back to the
@@ -1833,7 +1833,7 @@ export const layerWithOptions = (
               return [Option.some(updatedEntry), updated] as const;
             });
             // Plain detaches deliberately do not revoke: a detached thread's
-            // provider process may still be alive (shared multi-thread codex
+            // provider process may still be alive (shared multi-thread pi
             // session across a workspace handoff) and holds its MCP client's
             // credential for the thread it will re-attach with. Credentials
             // are revoked when the session entry is released (process gone)

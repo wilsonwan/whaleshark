@@ -46,19 +46,15 @@ import * as ElectronMenu from "../electron/ElectronMenu.ts";
 import * as ElectronShell from "../electron/ElectronShell.ts";
 import * as ElectronTheme from "../electron/ElectronTheme.ts";
 import * as ElectronWindow from "../electron/ElectronWindow.ts";
-import {
-  MENU_ACTION_CHANNEL,
-  SNAP_SHOT_EVENT_CHANNEL,
-  WINDOW_FULLSCREEN_STATE_CHANNEL,
-} from "../ipc/channels.ts";
+import { MENU_ACTION_CHANNEL, SNAP_SHOT_EVENT_CHANNEL } from "../ipc/channels.ts";
 import * as DesktopServerExposure from "../backend/DesktopServerExposure.ts";
 import * as DesktopWindow from "./DesktopWindow.ts";
 import * as PreviewManager from "../preview/Manager.ts";
 
 const environmentInput = {
   dirname: "/repo/apps/desktop/dist-electron",
-  homeDirectory: "/Users/alice",
-  platform: "darwin",
+  homeDirectory: "/home/alice",
+  platform: "linux",
   processArch: "arm64",
   appVersion: "1.2.3",
   appPath: "/repo",
@@ -157,7 +153,6 @@ const electronAppLayer = Layer.mock(ElectronApp.ElectronApp)({
 const desktopAssetsLayer = Layer.succeed(DesktopAssets.DesktopAssets, {
   iconPaths: Effect.succeed({
     ico: Option.none<string>(),
-    icns: Option.none<string>(),
     png: Option.none<string>(),
   }),
   resolveResourcePath: () => Effect.succeed(Option.none<string>()),
@@ -297,7 +292,6 @@ function makeTestLayer(input: {
               input.openedExternalUrls?.push(url);
               return true;
             }),
-          openSystemSettings: () => Effect.succeed(true),
           copyText: (text) =>
             Effect.sync(() => {
               input.copiedTexts?.push(text);
@@ -402,7 +396,6 @@ const makeSplashScenario = (createOutcomes: readonly (Electron.BrowserWindow | n
           electronMenuLayer,
           Layer.succeed(ElectronShell.ElectronShell, {
             openExternal: () => Effect.succeed(true),
-            openSystemSettings: () => Effect.succeed(true),
             copyText: () => Effect.void,
           } satisfies ElectronShell.ElectronShell["Service"]),
           electronThemeLayer,
@@ -619,16 +612,16 @@ describe("DesktopWindow", () => {
         assert.equal(createdWindowOptions[0]?.height, 780);
         assert.isUndefined(createdWindowOptions[0]?.x);
         assert.isUndefined(createdWindowOptions[0]?.y);
-        assert.isTrue(createdWindowOptions[0]?.disableAutoHideCursor);
+        assert.isUndefined(createdWindowOptions[0]?.disableAutoHideCursor);
         assert.isFalse(createdWindowOptions[0]?.webPreferences?.backgroundThrottling);
-        assert.deepEqual(fakeWindow.setAutoHideCursor.mock.calls, [[false]]);
+        assert.deepEqual(fakeWindow.setAutoHideCursor.mock.calls, []);
         assert.deepEqual(fakeWindow.loadURL.mock.calls[0], ["t3code-dev://app/"]);
         assert.equal(fakeWindow.openDevTools.mock.calls.length, 1);
       }).pipe(Effect.provide(layer));
     }),
   );
 
-  it.effect("blocks only repeated Cmd+W input before it reaches the native window menu", () =>
+  it.effect("blocks only repeated Ctrl+W input before it reaches the native window menu", () =>
     Effect.gen(function* () {
       const fakeWindow = makeFakeBrowserWindow();
       const createCount = yield* Ref.make(0);
@@ -654,8 +647,8 @@ describe("DesktopWindow", () => {
           type: "keyDown",
           isAutoRepeat: true,
           key: "W",
-          meta: true,
-          control: false,
+          meta: false,
+          control: true,
           alt: false,
           shift: false,
         };
@@ -667,7 +660,7 @@ describe("DesktopWindow", () => {
         assert.isFalse(prevented);
 
         prevented = false;
-        beforeInput(event, { ...input, meta: false });
+        beforeInput(event, { ...input, control: false });
         assert.isFalse(prevented);
       }).pipe(Effect.provide(layer));
     }),
@@ -1154,37 +1147,6 @@ describe("DesktopWindow", () => {
             width: 1410,
             height: 930,
           },
-        ]);
-      }).pipe(Effect.provide(layer));
-    }),
-  );
-
-  it.effect("publishes native macOS fullscreen changes to the renderer", () =>
-    Effect.gen(function* () {
-      const fakeWindow = makeFakeBrowserWindow();
-      const createCount = yield* Ref.make(0);
-      const mainWindow = yield* Ref.make<Option.Option<Electron.BrowserWindow>>(Option.none());
-      const layer = makeTestLayer({
-        window: fakeWindow.window,
-        createCount,
-        mainWindow,
-      });
-
-      yield* Effect.gen(function* () {
-        const desktopWindow = yield* DesktopWindow.DesktopWindow;
-        yield* desktopWindow.handleBackendReady(new URL("http://127.0.0.1:3773"));
-
-        const enterFullscreen = fakeWindow.windowListeners.get("enter-full-screen");
-        const leaveFullscreen = fakeWindow.windowListeners.get("leave-full-screen");
-        if (!enterFullscreen || !leaveFullscreen) {
-          return yield* Effect.die("fullscreen listeners were not registered");
-        }
-
-        enterFullscreen();
-        leaveFullscreen();
-        assert.deepEqual(fakeWindow.send.mock.calls, [
-          [WINDOW_FULLSCREEN_STATE_CHANNEL, true],
-          [WINDOW_FULLSCREEN_STATE_CHANNEL, false],
         ]);
       }).pipe(Effect.provide(layer));
     }),

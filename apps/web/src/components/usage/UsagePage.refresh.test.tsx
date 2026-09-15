@@ -78,7 +78,7 @@ vi.mock("./UsageProviderChart", () => ({ UsageProviderChart: "div" }));
 vi.mock("./UsagePriceOverrides", () => ({ UsagePriceOverrides: () => null }));
 vi.mock("../chat/ProviderInstanceIcon", () => ({ ProviderInstanceIcon: () => null }));
 vi.mock("../settings/RedactedSensitiveText", () => ({ RedactedSensitiveText: "span" }));
-vi.mock("../settings/providerDriverMeta", () => ({ getDriverOption: () => ({ label: "Codex" }) }));
+vi.mock("../settings/providerDriverMeta", () => ({ getDriverOption: () => ({ label: "Claude" }) }));
 
 import { UsagePage } from "./UsagePage";
 
@@ -96,8 +96,8 @@ beforeEach(() => {
         serverConfig: {
           providers: [
             {
-              instanceId: ProviderInstanceId.make("codex"),
-              driver: "codex",
+              instanceId: ProviderInstanceId.make("pi"),
+              driver: "pi",
               enabled: true,
               installed: true,
               version: null,

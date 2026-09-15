@@ -27,17 +27,12 @@ import {
   DESKTOP_EXTRA_RESOURCES,
   LINUX_CAPTURE_EXTRA_RESOURCES,
   LINUX_BROWSER_SECRET_EXTRA_RESOURCES,
-  MAC_FILE_EXCLUSIONS,
-  UnsupportedDesktopBuildArchitectureError,
   LinuxIconResizeError,
   LinuxDesktopBuildPrerequisitesMissingError,
-  MacDesktopBuildPrerequisitesMissingError,
   packWindowsServerAsar,
   preflightLinuxDesktopBuild,
-  preflightMacDesktopBuild,
   preflightWindowsDesktopBuild,
   resolveDesktopRuntimeDependencies,
-  resolveMacStageDependencies,
   resolveFffNativeDependencies,
   resolveBuildOptions,
   resolveDesktopBuildIconAssets,
@@ -243,7 +238,6 @@ const makeWindowsPayloadFixture = Effect.fn("test.makeWindowsPayloadFixture")(fu
 it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
   it("uses production artwork for desktop packaging", () => {
     assert.deepStrictEqual(resolveDesktopBuildIconAssets(), {
-      macIconPng: BRAND_ASSET_PATHS.productionMacIconPng,
       linuxIconPng: BRAND_ASSET_PATHS.productionLinuxIconPng,
       windowsIconIco: BRAND_ASSET_PATHS.productionWindowsIconIco,
     });
@@ -277,7 +271,6 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     assert.deepStrictEqual(
       createStagePatchedDependencies(
         {
-          "@expo/metro-config@56.0.13": "patches/@expo%2Fmetro-config@56.0.13.patch",
           "@ff-labs/fff-node@0.9.4": "patches/@ff-labs__fff-node@0.9.4.patch",
           "@pierre/diffs@1.1.20": "patches/@pierre%2Fdiffs@1.1.20.patch",
           "alchemy@2.0.0-beta.49": "patches/alchemy@2.0.0-beta.49.patch",
@@ -296,25 +289,12 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
       },
     );
 
-    assert.deepStrictEqual(
-      createStagePatchedDependencies(
-        {
-          "@expo/metro-config@56.0.13": "patches/@expo%2Fmetro-config@56.0.13.patch",
-        },
-        { effect: "4.0.0-beta.73" },
-      ),
-      {},
-    );
+    assert.deepStrictEqual(createStagePatchedDependencies({}, { effect: "4.0.0-beta.73" }), {});
   });
 
   it("installs optional native dependencies for the target desktop architecture", () => {
     assert.deepStrictEqual(STAGE_INSTALL_ARGS, ["install", "--prod"]);
-    assert.deepStrictEqual(createStageWorkspaceConfig({ platform: "mac", arch: "x64" }), {
-      supportedArchitectures: {
-        os: ["darwin"],
-        cpu: ["x64"],
-      },
-    });
+
     assert.deepStrictEqual(createStageWorkspaceConfig({ platform: "linux", arch: "x64" }), {
       supportedArchitectures: {
         os: ["linux"],
@@ -356,12 +336,6 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
         nodeLinker: "hoisted",
       },
     );
-    assert.deepStrictEqual(createStageWorkspaceConfig({ platform: "mac", arch: "universal" }), {
-      supportedArchitectures: {
-        os: ["darwin"],
-        cpu: ["arm64", "x64"],
-      },
-    });
   });
 
   it("stages pnpm 11 allowBuilds and patchedDependencies in the workspace yaml", () => {
@@ -406,7 +380,7 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     // patchedDependencies keeps the stage yaml minimal.
     assert.deepStrictEqual(
       createStageWorkspaceConfig({
-        platform: "mac",
+        platform: "linux",
         arch: "arm64",
         allowBuilds: {},
         patchedDependencies: {},
@@ -414,8 +388,9 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
       }),
       {
         supportedArchitectures: {
-          os: ["darwin"],
+          os: ["linux"],
           cpu: ["arm64"],
+          libc: ["glibc"],
         },
       },
     );
@@ -464,22 +439,18 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
 
   it.effect("applies platform-specific packaging to the build config", () =>
     Effect.gen(function* () {
-      const mac = yield* createBuildConfig("mac", "dmg", false);
       const linux = yield* createBuildConfig("linux", "AppImage", false);
       const win = yield* createBuildConfig("win", "nsis", false, true);
       const winWithoutWslPrebuild = yield* createBuildConfig("win", "nsis", false, false);
 
       // Windows unpacks native files explicitly so their JavaScript and metadata
       // stay archived. Other platforms retain electron-builder's defaults.
-      assert.notProperty(mac, "asar");
       assert.notProperty(linux, "asar");
-      assert.notProperty(mac, "asarUnpack");
       assert.notProperty(linux, "asarUnpack");
       assert.deepStrictEqual(win.asar, { smartUnpack: false });
       assert.deepStrictEqual(win.asarUnpack, [WINDOWS_NATIVE_ASAR_UNPACK_GLOB]);
       assert.deepStrictEqual(winWithoutWslPrebuild.asar, win.asar);
       assert.deepStrictEqual(winWithoutWslPrebuild.asarUnpack, win.asarUnpack);
-      assert.deepStrictEqual(mac.extraResources, DESKTOP_EXTRA_RESOURCES);
       assert.deepStrictEqual(linux.extraResources, [
         ...DESKTOP_EXTRA_RESOURCES,
         ...LINUX_CAPTURE_EXTRA_RESOURCES,
@@ -502,10 +473,7 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
         },
         ...WINDOWS_SERVER_EXTRA_RESOURCES,
       ]);
-      assert.notProperty(mac, "dmg");
       assert.notProperty(win, "nsis");
-      assert.notProperty(mac, "publish");
-      assert.notProperty(win, "publish");
       // The Claude SDK platform packages and .bin shims never ship.
       assert.deepStrictEqual(WINDOWS_SERVER_ASAR_IGNORE_GLOBS, [
         "**/node_modules/@anthropic-ai/claude-agent-sdk-*",
@@ -519,28 +487,17 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
       assert.deepStrictEqual((linux.linux as Record<string, unknown>).protocols, [
         { name: "T3 Code", schemes: ["t3code", "t3code-dev"] },
       ]);
-      assert.deepStrictEqual(mac.files, [...DESKTOP_FILE_EXCLUSIONS, ...MAC_FILE_EXCLUSIONS]);
       assert.deepStrictEqual(linux.files, DESKTOP_FILE_EXCLUSIONS);
       assert.deepStrictEqual(win.files, DESKTOP_FILE_EXCLUSIONS);
       assert.deepStrictEqual(winWithoutWslPrebuild.files, win.files);
-      assert.notProperty(mac.mac as Record<string, unknown>, "sign");
       for (const config of [linux, win]) {
         assert.deepStrictEqual(config.electronLanguages, DESKTOP_ELECTRON_LANGUAGES);
       }
-      assert.deepStrictEqual(mac.electronLanguages, DESKTOP_ELECTRON_LANGUAGES);
     }).pipe(Effect.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env: {} })))),
   );
 
-  it("excludes Windows terminal binaries only from macOS packages", () => {
-    assert.deepStrictEqual(MAC_FILE_EXCLUSIONS, [
-      "!**/node_modules/node-pty/prebuilds/win32-*/**/*",
-      "!**/node_modules/node-pty/third_party/conpty/**/*",
-    ]);
-  });
-
   it("unpacks native binaries while keeping their JavaScript and metadata archived", () => {
     for (const file of [
-      "node_modules/@napi-rs/keyring/keyring.win32-x64-msvc.node",
       "node_modules/@ff-labs/fff-bin-win32-x64/fff_c.dll",
       "node_modules/node-pty/prebuilds/win32-x64/conpty/OpenConsole.exe",
       "node_modules/native/addon.so",
@@ -552,45 +509,6 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
         `${file} must be available as a real file`,
       );
     }
-
-    for (const file of [
-      "node_modules/@napi-rs/keyring/index.js",
-      "node_modules/@napi-rs/keyring/keytar.js",
-    ]) {
-      assert.isFalse(
-        NodePath.matchesGlob(file, WINDOWS_NATIVE_ASAR_UNPACK_GLOB),
-        `${file} should remain inside the archive`,
-      );
-    }
-  });
-
-  it("stages only server runtime externals in macOS packages", () => {
-    assert.deepStrictEqual(
-      resolveMacStageDependencies({
-        serverDependencies: {
-          "@anthropic-ai/claude-agent-sdk": "^0.3.170",
-          "@ff-labs/fff-node": "0.9.4",
-          "@opencode-ai/sdk": "^1.3.15",
-          "@pierre/diffs": "1.3.0",
-          "msgpackr-extract": "3.0.4",
-          "node-pty": "1.1.0",
-        },
-        desktopDependencies: {
-          "electron-store": "8.2.0",
-          effect: "4.0.0-beta.103",
-        },
-        arch: "arm64",
-        fffNodeVersion: "0.9.4",
-      }),
-      {
-        "@ff-labs/fff-node": "0.9.4",
-        "msgpackr-extract": "3.0.4",
-        "node-pty": "1.1.0",
-        "electron-store": "8.2.0",
-        effect: "4.0.0-beta.103",
-        "@ff-labs/fff-bin-darwin-arm64": "0.9.4",
-      },
-    );
   });
 
   it("excludes node-pty binaries for the other Windows architecture", () => {
@@ -749,36 +667,6 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
               command.command === "rustc" && command.args.includes("aarch64-unknown-linux-gnu"),
           ),
         );
-      }),
-    ),
-  );
-
-  it.effect("reports missing macOS tools and Rust targets before building", () =>
-    Effect.scoped(
-      Effect.gen(function* () {
-        const spawner = Layer.succeed(
-          ChildProcessSpawner.ChildProcessSpawner,
-          ChildProcessSpawner.make((command) => {
-            const childProcess = command as unknown as {
-              readonly command: string;
-              readonly args: ReadonlyArray<string>;
-            };
-            const fails =
-              childProcess.command === "rustc" ||
-              (childProcess.command === "xcrun" && childProcess.args.includes("iconutil"));
-            return Effect.succeed(mockProcess(fails ? 1 : 0));
-          }),
-        );
-        const error = yield* preflightMacDesktopBuild("universal").pipe(
-          Effect.provide(spawner),
-          Effect.flip,
-        );
-
-        assert.instanceOf(error, MacDesktopBuildPrerequisitesMissingError);
-        assert.deepStrictEqual(error.missing, ["rust", "iconutil"]);
-        assert.deepStrictEqual(error.rustTargets, ["aarch64-apple-darwin", "x86_64-apple-darwin"]);
-        assert.include(error.message, "xcode-select --install");
-        assert.include(error.message, "rustup target add aarch64-apple-darwin x86_64-apple-darwin");
       }),
     ),
   );
@@ -1167,14 +1055,11 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     );
 
     return Effect.gen(function* () {
-      // `universal` is a mac-only arch the option type still admits. The helper
-      // script only knows x64 and arm64, so the request maps to x64, the same
-      // concrete target the Linux resource monitor resolves it to.
       yield* stageBrowserSecret({
         repoRoot: "/repo",
         stageResourcesDir: "/stage/resources",
         platform: "linux",
-        arch: "universal",
+        arch: "x64",
         verbose: false,
       });
       const helper = commands.find((command) =>
@@ -1211,7 +1096,7 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
 
     return Effect.gen(function* () {
       // The helper links against the host's libsecret and its build script is
-      // a no-op elsewhere, so a Linux artifact built on macOS would ship
+      // a no-op elsewhere, so a Linux artifact built on another host would ship
       // without it and report the keyring as unavailable on every import.
       const error = yield* stageBrowserSecret({
         repoRoot: "/repo",
@@ -1469,17 +1354,13 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
         to: "resource-monitor",
       },
     ]);
-    assert.deepStrictEqual(resolveResourceMonitorRustTargets("mac", "universal"), [
-      "aarch64-apple-darwin",
-      "x86_64-apple-darwin",
-    ]);
+
     assert.deepStrictEqual(resolveResourceMonitorRustTargets("linux", "x64"), [
       "x86_64-unknown-linux-gnu",
     ]);
     assert.deepStrictEqual(resolveResourceMonitorRustTargets("win", "arm64"), [
       "aarch64-pc-windows-msvc",
     ]);
-    assert.equal(resourceMonitorExecutableName("mac"), "t3-resource-monitor");
     assert.equal(resourceMonitorExecutableName("win"), "t3-resource-monitor.exe");
   });
 
@@ -1496,10 +1377,8 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     });
     // The archive is only usable alongside a Linux pty.node, so both the
     // staging and the packaging config hang off this one decision.
-    assert.isTrue(bundlesWslRuntime({ arch: "x64", prebuildPath: "/tmp/pty.node" }));
-    assert.isTrue(bundlesWslRuntime({ arch: "arm64", prebuildPath: "/tmp/pty.node" }));
-    assert.isFalse(bundlesWslRuntime({ arch: "x64", prebuildPath: undefined }));
-    assert.isFalse(bundlesWslRuntime({ arch: "universal", prebuildPath: "/tmp/pty.node" }));
+    assert.isTrue(bundlesWslRuntime({ prebuildPath: "/tmp/pty.node" }));
+    assert.isFalse(bundlesWslRuntime({ prebuildPath: undefined }));
 
     assert.deepStrictEqual(buildWslRuntimeArchiveArgs(), [
       "-czf",
@@ -1683,13 +1562,6 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
   );
 
   it("promotes target fff binaries to direct staged dependencies", () => {
-    assert.deepStrictEqual(resolveFffNativeDependencies("mac", "arm64", "0.9.4"), {
-      "@ff-labs/fff-bin-darwin-arm64": "0.9.4",
-    });
-    assert.deepStrictEqual(resolveFffNativeDependencies("mac", "universal", "0.9.4"), {
-      "@ff-labs/fff-bin-darwin-arm64": "0.9.4",
-      "@ff-labs/fff-bin-darwin-x64": "0.9.4",
-    });
     assert.deepStrictEqual(resolveFffNativeDependencies("win", "x64", "0.9.4"), {
       "@ff-labs/fff-bin-win32-x64": "0.9.4",
     });
@@ -1745,34 +1617,10 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     }),
   );
 
-  it.effect("rejects universal builds on Linux and Windows before staging binaries", () =>
-    Effect.gen(function* () {
-      for (const platform of ["linux", "win"] as const) {
-        const error = yield* Effect.flip(
-          resolveBuildOptions({
-            platform: Option.some(platform),
-            target: Option.none(),
-            arch: Option.some("universal"),
-            buildVersion: Option.none(),
-            outputDir: Option.none(),
-            skipBuild: Option.none(),
-            keepStage: Option.none(),
-            signed: Option.none(),
-            verbose: Option.none(),
-            wslPrebuild: Option.none(),
-          }),
-        );
-
-        assert.instanceOf(error, UnsupportedDesktopBuildArchitectureError);
-        assert.deepStrictEqual(error.supportedArchitectures, ["x64", "arm64"]);
-      }
-    }),
-  );
-
   it.effect("preserves explicit false boolean flags over true env defaults", () =>
     Effect.gen(function* () {
       const resolved = yield* resolveBuildOptions({
-        platform: Option.some("mac"),
+        platform: Option.some("linux"),
         target: Option.none(),
         arch: Option.some("arm64"),
         buildVersion: Option.none(),

@@ -12,7 +12,7 @@ import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import { copySorted } from "./Array.ts";
 
-const DEFAULT_PROVIDER_DRIVER_KIND = ProviderDriverKind.make("codex");
+const DEFAULT_PROVIDER_DRIVER_KIND = ProviderDriverKind.make("pi");
 
 /** Choose the command for a model change against the thread's current provider instance. */
 export function modelSelectionCommandType(
@@ -270,13 +270,8 @@ export function buildExplicitProviderOptionSelectionsFromDescriptors(
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
-export function isClaudeUltrathinkPrompt(text: string | null | undefined): boolean {
+export function isUltrathinkPrompt(text: string | null | undefined): boolean {
   return typeof text === "string" && /\bultrathink\b/i.test(text);
-}
-
-/** Compare Codex model families without changing provider-owned dispatch identifiers. */
-export function codexModelFamily(slug: string): string {
-  return slug.startsWith("openai.gpt-") ? slug.slice("openai.".length) : slug;
 }
 
 export function normalizeModelSlug(
@@ -458,18 +453,15 @@ export function resolvePromptInjectedEffort(
   return null;
 }
 
-export function applyClaudePromptEffortPrefix(
-  text: string,
-  effort: string | null | undefined,
-): string {
+export function applyPromptEffortPrefix(text: string, effort: string | null | undefined): string {
   const trimmed = text.trim();
   if (!trimmed) {
     return trimmed;
   }
-  // Prefixing a slash command turns it into plain prose, so Claude never
-  // runs it. Command names come from arbitrary file names ("/deploy.prod",
-  // "/plugin:skill"), so accept any first token without a second slash;
-  // absolute paths like "/home/theo/app.ts" keep the prefix.
+  // Prefixing a slash command turns it into plain prose, so the provider
+  // never runs it as a command. Command names come from arbitrary file names
+  // ("/deploy.prod", "/plugin:skill"), so accept any first token without a
+  // second slash; absolute paths like "/home/theo/app.ts" keep the prefix.
   if (effort !== "ultrathink" || /^\/[^\s/]+(?:\s|$)/u.test(trimmed)) {
     return trimmed;
   }

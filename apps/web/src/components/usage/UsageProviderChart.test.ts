@@ -50,10 +50,7 @@ describe("buildPeriodColumns", () => {
         day: "2026-08-01",
         costUsd: 30,
         totalTokens: 300,
-        byProvider: new Map([
-          ["codex" as const, { costUsd: 10, totalTokens: 100 }],
-          ["claude" as const, { costUsd: 20, totalTokens: 200 }],
-        ]),
+        byProvider: new Map([["claude" as const, { costUsd: 30, totalTokens: 300 }]]),
       },
     ],
     // 2026-08-02 is deliberately absent: a day with no activity.
@@ -81,14 +78,11 @@ describe("buildPeriodColumns", () => {
   });
 
   it("keeps band values absolute rather than cumulative", () => {
-    // Regression: the bands were once stack offsets, which drew Claude Code
-    // permanently above Codex regardless of which provider spent more.
+    // Regression: the bands were once stack offsets, so a band could read as
+    // the running total instead of the provider's own value for that period.
     const [first] = buildPeriodColumns(days, byDay, "cost");
 
-    expect(first?.bands).toEqual([
-      { provider: "codex", value: 10 },
-      { provider: "claude", value: 20 },
-    ]);
+    expect(first?.bands).toEqual([{ provider: "claude", value: 30 }]);
   });
 
   it("reports the total as the sum of its bands", () => {
@@ -100,13 +94,11 @@ describe("buildPeriodColumns", () => {
 });
 
 describe("providersWithUsage", () => {
-  it("omits providers with no cost or tokens", () => {
-    expect(
-      providersWithUsage([
-        { provider: "codex", costUsd: 0, totalTokens: 0 },
-        { provider: "claude", costUsd: 0, totalTokens: 200 },
-      ]),
-    ).toEqual(["claude"]);
+  it("keeps only providers with cost or tokens", () => {
+    expect(providersWithUsage([{ provider: "claude", costUsd: 0, totalTokens: 0 }])).toEqual([]);
+    expect(providersWithUsage([{ provider: "claude", costUsd: 0, totalTokens: 200 }])).toEqual([
+      "claude",
+    ]);
   });
 });
 
@@ -120,7 +112,7 @@ describe("hourly chart columns", () => {
           hourStart: "2026-08-11T09:37:00.000Z",
           costUsd: 4,
           totalTokens: 40,
-          byProvider: new Map([["codex" as const, { costUsd: 4, totalTokens: 40 }]]),
+          byProvider: new Map([["claude" as const, { costUsd: 4, totalTokens: 40 }]]),
         },
       ],
     ]);

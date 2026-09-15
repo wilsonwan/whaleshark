@@ -9,9 +9,8 @@ import { environmentSnapshotAtom } from "./shell";
 
 export const projectEnvironment = createProjectEnvironmentAtoms(connectionAtomRuntime);
 /**
- * Web-only: project content search backs the ⇧⌘F dialog, which has no mobile
- * surface, so the atom family lives here instead of the shared client-runtime
- * project atoms consumed by the mobile app.
+ * Web-only: project content search backs the ⇧⌘F dialog, so the atom family
+ * lives here instead of the shared client-runtime project atoms.
  */
 export const projectContentSearch = createEnvironmentRpcQueryAtomFamily(connectionAtomRuntime, {
   label: "environment-data:projects:search-contents",

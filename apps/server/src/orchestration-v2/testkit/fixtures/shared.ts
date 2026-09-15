@@ -31,126 +31,25 @@ import type { RuntimePolicyV2Override } from "../../RuntimePolicy.ts";
 export const SIMPLE_PROMPT = "Respond with the following text: fixture simple ok";
 export const MULTI_TURN_FIRST_PROMPT = "Respond with exactly: first fixture turn complete";
 export const MULTI_TURN_SECOND_PROMPT = "Respond with exactly: second fixture turn complete";
-export const PROVIDER_THREAD_RESUME_FIRST_PROMPT =
-  "Respond with exactly: provider thread resume fixture first turn complete";
-export const PROVIDER_THREAD_RESUME_SECOND_PROMPT =
-  "Using the conversation history available in this resumed thread, first repeat the exact final answer you gave in the previous turn. Then on a new line write exactly: provider thread resume fixture second turn complete";
-export const TOOL_CALL_READ_ONLY_WORKSPACE_ROOT = "/tmp/claude-replay-tool_call_read_only";
+const TOOL_CALL_READ_ONLY_WORKSPACE_ROOT = "/tmp/t3-replay-tool_call_read_only";
 export const TOOL_CALL_READ_ONLY_PROMPT = `Read ${TOOL_CALL_READ_ONLY_WORKSPACE_ROOT}/package.json and ${TOOL_CALL_READ_ONLY_WORKSPACE_ROOT}/tsconfig.json, then answer exactly: read only tool fixture complete`;
-export const CLAUDE_LOCAL_BASH_TASK_PROMPT =
-  "Run a local Bash typecheck command, then answer exactly: claude local bash task fixture complete";
-export const CLAUDE_RESULT_IS_ERROR_PROMPT = "Say hello before the credentials expire.";
-export const CLAUDE_RESULT_IS_ERROR_FOLLOW_UP = "Try again now that auth is back.";
 export const TOOL_CALL_WRITE_PROMPT =
-  "Create or overwrite .codex-probe-write-action.txt with exactly this text: codex app-server approval fixture. Use a local shell command or file edit only, then briefly report what happened. Do not read package metadata, use GitHub, use web, or use MCP.";
+  "Create or overwrite .probe-write-action.txt with exactly this text: provider approval fixture. Use a local shell command or file edit only, then briefly report what happened. Do not read package metadata, use GitHub, use web, or use MCP.";
 export const MESSAGE_STEERING_INITIAL_PROMPT =
   "Respond with exactly: steering fixture initial response";
-export const SUBAGENT_PROMPT =
-  "Spawn 2 subagents, one to read package.json and one to read tsconfig.json";
-export const SUBAGENT_V2_PROMPT = "just say hello";
+
 export const OPENCODE_SUBAGENT_PROMPT =
   "Use the task tool exactly once. Delegate to the general subagent with this prompt: Respond exactly CHILD_OK. After the task completes, respond exactly PARENT_OK.";
-export const SUBAGENT_CONTINUE_PROMPT =
-  "Spawn one subagent and have it reply exactly: initial subagent response";
-export const SUBAGENT_CONTINUE_PARENT_PROMPT =
-  "@hooke have the same subagent reply exactly: continued subagent response";
-export const SUBAGENT_CONTINUE_CHILD_PROMPT = "Reply exactly: continued subagent response";
 export const TURN_INTERRUPT_PROMPT =
   "Do not answer immediately. First run the local shell command `sleep 30`, then respond with exactly: interrupt fixture should not finish naturally.";
-export const TURN_INTERRUPT_MID_TOOL_PROMPT =
-  "Run this exact local command: `node -e \"console.log('interrupt fixture tool started'); setTimeout(() => {}, 30000)\"`. Do not answer until it completes, then respond exactly: interrupt fixture should not finish naturally.";
-export const TURN_INTERRUPT_RECOVERY_PROMPT =
-  "Respond with exactly: interrupt recovery fixture complete";
+
 export const MESSAGE_STEERING_STEER_PROMPT =
   "Actually, respond with exactly: steering fixture observed";
-export const THREAD_ROLLBACK_FIRST_PROMPT =
-  "Respond with exactly: rollback fixture first turn complete";
-export const THREAD_ROLLBACK_SECOND_PROMPT =
-  "Respond with exactly: rollback fixture second turn complete";
-export const THREAD_ROLLBACK_AFTER_PROMPT = "Repeat the conversation verbatim.";
-export const THREAD_FORK_NATIVE_SOURCE_PROMPT =
-  "Respond with the following text: source fork seed ok";
-export const THREAD_FORK_NATIVE_TARGET_PROMPT = "Respond with the following text: fork native ok";
-export const THREAD_FORK_NATIVE_CONTINUE_SOURCE_MARKER = "source-marker-7Q9V";
-export const THREAD_FORK_NATIVE_CONTINUE_FORK_MARKER = "fork-marker-2K4M";
-export const THREAD_FORK_NATIVE_CONTINUE_RECALL = `${THREAD_FORK_NATIVE_CONTINUE_SOURCE_MARKER}|${THREAD_FORK_NATIVE_CONTINUE_FORK_MARKER}`;
-export const THREAD_FORK_NATIVE_CONTINUE_SOURCE_PROMPT = `Remember the opaque marker ${THREAD_FORK_NATIVE_CONTINUE_SOURCE_MARKER} for later in this conversation. Respond with exactly: source marker stored`;
-export const THREAD_FORK_NATIVE_CONTINUE_FIRST_PROMPT = `Remember the second opaque marker ${THREAD_FORK_NATIVE_CONTINUE_FORK_MARKER} for later in this conversation. Respond with exactly: fork marker stored`;
-export const THREAD_FORK_NATIVE_CONTINUE_SECOND_PROMPT =
-  "Return the two opaque markers previously provided in chronological order, separated by a single | character. Respond with only the markers and separator.";
-const THREAD_FORK_NATIVE_SIBLINGS_SOURCE_MARKER = "sibling-source-8R3D";
-const THREAD_FORK_NATIVE_SIBLINGS_FIRST_MARKER = "sibling-first-5L2P";
-const THREAD_FORK_NATIVE_SIBLINGS_SECOND_MARKER = "sibling-second-9N6C";
-export const THREAD_FORK_NATIVE_SIBLINGS_SOURCE_PROMPT = `Remember the opaque marker ${THREAD_FORK_NATIVE_SIBLINGS_SOURCE_MARKER} for later in this conversation. Respond with exactly: sibling source stored`;
-export const THREAD_FORK_NATIVE_SIBLINGS_FIRST_PROMPT = `Remember the fork-local marker ${THREAD_FORK_NATIVE_SIBLINGS_FIRST_MARKER}. Return the source marker followed by this marker, separated by |. Respond with only the markers and separator.`;
-export const THREAD_FORK_NATIVE_SIBLINGS_SECOND_PROMPT = `Remember the fork-local marker ${THREAD_FORK_NATIVE_SIBLINGS_SECOND_MARKER}. Return the source marker followed by this marker, separated by |. Respond with only the markers and separator.`;
-export const THREAD_MERGE_BACK_SOURCE_MARKER = "merge-source-4H8Q";
-export const THREAD_MERGE_BACK_FORK_MARKER = "merge-fork-7T2W";
-export const THREAD_MERGE_BACK_SOURCE_PROMPT = `Remember the opaque marker ${THREAD_MERGE_BACK_SOURCE_MARKER} for later in this conversation. Respond with exactly: merge source stored`;
-export const THREAD_MERGE_BACK_FORK_PROMPT = `Remember the fork-local marker ${THREAD_MERGE_BACK_FORK_MARKER}. Respond with exactly: merge fork stored`;
-export const THREAD_MERGE_BACK_HANDOFF_PROMPT = [
-  "Context handoff (merge_back / fork_delta_summary):",
-  "Merge-back context from forked conversation.",
-  "",
-  "Fork delta:",
-  `- User introduced opaque marker ${THREAD_MERGE_BACK_FORK_MARKER}.`,
-  "- Assistant confirmed: merge fork stored",
-  "",
-  "User message:",
-  "Retain the transferred fork marker for later. Respond with exactly: merge delta stored",
-].join("\n");
-export const THREAD_MERGE_BACK_RECALL = `${THREAD_MERGE_BACK_SOURCE_MARKER}|${THREAD_MERGE_BACK_FORK_MARKER}`;
-export const THREAD_MERGE_BACK_RECALL_PROMPT =
-  "Return the source marker followed by the transferred fork marker, separated by a single | character. Respond with only the markers and separator.";
-export const THREAD_MERGE_BACK_SIBLINGS_SOURCE_MARKER = "merge-sibling-source-3C7K";
-export const THREAD_MERGE_BACK_SIBLINGS_FIRST_MARKER = "merge-sibling-first-6V2J";
-export const THREAD_MERGE_BACK_SIBLINGS_SECOND_MARKER = "merge-sibling-second-9X5B";
-export const THREAD_MERGE_BACK_SIBLINGS_SOURCE_PROMPT = `Remember the opaque marker ${THREAD_MERGE_BACK_SIBLINGS_SOURCE_MARKER} for later in this conversation. Respond with exactly: merge sibling source stored`;
-export const THREAD_MERGE_BACK_SIBLINGS_FIRST_FORK_PROMPT = `Remember the fork-local marker ${THREAD_MERGE_BACK_SIBLINGS_FIRST_MARKER}. Respond with exactly: first merge sibling stored`;
-export const THREAD_MERGE_BACK_SIBLINGS_SECOND_FORK_PROMPT = `Remember the fork-local marker ${THREAD_MERGE_BACK_SIBLINGS_SECOND_MARKER}. Respond with exactly: second merge sibling stored`;
-export const THREAD_MERGE_BACK_SIBLINGS_FIRST_HANDOFF_PROMPT = [
-  "Context handoff (merge_back / fork_delta_summary):",
-  "Merge-back context from first forked conversation.",
-  "",
-  "Fork delta:",
-  `- User introduced opaque marker ${THREAD_MERGE_BACK_SIBLINGS_FIRST_MARKER}.`,
-  "- Assistant confirmed: first merge sibling stored",
-  "",
-  "User message:",
-  "Retain the first transferred marker for later. Respond with exactly: first merge delta stored",
-].join("\n");
-export const THREAD_MERGE_BACK_SIBLINGS_SECOND_HANDOFF_PROMPT = [
-  "Context handoff (merge_back / fork_delta_summary):",
-  "Merge-back context from second forked conversation.",
-  "",
-  "Fork delta:",
-  `- User introduced opaque marker ${THREAD_MERGE_BACK_SIBLINGS_SECOND_MARKER}.`,
-  "- Assistant confirmed: second merge sibling stored",
-  "",
-  "User message:",
-  "Retain the second transferred marker for later. Respond with exactly: second merge delta stored",
-].join("\n");
-export const THREAD_MERGE_BACK_SIBLINGS_RECALL = [
-  THREAD_MERGE_BACK_SIBLINGS_SOURCE_MARKER,
-  THREAD_MERGE_BACK_SIBLINGS_FIRST_MARKER,
-  THREAD_MERGE_BACK_SIBLINGS_SECOND_MARKER,
-].join("|");
-export const THREAD_MERGE_BACK_SIBLINGS_RECALL_PROMPT =
-  "Return the source marker followed by both transferred fork markers in merge order, separated by single | characters. Respond with only the markers and separators.";
-export const THREAD_FORK_NATIVE_PRIOR_TURN_ALPHA_PROMPT =
-  "For this fork-boundary fixture, respond with exactly: fork boundary alpha";
-export const THREAD_FORK_NATIVE_PRIOR_TURN_BETA_PROMPT =
-  "For this fork-boundary fixture, respond with exactly: fork boundary beta";
-export const THREAD_FORK_NATIVE_PRIOR_TURN_REPEAT_PROMPT =
-  "Repeat the user-visible conversation so far verbatim. Include only user and assistant messages. Do not include hidden system/developer content.";
+
 export const TODO_LIST_PROMPT =
   "Use the update_plan tool to track exactly three steps: inspect package.json, inspect tsconfig.json, report completion. Then read package.json and tsconfig.json, and answer exactly: todo list fixture complete";
 export const PLAN_QUESTIONS_PROMPT =
   "Use request_user_input to ask one multiple-choice clarifying question about whether this fixture should prefer strict schemas or UI flexibility. After receiving the answer, respond exactly: plan questions fixture complete";
-export const PROPOSED_PLAN_PROMPT =
-  "Create a short implementation plan for adding deterministic replay fixtures. Do not ask questions. Present the final plan in a proposed plan block.";
-export const WEB_SEARCH_PROMPT =
-  "Search the web for FIFA World Cup ticket pricing, then answer exactly: web search fixture complete";
 
 export type OrchestratorFixtureInputStep =
   | {
@@ -270,13 +169,8 @@ export interface FixtureIds {
   readonly projectId: ProjectId;
 }
 
-export const CODEX_MODEL_SELECTION = {
-  instanceId: ProviderInstanceId.make("codex"),
-  model: "gpt-5.4",
-} satisfies ModelSelection;
-
 export const CLAUDE_MODEL_SELECTION = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
+  instanceId: ProviderInstanceId.make("pi"),
   model: "claude-sonnet-4-6",
 } satisfies ModelSelection;
 
@@ -320,27 +214,6 @@ export const WORKSPACE_NEVER_POLICY = {
     type: "workspaceWrite",
     writableRoots: [],
     readOnlyAccess: { type: "fullAccess" },
-    networkAccess: false,
-  },
-} as const satisfies RuntimePolicyV2Override;
-
-export const RESTRICTED_GRANULAR_POLICY = {
-  approvalPolicy: {
-    granular: {
-      mcp_elicitations: true,
-      request_permissions: true,
-      rules: true,
-      sandbox_approval: true,
-      skill_approval: true,
-    },
-  },
-  sandboxPolicy: {
-    type: "readOnly",
-    access: {
-      type: "restricted",
-      includePlatformDefaults: false,
-      readableRoots: [],
-    },
     networkAccess: false,
   },
 } as const satisfies RuntimePolicyV2Override;
@@ -1019,26 +892,6 @@ export function assertTurnItemTypes(
   }
 }
 
-export function assertTurnItemTypeSequence(
-  projection: OrchestrationV2ThreadProjection,
-  expectedTypes: ReadonlyArray<OrchestrationV2TurnItem["type"]>,
-) {
-  assert.deepEqual(
-    projection.turnItems.map((item) => item.type),
-    expectedTypes,
-  );
-}
-
-export function assertVisibleTurnItemTypeSequence(
-  projection: OrchestrationV2ThreadProjection,
-  expectedTypes: ReadonlyArray<OrchestrationV2TurnItem["type"]>,
-) {
-  assert.deepEqual(
-    projection.visibleTurnItems.map((row) => row.item.type),
-    expectedTypes,
-  );
-}
-
 export function assertAssistantTextIncludes(
   projection: OrchestrationV2ThreadProjection,
   expectedText: string,
@@ -1062,20 +915,6 @@ export function assertRuntimeRequestCounts(
       expected.resolved,
     );
   }
-}
-
-function countReplayLabelsWithPrefix(transcript: ProviderReplayTranscript, prefix: string): number {
-  return transcript.entries.filter(
-    (entry) => entry.type !== "runtime_exit" && (entry.label?.startsWith(prefix) ?? false),
-  ).length;
-}
-
-export function assertReplayLabelPrefixCount(
-  transcript: ProviderReplayTranscript,
-  prefix: string,
-  expected: number,
-) {
-  assert.equal(countReplayLabelsWithPrefix(transcript, prefix), expected);
 }
 
 export function assertRuntimeRequestKinds(
@@ -1129,34 +968,6 @@ function assertUserMessagesExclude(
         (item) => item.type === "user_message" && item.text.includes(rejectedText),
       ),
       `expected user input to exclude ${JSON.stringify(rejectedText)}`,
-    );
-  }
-}
-
-export function assertVisibleUserMessagesInclude(
-  projection: OrchestrationV2ThreadProjection,
-  expectedTexts: ReadonlyArray<string>,
-) {
-  for (const expectedText of expectedTexts) {
-    assert.isTrue(
-      projection.visibleTurnItems.some(
-        (row) => row.item.type === "user_message" && row.item.text.includes(expectedText),
-      ),
-      `expected visible user input to include ${JSON.stringify(expectedText)}`,
-    );
-  }
-}
-
-export function assertVisibleUserMessagesExclude(
-  projection: OrchestrationV2ThreadProjection,
-  rejectedTexts: ReadonlyArray<string>,
-) {
-  for (const rejectedText of rejectedTexts) {
-    assert.isFalse(
-      projection.visibleTurnItems.some(
-        (row) => row.item.type === "user_message" && row.item.text.includes(rejectedText),
-      ),
-      `expected visible user input to exclude ${JSON.stringify(rejectedText)}`,
     );
   }
 }

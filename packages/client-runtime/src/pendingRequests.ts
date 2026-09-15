@@ -100,13 +100,11 @@ const staleRequestFailureDetails = {
     "stale pending approval request",
     "unknown pending approval request",
     "unknown pending permission request",
-    "unknown pending codex approval request",
   ],
   "provider.user-input.respond.failed": [
     "stale pending user-input request",
     "unknown pending user-input request",
     "unknown pending user input request",
-    "unknown pending codex user input request",
   ],
 } as const;
 
@@ -118,7 +116,7 @@ function isStaleRequestFailure(
   return staleRequestFailureDetails[kind].some((fragment) => detail.includes(fragment));
 }
 
-/** Reduces request state once for web, desktop, and mobile. Layout stays with each client. */
+/** Reduces request state once for web and desktop. Layout stays with each client. */
 export function derivePendingRequests(activities: ReadonlyArray<OrchestrationThreadActivity>) {
   const approvals = new Map<ApprovalRequestId, PendingApproval>();
   const userInputs = new Map<ApprovalRequestId, PendingUserInput>();

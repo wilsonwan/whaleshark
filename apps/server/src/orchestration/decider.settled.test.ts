@@ -42,7 +42,7 @@ function makeReadModel(
         id: ThreadId.make("thread-1"),
         projectId: ProjectId.make("project-1"),
         title: "Thread",
-        modelSelection: { instanceId: ProviderInstanceId.make("codex"), model: "gpt-5.4" },
+        modelSelection: { instanceId: ProviderInstanceId.make("pi"), model: "gpt-5.4" },
         runtimeMode: "full-access",
         interactionMode: "default",
         branch: null,
@@ -73,7 +73,7 @@ function makeSession(status: OrchestrationSession["status"]): OrchestrationSessi
   return {
     threadId: ThreadId.make("thread-1"),
     status,
-    providerName: "Codex",
+    providerName: "Claude",
     runtimeMode: "full-access",
     activeTurnId: null,
     lastError: null,

@@ -47,17 +47,17 @@ describe("ACP Registry contracts", () => {
   });
 
   it("decodes bounded search and prepare payloads", () => {
-    expect(decodeSearchInput({ query: "  codex  " })).toEqual({
-      query: "codex",
+    expect(decodeSearchInput({ query: "  pi  " })).toEqual({
+      query: "pi",
     });
     expect(
       decodePrepareResult({
-        agentId: "codex-acp",
+        agentId: "pi-acp",
         version: "1.2.0",
         distribution: "npx",
         prepared: true,
       }),
-    ).toMatchObject({ agentId: "codex-acp", distribution: "npx", prepared: true });
+    ).toMatchObject({ agentId: "pi-acp", distribution: "npx", prepared: true });
   });
 
   it("rejects oversized queries and result metadata", () => {

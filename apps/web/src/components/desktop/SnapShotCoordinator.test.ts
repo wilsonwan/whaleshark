@@ -71,7 +71,6 @@ describe("window capture failures", () => {
     vi.stubGlobal("window", {
       localStorage: storage,
       desktopBridge: {
-        requestSnapShotPermissions: vi.fn(),
         getSnapShotState: vi.fn(),
         checkSnapShotShortcut: vi.fn(),
         setSnapShotShortcutSuppressed: vi.fn(),
@@ -153,7 +152,6 @@ describe("window capture delivery", () => {
       const animationFrames: Array<FrameRequestCallback> = [];
       const acknowledgeSnapShot = vi.fn(async () => undefined);
       const bridge = {
-        requestSnapShotPermissions: vi.fn(async () => undefined),
         getSnapShotState: vi.fn(),
         checkSnapShotShortcut: vi.fn(),
         setSnapShotShortcutSuppressed: vi.fn(async () => undefined),

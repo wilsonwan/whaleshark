@@ -98,14 +98,14 @@ describe("ChangedFilesTree", () => {
           deletions: 3,
         },
         {
-          path: "apps/server/src/provider/Layers/CodexAdapter.ts",
+          path: "apps/server/src/provider/Layers/ClaudeAdapter.ts",
           kind: "modified",
           additions: 7,
           deletions: 2,
         },
       ],
       visibleLabels: ["apps/server/src"],
-      hiddenLabels: ["git", "provider", "GitCore.ts", "CodexAdapter.ts"],
+      hiddenLabels: ["git", "provider", "GitCore.ts", "ClaudeAdapter.ts"],
     },
     {
       name: "mixed root files and nested compacted directories",
@@ -163,7 +163,7 @@ describe("ChangedFilesTree", () => {
           deletions: 3,
         },
         {
-          path: "apps/server/src/provider/Layers/CodexAdapter.ts",
+          path: "apps/server/src/provider/Layers/ClaudeAdapter.ts",
           kind: "modified",
           additions: 7,
           deletions: 2,
@@ -174,7 +174,7 @@ describe("ChangedFilesTree", () => {
         "git/Layers",
         "provider/Layers",
         "GitCore.ts",
-        "CodexAdapter.ts",
+        "ClaudeAdapter.ts",
       ],
     },
     {

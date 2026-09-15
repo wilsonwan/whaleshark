@@ -708,7 +708,7 @@ const resolveWslStartConfig = Effect.fn("desktop.backendConfiguration.resolveWsl
   }
 
   // The WSL server spawns commands its providers reference by name — `npm`/`npx`
-  // for provider updates, and the installed CLIs themselves (e.g. `codex`). Those
+  // for provider updates, and the installed CLIs themselves. Those
   // live in the resolved Node's bin dir, which `wsl.exe -- node` does NOT put on
   // the process PATH, so `npm install -g ...` fails with NotFound. Pass the
   // user PATH entries captured by the login-shell preflight. Every dynamic

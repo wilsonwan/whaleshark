@@ -26,16 +26,10 @@ import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 
 import {
-  OrchestratorDispatchError,
-  OrchestratorProjectionError,
   OrchestratorV2,
   type OrchestratorV2DispatchResult,
   type OrchestratorV2Error,
 } from "./Orchestrator.ts";
-import {
-  LegacyV1ThreadImporter,
-  type LegacyV1ThreadImportError,
-} from "./LegacyV1ThreadImporter.ts";
 
 export type ThreadManagementSendMode = "auto" | "queue" | "steer" | "restart";
 
@@ -67,8 +61,8 @@ export function existingThreadIdsForCommand(
     case "thread.create":
       return [];
     // Read-state commands only rewrite the thread payload's visited/unread
-    // watermark; they never touch messages, so they do not need the imported
-    // v1 transcript hydrated first. Visits fire on every thread-activity bump
+    // watermark; they never touch messages, so they do not need a transcript
+    // read first. Visits fire on every thread-activity bump
     // while a thread is open, so keeping them off the import path matters.
     case "thread.visit":
     case "thread.mark-unread":
@@ -267,9 +261,6 @@ export type ThreadManagementError = typeof ThreadManagementError.Type;
 type ThreadManagementFailure = ThreadManagementError | OrchestratorV2Error;
 
 export interface ThreadManagementServiceShape {
-  readonly ensureLegacyTranscript: (
-    threadId: ThreadId,
-  ) => Effect.Effect<void, LegacyV1ThreadImportError>;
   readonly dispatch: (
     command: OrchestrationV2Command,
   ) => Effect.Effect<OrchestratorV2DispatchResult, OrchestratorV2Error>;
@@ -363,76 +354,21 @@ function latestSteerableRun(
 
 const make = Effect.gen(function* () {
   const orchestrator = yield* OrchestratorV2;
-  const legacyImporter = yield* LegacyV1ThreadImporter;
-
-  const ensureLegacyTranscript = Effect.fn(
-    "orchestrationV2.threadManagement.ensureLegacyTranscript",
-  )(function* (threadId: ThreadId) {
-    yield* legacyImporter.ensureTranscript(threadId).pipe(
-      Effect.tapError((cause) =>
-        Effect.logWarning("Unable to hydrate migrated v1 thread transcript", {
-          threadId,
-          cause,
-        }),
-      ),
-    );
-  });
-
-  const ensureProjectionTranscript = (threadId: ThreadId) =>
-    ensureLegacyTranscript(threadId).pipe(
-      Effect.mapError(
-        (cause) =>
-          new OrchestratorProjectionError({
-            threadId,
-            cause,
-          }),
-      ),
-    );
-
-  const ensureCommandTranscripts = Effect.fn(
-    "orchestrationV2.threadManagement.ensureCommandTranscripts",
-  )(function* (command: OrchestrationV2Command) {
-    yield* Effect.forEach(
-      existingThreadIdsForCommand(command),
-      (threadId) => ensureLegacyTranscript(threadId),
-      { discard: true },
-    ).pipe(
-      Effect.mapError(
-        (cause) =>
-          new OrchestratorDispatchError({
-            commandId: command.commandId,
-            commandType: command.type,
-            cause,
-          }),
-      ),
-    );
-  });
+  const dispatch: ThreadManagementServiceShape["dispatch"] = (command) =>
+    orchestrator.dispatch(command);
 
   const getThreadProjection: ThreadManagementServiceShape["getThreadProjection"] = (threadId) =>
-    ensureProjectionTranscript(threadId).pipe(
-      Effect.andThen(orchestrator.getThreadProjection(threadId)),
-    );
+    orchestrator.getThreadProjection(threadId);
 
   const getCheckpointContext: ThreadManagementServiceShape["getCheckpointContext"] = (threadId) =>
-    ensureProjectionTranscript(threadId).pipe(
-      Effect.andThen(orchestrator.getCheckpointContext(threadId)),
-    );
+    orchestrator.getCheckpointContext(threadId);
 
   const getThreadSnapshot: ThreadManagementServiceShape["getThreadSnapshot"] = (threadId) =>
-    ensureProjectionTranscript(threadId).pipe(
-      Effect.andThen(orchestrator.getThreadSnapshot(threadId)),
-    );
+    orchestrator.getThreadSnapshot(threadId);
   const getThreadSnapshotWindow: ThreadManagementServiceShape["getThreadSnapshotWindow"] = (
     threadId,
     options,
-  ) =>
-    ensureProjectionTranscript(threadId).pipe(
-      Effect.andThen(orchestrator.getThreadSnapshotWindow(threadId, options)),
-    );
-
-  const dispatch: ThreadManagementServiceShape["dispatch"] = (command) =>
-    ensureCommandTranscripts(command).pipe(Effect.andThen(orchestrator.dispatch(command)));
-
+  ) => orchestrator.getThreadSnapshotWindow(threadId, options);
   const getProjectThread: ThreadManagementServiceShape["getProjectThread"] = (input) =>
     getThreadProjection(input.threadId).pipe(
       Effect.mapError(
@@ -660,7 +596,6 @@ const make = Effect.gen(function* () {
     });
 
   return ThreadManagementService.of({
-    ensureLegacyTranscript,
     dispatch,
     getThreadProjection,
     getCheckpointContext,
@@ -680,23 +615,7 @@ const make = Effect.gen(function* () {
   });
 });
 
-const legacyV1ThreadImporterNoopLayer = Layer.succeed(
-  LegacyV1ThreadImporter,
-  LegacyV1ThreadImporter.of({
-    pendingThreadCount: Effect.succeed(0),
-    reconcileShells: Effect.succeed({ importedThreadCount: 0, importedMessageCount: 0 }),
-    ensureTranscript: () => Effect.succeed({ importedThreadCount: 0, importedMessageCount: 0 }),
-    importPendingTranscripts: Effect.succeed({ importedThreadCount: 0, importedMessageCount: 0 }),
-  }),
-);
-
 export const layer: Layer.Layer<ThreadManagementService, never, OrchestratorV2> = Layer.effect(
   ThreadManagementService,
   make,
-).pipe(Layer.provide(legacyV1ThreadImporterNoopLayer));
-
-export const layerWithLegacyImporter: Layer.Layer<
-  ThreadManagementService,
-  never,
-  LegacyV1ThreadImporter | OrchestratorV2
-> = Layer.effect(ThreadManagementService, make);
+);

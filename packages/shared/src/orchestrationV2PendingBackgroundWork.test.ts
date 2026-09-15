@@ -112,7 +112,7 @@ describe("derivePendingBackgroundWork", () => {
         {
           id: "pt-1" as never,
           pendingBackgroundTasks: [
-            { taskId: "bg-1", description: "Run Codex review", taskType: "local_bash" },
+            { taskId: "bg-1", description: "Run agent review", taskType: "local_bash" },
           ],
         },
       ],
@@ -120,7 +120,7 @@ describe("derivePendingBackgroundWork", () => {
       activeProviderThreadId: "pt-1",
     });
     expect(tasks).toEqual([
-      { taskId: "bg-1", description: "Run Codex review", taskType: "local_bash" },
+      { taskId: "bg-1", description: "Run agent review", taskType: "local_bash" },
     ]);
   });
 
@@ -420,8 +420,8 @@ describe("formatPendingBackgroundWorkLabel", () => {
       "Waiting on a background task",
     );
     expect(
-      formatPendingBackgroundWorkLabel([{ taskId: "a", description: "Run Codex review" }]),
-    ).toBe("Waiting on background task: Run Codex review");
+      formatPendingBackgroundWorkLabel([{ taskId: "a", description: "Run agent review" }]),
+    ).toBe("Waiting on background task: Run agent review");
     expect(
       formatPendingBackgroundWorkLabel([
         { taskId: "a", description: "first" },

@@ -7,7 +7,6 @@ import {
   initialTargetSelection,
   isRetryableReason,
   formatSkippedDomains,
-  fullDiskAccessRecheckStep,
   outcomeToStep,
   refreshedSourceProfileDirectory,
   refreshedSourceStep,
@@ -50,15 +49,6 @@ describe("initialWizardStep", () => {
 
   it("opens on configure when the source is ready", () => {
     expect(initialWizardStep(source())).toEqual({ step: "configure" });
-  });
-
-  it("asks for Full Disk Access before choosing an import target", () => {
-    expect(initialWizardStep(source({ profiles: [], unavailable: "needsFullDiskAccess" }))).toEqual(
-      {
-        step: "fullDiskAccess",
-        resume: "configure",
-      },
-    );
   });
 
   it("blocks on a reason nothing local can fix", () => {
@@ -113,14 +103,6 @@ describe("outcomeToStep", () => {
     expect(outcomeToStep({ kind: "blocked", reason: "browserRunning" })).toEqual({ step: "quit" });
   });
 
-  it("routes a Full Disk Access refusal to its own screen", () => {
-    expect(outcomeToStep({ kind: "blocked", reason: "needsFullDiskAccess" })).toEqual({
-      step: "fullDiskAccess",
-      resume: "import",
-      checked: true,
-    });
-  });
-
   it("surfaces every other failure on the blocked screen", () => {
     expect(outcomeToStep({ kind: "blocked", reason: "readFailed" })).toEqual({
       step: "blocked",
@@ -149,20 +131,6 @@ describe("refreshedSourceStep", () => {
       step: "blocked",
       reason: "unknownSourceProfile",
     });
-  });
-});
-
-describe("fullDiskAccessRecheckStep", () => {
-  it("marks a still-denied access check for visible feedback", () => {
-    expect(fullDiskAccessRecheckStep(source({ unavailable: "needsFullDiskAccess" }))).toEqual({
-      step: "fullDiskAccess",
-      resume: "configure",
-      checked: true,
-    });
-  });
-
-  it("moves on once access reveals the source profiles", () => {
-    expect(fullDiskAccessRecheckStep(source())).toEqual({ step: "configure" });
   });
 });
 

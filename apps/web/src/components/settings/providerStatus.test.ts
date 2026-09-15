@@ -4,8 +4,8 @@ import { describe, expect, it } from "vite-plus/test";
 import { getProviderSummary } from "./providerStatus";
 
 const provider: ServerProvider = {
-  instanceId: ProviderInstanceId.make("codex"),
-  driver: ProviderDriverKind.make("codex"),
+  instanceId: ProviderInstanceId.make("pi"),
+  driver: ProviderDriverKind.make("pi"),
   enabled: true,
   installed: true,
   version: "1.0.0",
@@ -57,11 +57,11 @@ describe("getProviderSummary", () => {
         ...provider,
         status: "error",
         auth: { status: "unauthenticated" },
-        message: "Run codex login.",
+        message: "Run pi login.",
       }),
     ).toEqual({
       headline: "Not authenticated",
-      detail: "Run codex login.",
+      detail: "Run pi login.",
     });
   });
 

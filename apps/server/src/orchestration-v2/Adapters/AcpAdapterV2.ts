@@ -617,7 +617,7 @@ function acpMcpContext(threadId: ThreadId | null): AcpMcpContext {
   }
   // Stdio is ACP's required baseline MCP transport. Agents that advertise
   // optional http support still routinely fail to wire injected http servers
-  // through to their backend (codex-acp 1.2.0 and pi-acp both drop them), so
+  // through to their backend (some ACP agents drop optional http servers), so
   // every ACP session gets the `t3 acp-mcp-bridge` stdio server, which
   // forwards JSON-RPC to T3's authenticated MCP endpoint. The credential
   // travels via environment variables, never the command line.
@@ -719,9 +719,9 @@ function makeProviderThread(input: {
 }
 
 /**
- * Unwrap a codex-acp style MCP call result (`{ result, error }` around MCP
- * `content`/`structuredContent`) the same way the native Codex adapter does,
- * so recovered MCP items render identical output. Unknown shapes pass through.
+ * Unwrap an ACP MCP call result (`{ result, error }` around MCP
+ * `content`/`structuredContent`) so recovered MCP items render identical
+ * output. Unknown shapes pass through.
  */
 function acpMcpToolCallOutput(rawOutput: unknown): unknown {
   const record = unknownRecord(rawOutput);
@@ -1166,7 +1166,7 @@ export function acpPostSettleWakeShouldBuffer(
  * An app-owned wake (a delegated child finishing) is injected by the
  * orchestrator, not typed by the user. It reports on a sibling child and says
  * nothing about this session's own pending wake frames, so it must not discard
- * them the way a real user turn does. ClaudeAdapterV2 already leaves its buffer
+ * them the way a real user turn does. Buffered adapters already leave their buffer
  * alone on non-continuation turns; this keeps ACP consistent.
  */
 export function acpIsAppOwnedWakeTurn(message: {
@@ -3056,7 +3056,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
           } else if (mcpIdentity !== undefined) {
             turnItem = {
               ...base,
-              // Identity lives in toolName, like native Codex MCP items; the
+              // Identity lives in toolName, like native MCP items; the
               // agent's own title (e.g. "Ran command") would shadow it.
               title: null,
               type: "dynamic_tool",
@@ -5330,8 +5330,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
               const transportRequestId = requestContext.requestId;
               if (
                 params.mode === "form" &&
-                (unknownRecord(params._meta)?.codex_approval_kind === "mcp_tool_call" ||
-                  transportRequestId.startsWith("mcp_tool_call_approval_"))
+                transportRequestId.startsWith("mcp_tool_call_approval_")
               ) {
                 const mcpApprovalDisposition = yield* runRuntimeCallbackAtGeneration(
                   handlerGeneration,
@@ -5844,7 +5843,7 @@ export function makeAcpAdapterV2(options: AcpAdapterV2Options): ProviderAdapterV
             if (!availableConfigIds.has(selection.id)) continue;
             // Tuning knobs degrade instead of failing the session open: agents
             // advertise the union of values across models but can reject a
-            // per-model invalid one at set time (codex-acp advertises "ultra"
+            // per-model invalid one at set time (agents advertise "ultra"
             // reasoning effort and then rejects it for most models). Skip
             // values the session does not currently offer and downgrade an
             // agent-side set rejection to a warning; the agent's default

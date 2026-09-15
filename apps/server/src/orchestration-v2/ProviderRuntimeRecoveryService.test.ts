@@ -411,7 +411,7 @@ it.effect("cancels a stale waiting run when no checkpoint capture can finish it"
       {
         id: runId,
         status: "waiting",
-        providerInstanceId: ProviderInstanceId.make("codex"),
+        providerInstanceId: ProviderInstanceId.make("pi"),
       },
     ],
     attempts: [],
@@ -473,7 +473,7 @@ it.effect("cancels accepted queued work instead of replaying it after restart", 
         id: runId,
         status: "queued",
         queuePosition: 1,
-        providerInstanceId: ProviderInstanceId.make("codex"),
+        providerInstanceId: ProviderInstanceId.make("pi"),
       },
     ],
     attempts: [
@@ -558,16 +558,16 @@ it.effect(
       providerSessions: [
         {
           id: providerSessionId,
-          driver: ProviderDriverKind.make("codex"),
-          providerInstanceId: ProviderInstanceId.make("codex"),
+          driver: ProviderDriverKind.make("pi"),
+          providerInstanceId: ProviderInstanceId.make("pi"),
           status: "ready",
         },
       ],
       providerThreads: [
         {
           id: providerThreadId,
-          driver: ProviderDriverKind.make("codex"),
-          providerInstanceId: ProviderInstanceId.make("codex"),
+          driver: ProviderDriverKind.make("pi"),
+          providerInstanceId: ProviderInstanceId.make("pi"),
           status: "active",
         },
       ],
@@ -584,7 +584,7 @@ it.effect(
           id: runId,
           status: "starting",
           providerThreadId,
-          providerInstanceId: ProviderInstanceId.make("codex"),
+          providerInstanceId: ProviderInstanceId.make("pi"),
         },
       ],
       attempts: [
@@ -885,31 +885,31 @@ it.effect(
     const settledRunId = RunId.make("run_recovery_orphan_wait_settled");
     const providerThreadId = ProviderThreadId.make("provider_thread_recovery_orphan_wait");
     const orphanWaitItemId = TurnItemId.make(
-      "turn-item:provider:codex:native-item:exec-4669f3bb-78c9-4af1-b44e-daa340d2c538",
+      "turn-item:provider:pi:native-item:exec-4669f3bb-78c9-4af1-b44e-daa340d2c538",
     );
     const persistentMonitorItemId = TurnItemId.make(
-      "turn-item:provider:codex:native-item:exec-persistent-monitor",
+      "turn-item:provider:pi:native-item:exec-persistent-monitor",
     );
     const orphanWaitNodeId = NodeId.make("node_recovery_orphan_wait");
     const persistentMonitorNodeId = NodeId.make("node_recovery_persistent_monitor");
-    const codexInstanceId = ProviderInstanceId.make("codex");
+    const claudeInstanceId = ProviderInstanceId.make("pi");
     let committedInput: Parameters<EventSink.EventSinkV2["Service"]["commitCommand"]>[0] | null =
       null;
     const projection = {
-      thread: { id: threadId, providerInstanceId: codexInstanceId },
+      thread: { id: threadId, providerInstanceId: claudeInstanceId },
       runtimeRequests: [],
       providerSessions: [],
       providerThreads: [
         {
           id: providerThreadId,
-          driver: ProviderDriverKind.make("codex"),
-          providerInstanceId: codexInstanceId,
+          driver: ProviderDriverKind.make("pi"),
+          providerInstanceId: claudeInstanceId,
           status: "idle",
           pendingBackgroundTasks: [],
         },
       ],
       providerTurns: [],
-      runs: [{ id: settledRunId, status: "completed", providerInstanceId: codexInstanceId }],
+      runs: [{ id: settledRunId, status: "completed", providerInstanceId: claudeInstanceId }],
       attempts: [],
       nodes: [
         { id: orphanWaitNodeId, runId: settledRunId, status: "running", kind: "tool_call" },

@@ -135,7 +135,7 @@ describe("DesktopPreReadyPlatform", () => {
       });
 
       const preReadyLayer = DesktopPreReadyPlatform.layer.pipe(
-        Layer.provide(Layer.succeed(HostProcessPlatform, "darwin")),
+        Layer.provide(Layer.succeed(HostProcessPlatform, "win32")),
       );
 
       const asyncShapedLayer = Layer.effect(

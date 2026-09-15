@@ -5,7 +5,7 @@ import { ProviderDriverKind, ProviderInstanceId } from "./providerInstance.ts";
 import {
   ClientSettingsSchema,
   ClientSettingsPatch,
-  ClaudeSettings,
+  PiSettings,
   DEFAULT_SERVER_SETTINGS,
   resolveProviderInstanceEnabled,
   ServerSettings,
@@ -18,7 +18,7 @@ const encodeClientSettings = Schema.encodeSync(ClientSettingsSchema);
 const decodeServerSettings = Schema.decodeUnknownSync(ServerSettings);
 const decodeServerSettingsPatch = Schema.decodeUnknownSync(ServerSettingsPatch);
 const encodeServerSettings = Schema.encodeSync(ServerSettings);
-const decodeClaudeSettings = Schema.decodeUnknownSync(ClaudeSettings);
+const decodePiSettings = Schema.decodeUnknownSync(PiSettings);
 
 describe("ServerSettings default permissions", () => {
   it("keeps full access for settings saved before a default was configured", () => {
@@ -114,7 +114,7 @@ describe("custom model settings", () => {
   };
 
   it("accepts legacy bare slugs alongside full entries", () => {
-    const decoded = decodeClaudeSettings({
+    const decoded = decodePiSettings({
       customModels: ["bare-slug", { slug: "named", name: "Named", capabilities }],
     });
     expect(decoded.customModels).toEqual([
@@ -126,41 +126,14 @@ describe("custom model settings", () => {
   it("accepts entries at the settings patch boundary", () => {
     expect(
       decodeServerSettingsPatch({
-        providers: { codex: { customModels: [{ slug: "x", capabilities }] } },
-      }).providers?.codex?.customModels,
+        providers: { pi: { customModels: [{ slug: "x", capabilities }] } },
+      }).providers?.pi?.customModels,
     ).toEqual([{ slug: "x", capabilities }]);
     expect(() =>
-      decodeServerSettingsPatch({ providers: { codex: { customModels: [{ name: "no slug" }] } } }),
+      decodeServerSettingsPatch({
+        providers: { pi: { customModels: [{ name: "no slug" }] } },
+      }),
     ).toThrow();
-  });
-});
-
-describe("ClaudeSettings auto-compaction", () => {
-  it("uses Claude's default threshold when no override is configured", () => {
-    expect(decodeClaudeSettings({}).autoCompactWindow).toBe("");
-  });
-
-  it.each(["100000", "300000", "1000000"])(
-    "accepts a supported auto-compaction threshold: %s",
-    (value) => {
-      expect(decodeClaudeSettings({ autoCompactWindow: value }).autoCompactWindow).toBe(value);
-    },
-  );
-
-  it.each(["99999", "1000001", "300k", "invalid"])(
-    "rejects an unsupported auto-compaction threshold: %s",
-    (value) => {
-      expect(() => decodeClaudeSettings({ autoCompactWindow: value })).toThrow();
-    },
-  );
-
-  it("rejects an unsupported threshold at the settings patch boundary", () => {
-    expect(() =>
-      decodeServerSettingsPatch({ providers: { claudeAgent: { autoCompactWindow: "300k" } } }),
-    ).toThrow();
-    expect(
-      decodeServerSettingsPatch({ providers: { claudeAgent: { autoCompactWindow: "300000" } } }),
-    ).toBeDefined();
   });
 });
 
@@ -532,7 +505,7 @@ describe("ClientSettings pull request merge methods", () => {
 describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
   it("defaults text generation to Luna at low reasoning effort", () => {
     expect(DEFAULT_SERVER_SETTINGS.textGenerationModelSelection).toEqual({
-      instanceId: ProviderInstanceId.make("codex"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5.6-luna",
       options: [{ id: "reasoningEffort", value: "low" }],
     });
@@ -546,21 +519,22 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
     const decoded = decodeServerSettings({});
     expect(decoded.providerInstances).toEqual({});
     // Legacy `providers` struct is still hydrated with its per-driver defaults
-    // so existing call sites keep working through the migration.
-    expect(decoded.providers.codex.enabled).toBe(true);
+    // so existing call sites keep working through the migration. Every
+    // remaining binding opts in, so the hydrated default is disabled.
+    expect(decoded.providers.pi.enabled).toBe(false);
   });
 
   it("decodes a multi-instance map mixing first-party and fork drivers", () => {
     const decoded = decodeServerSettings({
       providerInstances: {
-        codex_personal: {
-          driver: "codex",
-          displayName: "Codex (personal)",
-          config: { homePath: "~/.codex_personal" },
+        claude_personal: {
+          driver: "pi",
+          displayName: "Claude (personal)",
+          config: { homePath: "~/.claude_personal" },
         },
-        codex_work: {
-          driver: "codex",
-          config: { homePath: "~/.codex_work" },
+        claude_work: {
+          driver: "pi",
+          config: { homePath: "~/.claude_work" },
         },
         ollama_local: {
           driver: "ollama",
@@ -569,12 +543,12 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
         },
       },
     });
-    const personalId = ProviderInstanceId.make("codex_personal");
-    const workId = ProviderInstanceId.make("codex_work");
+    const personalId = ProviderInstanceId.make("claude_personal");
+    const workId = ProviderInstanceId.make("claude_work");
     const ollamaId = ProviderInstanceId.make("ollama_local");
 
-    expect(decoded.providerInstances[personalId]?.driver).toBe("codex");
-    expect(decoded.providerInstances[workId]?.config).toEqual({ homePath: "~/.codex_work" });
+    expect(decoded.providerInstances[personalId]?.driver).toBe("pi");
+    expect(decoded.providerInstances[workId]?.config).toEqual({ homePath: "~/.claude_work" });
     // Critical: a config naming a driver this build does not know about
     // (`ollama` is not in `ProviderDriverKind`) must round-trip without loss.
     // The runtime handles "driver not installed" — the schema must not.
@@ -587,17 +561,15 @@ describe("ServerSettings.providerInstances (slice-2 invariant)", () => {
   it("rejects instance keys that violate the slug pattern", () => {
     expect(() =>
       decodeServerSettings({
-        providerInstances: { "1bad": { driver: "codex" } },
+        providerInstances: { "1bad": { driver: "pi" } },
       }),
     ).toThrow();
   });
 });
 
 describe("provider enabled defaults", () => {
-  it("enables only the stable bindings by default", () => {
+  it("leaves the built-in bindings disabled by default", () => {
     const decoded = decodeServerSettings({});
-    expect(decoded.providers.codex.enabled).toBe(true);
-    expect(decoded.providers.claudeAgent.enabled).toBe(true);
     expect(decoded.providers.pi.enabled).toBe(false);
     expect(decoded.providers.opencode.enabled).toBe(false);
   });
@@ -631,27 +603,35 @@ describe("provider enabled defaults", () => {
 
   it("resolves instance enabled state with explicit false winning", () => {
     const pi = ProviderDriverKind.make("pi");
-    const codex = ProviderDriverKind.make("codex");
+    const acpRegistry = ProviderDriverKind.make("acpRegistry");
     // No flags anywhere: driver default applies.
     expect(resolveProviderInstanceEnabled({ driver: pi, config: {} })).toBe(false);
-    expect(resolveProviderInstanceEnabled({ driver: codex, config: {} })).toBe(true);
+    expect(resolveProviderInstanceEnabled({ driver: acpRegistry, config: {} })).toBe(true);
     // Unknown fork drivers stay enabled.
     expect(
       resolveProviderInstanceEnabled({ driver: ProviderDriverKind.make("ollama"), config: {} }),
     ).toBe(true);
     // Envelope flag wins over the driver default.
     expect(resolveProviderInstanceEnabled({ driver: pi, enabled: true, config: {} })).toBe(true);
-    expect(resolveProviderInstanceEnabled({ driver: codex, enabled: false, config: {} })).toBe(
-      false,
-    );
+    expect(
+      resolveProviderInstanceEnabled({ driver: acpRegistry, enabled: false, config: {} }),
+    ).toBe(false);
     // Legacy in-config flag fills in when the envelope is silent.
     expect(resolveProviderInstanceEnabled({ driver: pi, config: { enabled: true } })).toBe(true);
     // Conflicting flags: the explicit false wins, whichever side it is on.
     expect(
-      resolveProviderInstanceEnabled({ driver: pi, enabled: true, config: { enabled: false } }),
+      resolveProviderInstanceEnabled({
+        driver: acpRegistry,
+        enabled: true,
+        config: { enabled: false },
+      }),
     ).toBe(false);
     expect(
-      resolveProviderInstanceEnabled({ driver: codex, enabled: false, config: { enabled: true } }),
+      resolveProviderInstanceEnabled({
+        driver: acpRegistry,
+        enabled: false,
+        config: { enabled: true },
+      }),
     ).toBe(false);
   });
 });
@@ -702,13 +682,13 @@ describe("ServerSettingsPatch.providerInstances", () => {
 
     const replacement = decodeServerSettingsPatch({
       providerInstances: {
-        codex_personal: { driver: "codex", config: { homePath: "~/.codex" } },
+        claude_personal: { driver: "pi", config: { homePath: "~/.claude" } },
       },
     });
     expect(replacement.providerInstances).toBeDefined();
-    expect(replacement.providerInstances?.[ProviderInstanceId.make("codex_personal")]?.driver).toBe(
-      "codex",
-    );
+    expect(
+      replacement.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.driver,
+    ).toBe("pi");
   });
 
   it("preserves a fork-defined driver entry through patch decoding", () => {
@@ -734,17 +714,16 @@ describe("ServerSettingsPatch string normalization", () => {
         otlpTracesUrl: "  http://localhost:4318/v1/traces  ",
       },
       providers: {
-        codex: {
-          binaryPath: "  /opt/homebrew/bin/codex  ",
-          homePath: "  ~/.codex  ",
+        pi: {
+          binaryPath: "  /opt/homebrew/bin/claude  ",
           launchArgs: "  --strict-config --enable foo  ",
         },
       },
       providerInstances: {
-        codex_personal: {
-          driver: "  codex  ",
-          displayName: "  Codex Personal  ",
-          config: { homePath: "  ~/.codex-personal  " },
+        claude_personal: {
+          driver: "  pi  ",
+          displayName: "  Claude Personal  ",
+          config: { homePath: "  ~/.claude-personal  " },
         },
       },
     });
@@ -752,17 +731,16 @@ describe("ServerSettingsPatch string normalization", () => {
     expect(patch.addProjectBaseDirectory).toBe("~/Development");
     expect(patch.textGenerationModelSelection?.model).toBe("gpt-5.4-mini");
     expect(patch.observability?.otlpTracesUrl).toBe("http://localhost:4318/v1/traces");
-    expect(patch.providers?.codex?.binaryPath).toBe("/opt/homebrew/bin/codex");
-    expect(patch.providers?.codex?.homePath).toBe("~/.codex");
-    expect(patch.providers?.codex?.launchArgs).toBe("--strict-config --enable foo");
-    expect(patch.providerInstances?.[ProviderInstanceId.make("codex_personal")]?.driver).toBe(
-      "codex",
+    expect(patch.providers?.pi?.binaryPath).toBe("/opt/homebrew/bin/claude");
+    expect(patch.providers?.pi?.launchArgs).toBe("--strict-config --enable foo");
+    expect(patch.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.driver).toBe(
+      "pi",
     );
-    expect(patch.providerInstances?.[ProviderInstanceId.make("codex_personal")]?.displayName).toBe(
-      "Codex Personal",
+    expect(patch.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.displayName).toBe(
+      "Claude Personal",
     );
-    expect(patch.providerInstances?.[ProviderInstanceId.make("codex_personal")]?.config).toEqual({
-      homePath: "  ~/.codex-personal  ",
+    expect(patch.providerInstances?.[ProviderInstanceId.make("claude_personal")]?.config).toEqual({
+      homePath: "  ~/.claude-personal  ",
     });
   });
 
@@ -773,17 +751,17 @@ describe("ServerSettingsPatch string normalization", () => {
       addProjectBaseDirectory: "  ~/Development  ",
       providers: {
         ...defaultSettings.providers,
-        codex: {
-          ...defaultSettings.providers.codex,
-          binaryPath: "  /opt/homebrew/bin/codex  ",
+        pi: {
+          ...defaultSettings.providers.pi,
+          binaryPath: "  /opt/homebrew/bin/pi  ",
           launchArgs: "  --strict-config  ",
         },
       },
     });
 
     expect(encoded.addProjectBaseDirectory).toBe("~/Development");
-    expect(encoded.providers?.codex?.binaryPath).toBe("/opt/homebrew/bin/codex");
-    expect(encoded.providers?.codex?.launchArgs).toBe("--strict-config");
+    expect(encoded.providers?.pi?.binaryPath).toBe("/opt/homebrew/bin/pi");
+    expect(encoded.providers?.pi?.launchArgs).toBe("--strict-config");
   });
 });
 

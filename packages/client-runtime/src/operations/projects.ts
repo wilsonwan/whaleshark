@@ -70,7 +70,7 @@ const ADD_PROJECT_REMOTE_PROVIDER_SOURCES: ReadonlyArray<AddProjectRemoteProvide
   "azure-devops",
 ];
 
-export function addProjectRemoteSourceLabel(source: AddProjectRemoteSource): string {
+function addProjectRemoteSourceLabel(source: AddProjectRemoteSource): string {
   switch (source) {
     case "github":
       return "GitHub";
@@ -85,22 +85,7 @@ export function addProjectRemoteSourceLabel(source: AddProjectRemoteSource): str
   }
 }
 
-export function addProjectRemoteSourcePathHint(source: AddProjectRemoteSource): string {
-  switch (source) {
-    case "github":
-      return "owner/repo";
-    case "gitlab":
-      return "group/project";
-    case "bitbucket":
-      return "workspace/repository";
-    case "azure-devops":
-      return "project/repository";
-    case "url":
-      return "URL";
-  }
-}
-
-export function addProjectRemoteSourceProvider(
+function addProjectRemoteSourceProvider(
   source: AddProjectRemoteSource,
 ): AddProjectRemoteProviderKind | null {
   return source === "url" ? null : source;

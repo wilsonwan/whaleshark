@@ -1,7 +1,8 @@
 # Install T3 Code
 
 T3 Code runs coding agents on your computer and lets you control them from its
-desktop, web, or mobile app. Set up the machine where the agents will work first.
+desktop app or responsive web app. Set up the machine where the agents will work
+first.
 
 This fork is not published as a package. You install it by checking out this
 repository and building it, and you update it by pulling, rebuilding, and
@@ -41,13 +42,8 @@ Build the desktop app from the same checkout:
 
 | Platform | Command                     |
 | -------- | --------------------------- |
-| macOS    | `vp run dist:desktop:dmg`   |
 | Linux    | `vp run dist:desktop:linux` |
 | Windows  | `vp run dist:desktop:win`   |
-
-Local builds are unsigned. See
-[Development](../operations/development.md#desktop-artifacts) for prerequisites,
-or `vp run dev:desktop` to run the Electron client against the dev server.
 
 ### Windows Subsystem for Linux
 
@@ -70,13 +66,12 @@ another directory. It requires the desktop app, so a standalone server or an SSH
 session is not enough. If the command cannot reach the app, start the desktop app
 and try again.
 
-## Mobile app
+## Phone and remote access
 
-The mobile client is source-only in this fork. Build and install a local
-development or full build from this checkout; see the
-[mobile README](../../apps/mobile/README.md) for the native prerequisites and
-commands. The client connects to a server on another machine. Follow
-[remote access](./remote-access.md) to link it with a pairing URL.
+The responsive web app is the phone surface. Start T3 Code on the machine where
+agents run, then open its pairing URL from the phone or another computer. See
+[remote access](./remote-access.md) for pairing, local-network, Tailscale, and
+T3 Connect options.
 
 ## Providers
 
@@ -85,12 +80,11 @@ and enable the provider you want. Installation, login, and configuration belong
 to that environment's machine, even when you connect from a phone or another
 computer.
 
-| Provider | Install and authenticate                                                                     |
-| -------- | -------------------------------------------------------------------------------------------- |
-| Codex    | Install [Codex CLI](https://developers.openai.com/codex/cli), then run `codex login`.        |
-| Claude   | Install [Claude Code](https://claude.com/product/claude-code), then run `claude auth login`. |
-| OpenCode | Install [OpenCode](https://opencode.ai), then run `opencode auth login`.                     |
-| Pi       | Install [Pi](https://pi.dev), then run `pi` once to finish its login or API-key setup.       |
+| Provider | Install and authenticate                                                               |
+| -------- | -------------------------------------------------------------------------------------- |
+| Codex    | Install [Codex CLI](https://developers.openai.com/codex/cli), then run `codex login`.  |
+| OpenCode | Install [OpenCode](https://opencode.ai), then run `opencode auth login`.               |
+| Pi       | Install [Pi](https://pi.dev), then run `pi` once to finish its login or API-key setup. |
 
 Provider CLIs must be on the server's `PATH`. If T3 Code cannot find one, set its
 **Binary path** in provider settings, especially when using a version manager.
@@ -108,8 +102,7 @@ base URL. Mark secret values as sensitive; after saving, T3 Code does not displa
 their original values.
 
 For provider-specific setup and accounts, see [Codex](./providers-codex.md),
-[Claude](./providers-claude.md), [OpenCode](./providers-opencode.md),
-and [Pi](./providers-pi.md).
+[OpenCode](./providers-opencode.md), and [Pi](./providers-pi.md).
 
 ## Next steps
 

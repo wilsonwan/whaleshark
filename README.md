@@ -1,6 +1,6 @@
 # T3 Code
 
-T3 Code is an "agent harness control surface". It enables control of the agents on your machine with a best-in-class mobile client, a web app served by your own server, and an [Electron-based desktop app](https://t3.codes).
+T3 Code is an "agent harness control surface". It enables control of the agents on your machine with a responsive web app served by your own server and an [Electron-based desktop app](https://t3.codes).
 
 Works with your subscriptions on Claude Code, Codex, OpenCode, and Pi. Agents from the [ACP Registry](https://agentclientprotocol.com/get-started/registry) work too. If they're set up on your computer, T3 Code can control them.
 
@@ -45,7 +45,6 @@ Build the desktop app from the same checkout:
 
 | Platform | Command                     |
 | -------- | --------------------------- |
-| macOS    | `vp run dist:desktop:dmg`   |
 | Linux    | `vp run dist:desktop:linux` |
 | Windows  | `vp run dist:desktop:win`   |
 
@@ -71,7 +70,6 @@ Full docs live in [docs/](./docs). There's no docs site yet.
 - [Remote access from a phone or another machine](./docs/user/remote-access.md)
 - [Updating T3 Code](./docs/user/updating.md)
 - [Source control integrations](./docs/user/source-control.md)
-- Multiple accounts: [Codex](./docs/user/providers-codex.md) · [Claude](./docs/user/providers-claude.md)
 - [Run T3 Code as a background service](./docs/user/background-service.md)
 
 Building from source? Start at [docs/internals/overview.md](./docs/internals/overview.md).
@@ -82,7 +80,7 @@ Building from source? Start at [docs/internals/overview.md](./docs/internals/ove
 
 T3 Code uses Vite+ so you'll need to install the global `vp` command-line tool.
 
-#### macOS / Linux
+#### Linux
 
 ```bash
 curl -fsSL https://vite.plus | bash

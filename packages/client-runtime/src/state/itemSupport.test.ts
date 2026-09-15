@@ -22,7 +22,7 @@ const runId = RunId.make("run-1");
 const nodeId = NodeId.make("node-1");
 const itemId = TurnItemId.make("item-1");
 const requestId = RuntimeRequestId.make("request-1");
-const providerInstanceId = ProviderInstanceId.make("codex");
+const providerInstanceId = ProviderInstanceId.make("pi");
 const providerThreadId = ProviderThreadId.make("provider-thread-1");
 const providerTurnId = ProviderTurnId.make("provider-turn-1");
 
@@ -111,7 +111,7 @@ describe("resolveV2ItemSupport", () => {
     };
     const providerThread = {
       id: providerThreadId,
-      driver: ProviderDriverKind.make("codex"),
+      driver: ProviderDriverKind.make("pi"),
       providerInstanceId,
       providerSessionId: null,
       appThreadId: v2ThreadId,
