@@ -40,7 +40,6 @@ import { formatAttachmentSize } from "@t3tools/client-runtime/state/attachments"
 import { formatSubagentTokenCount } from "@t3tools/client-runtime/state/subagentRuntime";
 
 const NOOP_OPEN_AGENTS = () => {};
-const NOOP_USE_ARTIFACT_TEMPLATE = () => {};
 const NOOP_OPEN_ATTACHMENT = (_attachment: ChatFileAttachment) => {};
 
 import { resolveChatListAnchoredEndSpace } from "@t3tools/shared/chatList";
@@ -79,7 +78,6 @@ import {
   workEntrySignalsSevereFailure,
   workLogEntryIsToolLike,
 } from "../../session-logic";
-import type { CodexArtifactTemplate } from "@t3tools/client-runtime/codex-artifact-templates";
 import {
   type ChatMessage,
   type ChatFileAttachment,
@@ -271,7 +269,6 @@ interface TimelineRowSharedState {
   runs: ReadonlyArray<HandoffTimelineRun>;
   activeThreadEnvironmentId: EnvironmentId;
   onRevertToTurnCount: (targetTurnCount: number, messageId: MessageId) => void;
-  onUseArtifactTemplate: (template: CodexArtifactTemplate) => void;
   onImageExpand: (preview: ExpandedImagePreview) => void;
   displayThreadKey?: string;
   onOpenTurnDiff: (runId: RunId, filePath?: string) => void;
@@ -389,7 +386,6 @@ interface MessagesTimelineProps {
   }) => void;
   supportsConversationRollback: boolean;
   onRevertToTurnCount: (targetTurnCount: number, messageId: MessageId) => void;
-  onUseArtifactTemplate?: (template: CodexArtifactTemplate) => void;
   isRevertingCheckpoint: boolean;
   onImageExpand: (preview: ExpandedImagePreview) => void;
   onFileOpen?: (attachment: ChatFileAttachment) => void;
@@ -455,7 +451,6 @@ export const MessagesTimeline = memo(function MessagesTimeline({
   onRollbackCheckpoint,
   supportsConversationRollback,
   onRevertToTurnCount,
-  onUseArtifactTemplate = NOOP_USE_ARTIFACT_TEMPLATE,
   isRevertingCheckpoint,
   onImageExpand,
   onFileOpen = NOOP_OPEN_ATTACHMENT,
@@ -875,7 +870,6 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       onRevertToTurnCount,
       onImageExpand,
       onFileOpen,
-      onUseArtifactTemplate,
       onFileDownload,
       openPullRequest,
       onOpenTurnDiff,
@@ -904,7 +898,6 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       onRevertToTurnCount,
       onImageExpand,
       onFileOpen,
-      onUseArtifactTemplate,
       onFileDownload,
       openPullRequest,
       onOpenTurnDiff,
@@ -2071,7 +2064,6 @@ function AssistantTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "mess
             isStreaming={Boolean(row.message.streaming)}
             lineBreaks={shouldPreserveAssistantLineBreaks(messageText)}
             skills={ctx.skills}
-            onUseArtifactTemplate={ctx.onUseArtifactTemplate}
             onImageExpand={ctx.onImageExpand}
           />
         </AssistantCitationSource>

@@ -2,7 +2,9 @@ import { assert, it } from "@effect/vitest";
 import {
   DEFAULT_SERVER_SETTINGS,
   DEFAULT_MODEL,
+  DEFAULT_MODEL_BY_PROVIDER,
   ProjectId,
+  ProviderDriverKind,
   ProviderInstanceId,
 } from "@t3tools/contracts";
 import * as Deferred from "effect/Deferred";
@@ -15,10 +17,10 @@ import * as GitVcsDriver from "./vcs/GitVcsDriver.ts";
 import * as ServerConfig from "./config.ts";
 import * as ServerRuntimeStartup from "./serverRuntimeStartup.ts";
 
-it("uses the canonical Codex model for auto-bootstrap", () => {
+it("uses the canonical Pi model for auto-bootstrap", () => {
   assert.deepEqual(ServerRuntimeStartup.getAutoBootstrapThreadModelSelection(), {
-    instanceId: ProviderInstanceId.make("codex"),
-    model: DEFAULT_MODEL,
+    instanceId: ProviderInstanceId.make("pi"),
+    model: DEFAULT_MODEL_BY_PROVIDER[ProviderDriverKind.make("pi")] ?? DEFAULT_MODEL,
   });
 });
 
@@ -28,13 +30,12 @@ it.effect("starts without scanning or rebuilding projection history", () =>
     const record = (label: string) => Ref.update(calls, (current) => [...current, label]);
 
     const result = yield* ServerRuntimeStartup.runOrderedV2StartupPhases({
-      importLegacyShells: record("import"),
       recover: record("recover").pipe(Effect.as({ closedRequests: 2 })),
       startEffectWorker: record("worker"),
       autoBootstrap: record("bootstrap").pipe(Effect.as({ projectId: "project-1" })),
     });
 
-    assert.deepEqual(yield* Ref.get(calls), ["import", "recover", "worker", "bootstrap"]);
+    assert.deepEqual(yield* Ref.get(calls), ["recover", "worker", "bootstrap"]);
     assert.deepEqual(result, {
       recovery: { closedRequests: 2 },
       bootstrap: { projectId: "project-1" },

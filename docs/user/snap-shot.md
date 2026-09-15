@@ -5,7 +5,7 @@ attachment carries the app name and window title, and when available the app ico
 accessibility data (its controls, text, and their positions in the image). Agents can use that data
 to reason about the screenshot.
 
-SnapShots are off by default and available in the desktop app on macOS, Windows, and Linux with
+SnapShots are off by default and available in the desktop app on Windows and Linux with
 Wayland. X11 sessions are not supported.
 
 ## Turning it on
@@ -14,8 +14,6 @@ Open **Settings** > **SnapShots** and turn the feature on. Setup has two steps: 
 choose a shortcut. Each step shows only what your desktop needs. **Finish later** turns capture back
 off but keeps anything you already installed, so you can resume where you left off.
 
-- **macOS** asks for Screen Recording during setup. It asks for Accessibility only when **Include
-  app text** is on.
 - **Windows** needs no setup or permission.
 - **Linux** depends on your desktop. See [Linux desktops](#linux-desktops).
 
@@ -23,8 +21,8 @@ Turning capture off releases the shortcut. It does not uninstall a helper or ext
 
 ## Taking a capture
 
-Switch to the window you want and press the shortcut. The default on macOS and Windows is both
-Shift keys together. T3 Code attaches the image to your draft and brings itself forward. If no thread
+Switch to the window you want and press the shortcut. The default on Windows is both Shift keys
+together. T3 Code attaches the image to your draft and brings itself forward. If no thread
 is open it starts a draft in the current project.
 
 Pressing the shortcut while T3 Code is in front captures T3 Code itself.
@@ -35,8 +33,8 @@ too large are discarded.
 
 ## Changing the shortcut
 
-Select the shortcut in Settings, press the new keys, then **Save**. On macOS and Windows you can use
-a modifier pair such as Command+Command or Ctrl+Ctrl, or a key chord. T3 Code refuses shortcuts
+Select the shortcut in Settings, press the new keys, then **Save**. On Windows you can use a
+modifier pair such as Ctrl+Ctrl, or a key chord. T3 Code refuses shortcuts
 that collide with its own keybindings or that the operating system already reserves.
 
 On Linux, choose a key chord; modifier pairs are not supported. On Niri and Hyprland the shortcut
@@ -45,7 +43,7 @@ lives in your compositor config, so **Change shortcut** reopens setup to review 
 ## Include app text
 
 **Include app text** controls whether captures include the window's accessibility data. Turn it off
-to attach screenshots only. On macOS this also drops the Accessibility permission requirement.
+to attach screenshots only.
 
 Availability depends on the app. Some apps expose only their window controls, not the document or
 terminal contents. If an app is slow to answer, T3 Code attaches the screenshot without the data

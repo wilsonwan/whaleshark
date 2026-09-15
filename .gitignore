@@ -28,9 +28,7 @@ squashfs-root/
 /audits/
 dist-electron/
 .electron-runtime/
-.showcase/
 /.generated/
-artifacts/app-store/screenshots/
 .github/pr-assets/
 native/**/target/
 node_modules/

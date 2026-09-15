@@ -154,7 +154,7 @@ it.effect("trims branded ids and command string fields at decode boundaries", ()
       title: " Project Title ",
       workspaceRoot: " /tmp/workspace ",
       defaultModelSelection: {
-        provider: "codex",
+        provider: "pi",
         model: " gpt-5.2 ",
       },
       createdAt: "2026-01-01T00:00:00.000Z",
@@ -165,7 +165,7 @@ it.effect("trims branded ids and command string fields at decode boundaries", ()
     assert.strictEqual(parsed.workspaceRoot, "/tmp/workspace");
     assert.strictEqual(parsed.createWorkspaceRootIfMissing, undefined);
     assert.deepStrictEqual(parsed.defaultModelSelection, {
-      instanceId: ProviderInstanceId.make("codex"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5.2",
     });
   }),
@@ -194,14 +194,14 @@ it.effect("decodes historical project.created payloads with a default provider",
       title: "Project Title",
       workspaceRoot: "/tmp/workspace",
       defaultModelSelection: {
-        provider: "codex",
+        provider: "pi",
         model: "gpt-5.4",
       },
       scripts: [],
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
     });
-    assert.strictEqual(parsed.defaultModelSelection?.instanceId, "codex");
+    assert.strictEqual(parsed.defaultModelSelection?.instanceId, "pi");
   }),
 );
 
@@ -210,12 +210,12 @@ it.effect("decodes project.meta-updated payloads with explicit default provider"
     const parsed = yield* decodeProjectMetaUpdatedPayload({
       projectId: "project-1",
       defaultModelSelection: {
-        provider: "claudeAgent",
+        provider: "pi",
         model: "claude-opus-4-6",
       },
       updatedAt: "2026-01-01T00:00:00.000Z",
     });
-    assert.strictEqual(parsed.defaultModelSelection?.instanceId, "claudeAgent");
+    assert.strictEqual(parsed.defaultModelSelection?.instanceId, "pi");
   }),
 );
 
@@ -501,13 +501,13 @@ it.effect("preserves explicit provider and runtime mode in thread.turn.start", (
         attachments: [],
       },
       modelSelection: {
-        provider: "codex",
+        provider: "pi",
         model: "gpt-5.4",
       },
       runtimeMode: "full-access",
       createdAt: "2026-01-01T00:00:00.000Z",
     });
-    assert.strictEqual(parsed.modelSelection?.instanceId, "codex");
+    assert.strictEqual(parsed.modelSelection?.instanceId, "pi");
     assert.strictEqual(parsed.runtimeMode, "full-access");
     assert.strictEqual(parsed.interactionMode, DEFAULT_PROVIDER_INTERACTION_MODE);
   }),
@@ -530,7 +530,7 @@ it.effect("accepts bootstrap metadata in thread.turn.start", () =>
           projectId: "project-1",
           title: "Bootstrap thread",
           modelSelection: {
-            provider: "codex",
+            provider: "pi",
             model: "gpt-5.4",
           },
           runtimeMode: "full-access",
@@ -563,7 +563,7 @@ it.effect("decodes thread.created runtime mode for historical events", () =>
       projectId: "project-1",
       title: "Thread title",
       modelSelection: {
-        provider: "codex",
+        provider: "pi",
         model: "gpt-5.4",
       },
       interactionMode: "default",
@@ -574,7 +574,7 @@ it.effect("decodes thread.created runtime mode for historical events", () =>
     });
 
     assert.strictEqual(parsed.runtimeMode, DEFAULT_RUNTIME_MODE);
-    assert.strictEqual(parsed.modelSelection.instanceId, "codex");
+    assert.strictEqual(parsed.modelSelection.instanceId, "pi");
   }),
 );
 
@@ -589,14 +589,14 @@ it.effect("decodes thread.meta-updated payloads with explicit provider", () =>
         startedAt: "2026-01-01T00:00:00.000Z",
       },
       modelSelection: {
-        provider: "claudeAgent",
+        provider: "pi",
         model: "claude-opus-4-6",
       },
       updatedAt: "2026-01-01T00:00:00.000Z",
     });
     assert.strictEqual(parsed.previousTitle, "Previous title");
     assert.strictEqual(parsed.titleRegeneration?.requestId, "cmd-title-regenerate");
-    assert.strictEqual(parsed.modelSelection?.instanceId, "claudeAgent");
+    assert.strictEqual(parsed.modelSelection?.instanceId, "pi");
   }),
 );
 
@@ -653,7 +653,7 @@ it.effect("defaults settled fields when decoding historical thread data", () =>
       id: "thread-1",
       projectId: "project-1",
       title: "Historical thread",
-      modelSelection: { provider: "codex", model: "gpt-5.4" },
+      modelSelection: { provider: "pi", model: "gpt-5.4" },
       runtimeMode: "full-access",
       interactionMode: "default",
       branch: null,
@@ -736,7 +736,7 @@ it.effect("decodes thread pull request links with snapshot and stack", () =>
       id: "thread-1",
       projectId: "project-1",
       title: "Thread",
-      modelSelection: { provider: "codex", model: "gpt-5-codex" },
+      modelSelection: { provider: "pi", model: "claude-sonnet-4-6" },
       runtimeMode: "full-access",
       branch: "feature/stack-2",
       worktreePath: null,
@@ -896,8 +896,8 @@ it.effect("accepts provider-scoped model options in thread.turn.start", () =>
         attachments: [],
       },
       modelSelection: {
-        provider: "codex",
-        model: "gpt-5.3-codex",
+        provider: "pi",
+        model: "claude-sonnet-4-6",
         options: [
           { id: "reasoningEffort", value: "high" },
           { id: "fastMode", value: true },
@@ -905,7 +905,7 @@ it.effect("accepts provider-scoped model options in thread.turn.start", () =>
       },
       createdAt: "2026-01-01T00:00:00.000Z",
     });
-    assert.strictEqual(parsed.modelSelection?.instanceId, "codex");
+    assert.strictEqual(parsed.modelSelection?.instanceId, "pi");
     assert.strictEqual(getOptionValue(parsed.modelSelection?.options, "reasoningEffort"), "high");
     assert.strictEqual(getOptionValue(parsed.modelSelection?.options, "fastMode"), true);
   }),
@@ -918,7 +918,7 @@ it.effect("normalizes legacy object-shaped modelSelection.options on decode", ()
       projectId: "project-1",
       title: "Legacy options thread",
       modelSelection: {
-        provider: "claudeAgent",
+        provider: "pi",
         model: "claude-opus-4-6",
         options: {
           effort: "max",
@@ -935,7 +935,7 @@ it.effect("normalizes legacy object-shaped modelSelection.options on decode", ()
       updatedAt: "2026-01-01T00:00:00.000Z",
     });
 
-    assert.strictEqual(parsed.modelSelection.instanceId, ProviderInstanceId.make("claudeAgent"));
+    assert.strictEqual(parsed.modelSelection.instanceId, ProviderInstanceId.make("pi"));
     assert.deepStrictEqual(parsed.modelSelection.options, [
       { id: "effort", value: "max" },
       { id: "fastMode", value: true },
@@ -950,7 +950,7 @@ it.effect("normalizes legacy object-shaped defaultModelSelection.options on deco
       title: "Legacy default project",
       workspaceRoot: "/tmp/legacy",
       defaultModelSelection: {
-        provider: "codex",
+        provider: "pi",
         model: "gpt-5.4",
         options: { reasoningEffort: "low" },
       },
@@ -974,7 +974,7 @@ it.effect(
         projectId: "project-1",
         title: "Round trip thread",
         modelSelection: {
-          provider: "codex",
+          provider: "pi",
           model: "gpt-5.4",
           options: { fastMode: true },
         },
@@ -1370,12 +1370,12 @@ const encodeModelSelection = Schema.encodeUnknownEffect(ModelSelection);
 it.effect("ModelSelection migrates legacy `provider` field to `instanceId`", () =>
   Effect.gen(function* () {
     const parsed = yield* decodeModelSelection({
-      provider: "codex",
-      model: "gpt-5-codex",
+      provider: "pi",
+      model: "claude-sonnet-4-6",
       options: [{ id: "reasoningEffort", value: "high" }],
     });
-    assert.strictEqual(parsed.instanceId, ProviderInstanceId.make("codex"));
-    assert.strictEqual(parsed.model, "gpt-5-codex");
+    assert.strictEqual(parsed.instanceId, ProviderInstanceId.make("pi"));
+    assert.strictEqual(parsed.model, "claude-sonnet-4-6");
     assert.deepStrictEqual(parsed.options, [{ id: "reasoningEffort", value: "high" }]);
   }),
 );
@@ -1383,21 +1383,21 @@ it.effect("ModelSelection migrates legacy `provider` field to `instanceId`", () 
 it.effect("ModelSelection accepts an explicit instanceId routing key", () =>
   Effect.gen(function* () {
     const parsed = yield* decodeModelSelection({
-      instanceId: "codex_personal",
-      model: "gpt-5-codex",
+      instanceId: "claude_personal",
+      model: "claude-sonnet-4-6",
     });
-    assert.strictEqual(parsed.instanceId, ProviderInstanceId.make("codex_personal"));
+    assert.strictEqual(parsed.instanceId, ProviderInstanceId.make("claude_personal"));
   }),
 );
 
 it.effect("ModelSelection prefers explicit instanceId over legacy provider", () =>
   Effect.gen(function* () {
     const parsed = yield* decodeModelSelection({
-      provider: "codex",
-      instanceId: "codex_personal",
-      model: "gpt-5-codex",
+      provider: "pi",
+      instanceId: "claude_personal",
+      model: "claude-sonnet-4-6",
     });
-    assert.strictEqual(parsed.instanceId, ProviderInstanceId.make("codex_personal"));
+    assert.strictEqual(parsed.instanceId, ProviderInstanceId.make("claude_personal"));
   }),
 );
 
@@ -1492,21 +1492,6 @@ it.effect("project icon overrides accept Lucide icons, colors, and emoji", () =>
       }),
     );
     assert.strictEqual(invalid._tag, "Failure");
-  }),
-);
-
-it.effect("rejects thread history imports without messages", () =>
-  Effect.gen(function* () {
-    const result = yield* Effect.exit(
-      decodeOrchestrationCommand({
-        type: "thread.history.import",
-        commandId: "command-empty-history",
-        threadId: "thread-1",
-        messages: [],
-      }),
-    );
-
-    assert.strictEqual(result._tag, "Failure");
   }),
 );
 

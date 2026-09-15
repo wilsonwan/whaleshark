@@ -12,7 +12,7 @@
  *   - Adapters are now constructed *inside* drivers (`<X>Driver.create()`),
  *     not at the boot Layer. There is no longer a single `make<X>AdapterLive(options)`
  *     call site where we can hand an `EventNdjsonLogger` in by hand.
- *   - Multiple driver instances per kind (`codex_personal`, `codex_work`)
+ *   - Multiple driver instances per kind (`claude_personal`, `claude_work`)
  *     must share one underlying log store — opening N writers against the
  *     same rotating file would race the rotation logic. Owning the loggers on
  *     a single tag keeps that invariant intact.

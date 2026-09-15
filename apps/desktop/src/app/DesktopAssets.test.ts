@@ -14,7 +14,7 @@ import * as DesktopEnvironment from "./DesktopEnvironment.ts";
 const environmentLayer = DesktopEnvironment.layer({
   dirname: "/repo/apps/desktop/dist-electron",
   homeDirectory: "/Users/alice",
-  platform: "darwin",
+  platform: "linux",
   processArch: "arm64",
   appVersion: "1.2.3",
   appPath: "/Applications/T3 Code.app/Contents/Resources/app.asar",
@@ -64,7 +64,6 @@ describe("DesktopAssets", () => {
 
       assert.match(Option.getOrThrow(icons.ico), /assets\/dev\/blueprint-windows\.ico$/);
       assert.match(Option.getOrThrow(icons.png), /assets\/dev\/blueprint-universal-1024\.png$/);
-      assert.isTrue(Option.isNone(icons.icns));
     }),
   );
 

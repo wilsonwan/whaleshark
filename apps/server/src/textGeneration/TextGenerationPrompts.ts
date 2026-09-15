@@ -2,7 +2,7 @@
  * Shared prompt builders for text generation providers.
  *
  * Extracts the prompt construction logic that is identical across
- * Codex, Claude, and any future CLI-based text generation backends.
+ * Claude and any future CLI-based text generation backends.
  *
  * @module textGenerationPrompts
  */
@@ -273,7 +273,7 @@ Editorial rules:
 - Return a meaningfully improved title, not a cosmetic paraphrase of the previous title.
 
 Examples of the distinction:
-- A subagent-monitoring review that finds a Codex roster bug remains "Review Subagent Monitoring Risks," not "Codex Roster Bug Review."
+- A subagent-monitoring review that finds a provider roster bug remains "Review Subagent Monitoring Risks," not "Provider Roster Bug Review."
 - A vague failing-test request later identified as a lazy thread-feed mismatch becomes "Fix Lazy Thread Feed Test," not "Prevent Mobile Feed Regressions."
 - A QR-sharing overhaul that ends with CI and merge work remains about QR sharing, not the PR lifecycle.`;
 }

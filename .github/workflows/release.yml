@@ -108,7 +108,6 @@ jobs:
           fetch-depth: 0
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
@@ -204,7 +203,6 @@ jobs:
           ref: ${{ needs.preflight.outputs.ref }}
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
@@ -254,7 +252,6 @@ jobs:
           ref: ${{ needs.resolve_commit.outputs.ref }}
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
@@ -292,8 +289,8 @@ jobs:
     # build_wsl_node_pty stays in `needs` so it runs first and its artifact is
     # available to download, but only the Windows matrix entry consumes it. We
     # therefore gate the job on preflight (which must succeed) WITHOUT requiring
-    # build_wsl_node_pty, so a failed Linux prebuild doesn't skip the macOS/Linux
-    # builds. `!cancelled()` (not `!failure()`) lets the job run even when
+    # build_wsl_node_pty, so a failed Linux prebuild doesn't skip the Linux
+    # build. `!cancelled()` (not `!failure()`) lets the job run even when
     # build_wsl_node_pty failed; the Windows-only download step below then fails
     # that single platform if the prebuild is missing.
     needs: [preflight, build_wsl_node_pty]
@@ -304,20 +301,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - label: macOS arm64
-            runner: blacksmith-12vcpu-macos-26
-            platform: mac
-            target: dmg
-            arch: arm64
-            rust_target: aarch64-apple-darwin
-            resource_key: darwin-arm64
-          - label: macOS x64
-            runner: blacksmith-12vcpu-macos-26
-            platform: mac
-            target: dmg
-            arch: x64
-            rust_target: x86_64-apple-darwin
-            resource_key: darwin-x64
           - label: Linux x64
             runner: blacksmith-32vcpu-ubuntu-2404
             platform: linux
@@ -332,11 +315,6 @@ jobs:
             arch: x64
             rust_target: x86_64-pc-windows-msvc
             resource_key: win32-x64
-          # - label: Windows arm64
-          #   runner: windows-11-arm
-          #   platform: win
-          #   target: nsis
-          #   arch: arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -344,7 +322,6 @@ jobs:
           ref: ${{ needs.preflight.outputs.ref }}
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
@@ -518,13 +495,6 @@ jobs:
           pnpm_config_cache_dir: ${{ runner.temp }}/pnpm-metadata
           T3CODE_DESKTOP_REUSE_RESOURCE_MONITOR: ${{ steps.resource_monitor_cache.outputs.cache-hit == 'true' }}
           T3CODE_DESKTOP_REUSE_LINUX_CAPTURE_HELPERS: ${{ steps.capture_helper_cache.outputs.cache-hit == 'true' }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
-          MACOS_PROVISIONING_PROFILE: ${{ secrets.MACOS_PROVISIONING_PROFILE }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
@@ -550,29 +520,7 @@ jobs:
             return 0
           }
 
-          if [[ "${{ matrix.platform }}" == "mac" ]]; then
-            if has_all "$CSC_LINK" "$CSC_KEY_PASSWORD" "$APPLE_API_KEY" "$APPLE_API_KEY_ID" "$APPLE_API_ISSUER"; then
-              if ! has_all "$APPLE_TEAM_ID" "$MACOS_PROVISIONING_PROFILE"; then
-                echo "macOS signing is configured, but APPLE_TEAM_ID or MACOS_PROVISIONING_PROFILE is missing." >&2
-                exit 1
-              fi
-
-              key_path="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
-              printf '%s' "$APPLE_API_KEY" > "$key_path"
-              export APPLE_API_KEY="$key_path"
-
-              profile_path="$RUNNER_TEMP/t3code.provisionprofile"
-              printf '%s' "$MACOS_PROVISIONING_PROFILE" | base64 -D > "$profile_path"
-              security cms -D -i "$profile_path" >/dev/null
-              export T3CODE_APPLE_TEAM_ID="$APPLE_TEAM_ID"
-              export T3CODE_MACOS_PROVISIONING_PROFILE="$profile_path"
-
-              echo "macOS signing enabled."
-              args+=(--signed)
-            else
-              echo "macOS signing disabled (missing one or more Apple signing secrets)."
-            fi
-          elif [[ "${{ matrix.platform }}" == "win" ]]; then
+          if [[ "${{ matrix.platform }}" == "win" ]]; then
             # Bundle the Linux node-pty binary built by the build_wsl_node_pty job
             # so the packaged WSL backend ships a ready binary (no first-launch
             # compile). Required for a working WSL backend on Windows.
@@ -590,8 +538,6 @@ jobs:
             else
               echo "Windows signing disabled (missing one or more Azure Trusted Signing secrets)."
             fi
-          else
-            echo "Signing disabled for ${{ matrix.platform }}."
           fi
 
           vp run dist:desktop:artifact "${args[@]}"
@@ -604,8 +550,6 @@ jobs:
 
           shopt -s nullglob
           for pattern in \
-            "release/*.dmg" \
-            "release/*.zip" \
             "release/*.AppImage" \
             "release/*.exe" \
             "release/*.blockmap" \
@@ -614,25 +558,6 @@ jobs:
               cp "$file" release-publish/
             done
           done
-
-          if [[ "${{ matrix.platform }}" == "mac" && "${{ matrix.arch }}" != "arm64" ]]; then
-            shopt -s nullglob
-            for manifest in release-publish/*-mac.yml; do
-              mv "$manifest" "${manifest%.yml}-${{ matrix.arch }}.yml"
-            done
-          fi
-
-          # Enable if Windows arm64 builds are enabled.
-          # Windows updater metadata is channel-specific (for example
-          # "latest.yml" or "nightly.yml"). Suffix each per-arch copy so the
-          # release job can merge matching arm64/x64 manifests back into one
-          # canonical manifest per channel.
-          # if [[ "${{ matrix.platform }}" == "win" ]]; then
-          #   shopt -s nullglob
-          #   for manifest in release-publish/*.yml; do
-          #     mv "$manifest" "${manifest%.yml}-win-${{ matrix.arch }}.yml"
-          #   done
-          # fi
 
       - name: Collect resource monitor
         shell: bash
@@ -677,7 +602,6 @@ jobs:
           ref: ${{ needs.preflight.outputs.ref }}
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
@@ -735,7 +659,6 @@ jobs:
           ref: ${{ needs.preflight.outputs.ref }}
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
@@ -754,17 +677,6 @@ jobs:
           merge-multiple: true
           path: release-assets
 
-      - name: Merge macOS updater manifests
-        run: |
-          shopt -s nullglob
-          for x64_manifest in release-assets/*-mac-x64.yml; do
-            arm64_manifest="${x64_manifest%-x64.yml}.yml"
-            if [[ -f "$arm64_manifest" ]]; then
-              node scripts/merge-update-manifests.ts --platform mac "$arm64_manifest" "$x64_manifest"
-              rm -f "$x64_manifest"
-            fi
-          done
-
       - name: Publish release
         if: needs.preflight.outputs.previous_tag != ''
         uses: softprops/action-gh-release@v3
@@ -777,8 +689,6 @@ jobs:
           prerelease: ${{ needs.preflight.outputs.is_prerelease }}
           make_latest: ${{ needs.preflight.outputs.make_latest }}
           files: |
-            release-assets/*.dmg
-            release-assets/*.zip
             release-assets/*.AppImage
             release-assets/*.exe
             release-assets/*.blockmap
@@ -797,8 +707,6 @@ jobs:
           prerelease: ${{ needs.preflight.outputs.is_prerelease }}
           make_latest: ${{ needs.preflight.outputs.make_latest }}
           files: |
-            release-assets/*.dmg
-            release-assets/*.zip
             release-assets/*.AppImage
             release-assets/*.exe
             release-assets/*.blockmap
@@ -830,7 +738,6 @@ jobs:
           persist-credentials: true
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - id: app_bot

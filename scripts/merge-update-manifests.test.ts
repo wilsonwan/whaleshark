@@ -15,60 +15,6 @@ import {
 const runCli = Command.runWith(mergeUpdateManifestsCommand, { version: "0.0.0" });
 
 describe("merge-update-manifests", () => {
-  it("merges arm64 and x64 macOS update manifests into one multi-arch manifest", () => {
-    const arm64 = parsePlatformUpdateManifest(
-      "mac",
-      `version: 0.0.4
-files:
-  - url: T3-Code-0.0.4-arm64.zip
-    sha512: arm64zip
-    size: 125621344
-  - url: T3-Code-0.0.4-arm64.dmg
-    sha512: arm64dmg
-    size: 131754935
-path: T3-Code-0.0.4-arm64.zip
-sha512: arm64zip
-releaseDate: '2026-03-07T10:32:14.587Z'
-`,
-      "latest-mac.yml",
-    );
-
-    const x64 = parsePlatformUpdateManifest(
-      "mac",
-      `version: 0.0.4
-files:
-  - url: T3-Code-0.0.4-x64.zip
-    sha512: x64zip
-    size: 132000112
-  - url: T3-Code-0.0.4-x64.dmg
-    sha512: x64dmg
-    size: 138148807
-path: T3-Code-0.0.4-x64.zip
-sha512: x64zip
-releaseDate: '2026-03-07T10:36:07.540Z'
-`,
-      "latest-mac-x64.yml",
-    );
-
-    const merged = mergePlatformUpdateManifests("mac", arm64, x64);
-
-    assert.equal(merged.version, "0.0.4");
-    assert.equal(merged.releaseDate, "2026-03-07T10:36:07.540Z");
-    assert.deepStrictEqual(
-      merged.files.map((file) => file.url),
-      [
-        "T3-Code-0.0.4-arm64.zip",
-        "T3-Code-0.0.4-arm64.dmg",
-        "T3-Code-0.0.4-x64.zip",
-        "T3-Code-0.0.4-x64.dmg",
-      ],
-    );
-
-    const serialized = serializePlatformUpdateManifest("mac", merged);
-    assert.ok(!serialized.includes("path:"));
-    assert.equal((serialized.match(/- url:/g) ?? []).length, 4);
-  });
-
   it("merges arm64 and x64 Windows update manifests into one multi-arch manifest", () => {
     const arm64 = parsePlatformUpdateManifest(
       "win",
@@ -156,7 +102,7 @@ releaseDate: '2026-03-07T10:36:07.540Z'
 
   it("preserves quoted scalars as strings", () => {
     const manifest = parsePlatformUpdateManifest(
-      "mac",
+      "win",
       `version: '1.0'
 files:
   - url: T3-Code-1.0-x64.zip
@@ -167,7 +113,7 @@ minimumSystemVersion: '13.0'
 stagingPercentage: 50
 releaseDate: '2026-03-07T10:36:07.540Z'
 `,
-      "latest-mac.yml",
+      "latest-win.yml",
     );
 
     assert.equal(manifest.version, "1.0");
@@ -198,29 +144,29 @@ releaseDate: '2026-03-07T10:36:07.540Z'
 });
 
 it.layer(NodeServices.layer)("merge-update-manifests cli", (it) => {
-  const arm64MacManifest = `version: 0.0.4
+  const arm64WindowsManifest = `version: 0.0.4
 files:
-  - url: T3-Code-0.0.4-arm64.zip
-    sha512: arm64zip
+  - url: T3-Code-0.0.4-arm64.exe
+    sha512: arm64exe
     size: 125621344
-  - url: T3-Code-0.0.4-arm64.dmg
-    sha512: arm64dmg
-    size: 131754935
-path: T3-Code-0.0.4-arm64.zip
-sha512: arm64zip
+  - url: T3-Code-0.0.4-arm64.exe.blockmap
+    sha512: arm64blockmap
+    size: 131754
+path: T3-Code-0.0.4-arm64.exe
+sha512: arm64exe
 releaseDate: '2026-03-07T10:32:14.587Z'
 `;
 
-  const x64MacManifest = `version: 0.0.4
+  const x64WindowsManifest = `version: 0.0.4
 files:
-  - url: T3-Code-0.0.4-x64.zip
-    sha512: x64zip
+  - url: T3-Code-0.0.4-x64.exe
+    sha512: x64exe
     size: 132000112
-  - url: T3-Code-0.0.4-x64.dmg
-    sha512: x64dmg
-    size: 138148807
-path: T3-Code-0.0.4-x64.zip
-sha512: x64zip
+  - url: T3-Code-0.0.4-x64.exe.blockmap
+    sha512: x64blockmap
+    size: 138148
+path: T3-Code-0.0.4-x64.exe
+sha512: x64exe
 releaseDate: '2026-03-07T10:36:07.540Z'
 `;
 
@@ -231,17 +177,17 @@ releaseDate: '2026-03-07T10:36:07.540Z'
       const baseDir = yield* fs.makeTempDirectoryScoped({
         prefix: "merge-update-manifests-cli-",
       });
-      const primaryPath = path.join(baseDir, "latest-mac.yml");
-      const secondaryPath = path.join(baseDir, "latest-mac-x64.yml");
+      const primaryPath = path.join(baseDir, "latest-win-arm64.yml");
+      const secondaryPath = path.join(baseDir, "latest-win-x64.yml");
 
-      yield* fs.writeFileString(primaryPath, arm64MacManifest);
-      yield* fs.writeFileString(secondaryPath, x64MacManifest);
+      yield* fs.writeFileString(primaryPath, arm64WindowsManifest);
+      yield* fs.writeFileString(secondaryPath, x64WindowsManifest);
 
-      yield* runCli(["--platform", "mac", primaryPath, secondaryPath]);
+      yield* runCli(["--platform", "win", primaryPath, secondaryPath]);
 
       const merged = yield* fs.readFileString(primaryPath);
-      assert.ok(merged.includes("T3-Code-0.0.4-arm64.zip"));
-      assert.ok(merged.includes("T3-Code-0.0.4-x64.zip"));
+      assert.ok(merged.includes("T3-Code-0.0.4-arm64.exe"));
+      assert.ok(merged.includes("T3-Code-0.0.4-x64.exe"));
       assert.ok(!merged.includes("path:"));
     }),
   );
@@ -288,7 +234,9 @@ releaseDate: '2026-03-07T10:36:07.540Z'
 
   it.effect("rejects invalid platform values during cli parsing", () =>
     Effect.gen(function* () {
-      const error = yield* runCli(["--platform", "linux", "a.yml", "b.yml"]).pipe(Effect.flip);
+      const error = yield* runCli(["--platform", "unsupported", "a.yml", "b.yml"]).pipe(
+        Effect.flip,
+      );
 
       if (!CliError.isCliError(error)) {
         assert.fail(`Expected CliError, got ${String(error)}`);
@@ -302,7 +250,7 @@ releaseDate: '2026-03-07T10:36:07.540Z'
       }
 
       assert.equal(platformError.option, "platform");
-      assert.equal(platformError.value, "linux");
+      assert.equal(platformError.value, "unsupported");
     }),
   );
 });

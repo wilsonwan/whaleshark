@@ -36,10 +36,7 @@ import {
   getLocalEnvironmentBootstraps,
   getLocalEnvironmentBearerToken,
   getSystemLocale,
-  getWindowFullscreenState,
   openExternal,
-  openSystemSettings,
-  checkSystemPermission,
   probeRemoteEditors,
   pickFolder,
   pickProjectFavicon,
@@ -57,7 +54,6 @@ import {
   applySnapShotConfig,
   listPendingSnapShots,
   readSnapShot,
-  requestSnapShotPermissions,
   setSnapShotAnimationDestination,
   setSnapShotShortcutSuppressed,
 } from "./methods/snapShot.ts";
@@ -74,7 +70,6 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
 
   yield* ipc.handleSync(getAppBranding);
   yield* ipc.handleSync(getSystemLocale);
-  yield* ipc.handleSync(getWindowFullscreenState);
   yield* ipc.handleSync(getLocalEnvironmentBootstraps);
   yield* ipc.handle(getLocalEnvironmentBearerToken);
 
@@ -85,7 +80,7 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
   yield* ipc.handle(setupSnapShot);
   yield* ipc.handle(previewSnapShotConfig);
   yield* ipc.handle(applySnapShotConfig);
-  yield* ipc.handle(requestSnapShotPermissions);
+
   yield* ipc.handle(checkSnapShotShortcut);
   yield* ipc.handle(setSnapShotShortcutSuppressed);
   yield* ipc.handle(listPendingSnapShots);
@@ -122,8 +117,7 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
   yield* ipc.handle(setTheme);
   yield* ipc.handle(showContextMenu);
   yield* ipc.handle(openExternal);
-  yield* ipc.handle(openSystemSettings);
-  yield* ipc.handle(checkSystemPermission);
+
   yield* ipc.handle(probeRemoteEditors);
   yield* ipc.handle(getUpdateState);
   yield* ipc.handle(setUpdateChannel);

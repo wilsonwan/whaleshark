@@ -19,7 +19,6 @@ import {
   type ProviderDriverKind,
   type ServerProviderModel,
 } from "@t3tools/contracts";
-import { codexModelFamily } from "@t3tools/shared/model";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
@@ -32,9 +31,7 @@ import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 
 import { ServerConfig } from "../config.ts";
 import * as ServerSettings from "../serverSettings.ts";
-import { hasValidClaudeManifestAdapters } from "./ClaudeModelManifest.ts";
 import bundledManifestJson from "./model-manifest.json" with { type: "json" };
-import type { ServerProviderDraft } from "./providerSnapshot.ts";
 
 const MODEL_MANIFEST_URL =
   "https://raw.githubusercontent.com/pingdotgg/t3code/main/apps/server/src/provider/model-manifest.json";
@@ -112,9 +109,6 @@ const ModelManifestSchema = ModelManifestEnvelopeSchema.pipe(
   Schema.check(
     Schema.makeFilter(hasValidProviderCatalogReferences, {
       expected: "unique model slugs and existing model and profile references",
-    }),
-    Schema.makeFilter(hasValidClaudeManifestAdapters, {
-      expected: "valid Claude adapter metadata",
     }),
   ),
 );
@@ -213,34 +207,12 @@ function isLegacyModel(
   driverKind: ProviderDriverKind,
   slug: string,
 ): boolean {
-  const family = driverKind === "codex" ? codexModelFamily(slug) : slug;
   const catalog = manifest.providers?.[driverKind]?.models;
-  const catalogModel =
-    catalog?.find((model) => model.slug === slug) ??
-    catalog?.find((model) => model.slug === family);
+  const catalogModel = catalog?.find((model) => model.slug === slug);
   if (catalogModel) return catalogModel.status === "legacy";
   const currentModels = manifest.currentModels[driverKind];
   if (!currentModels) return false;
-  return !currentModels.includes(slug) && !currentModels.includes(family);
-}
-
-/**
- * Reclassifies every built-in model on a snapshot draft against the manifest.
- * Custom models are user-defined and never reclassified.
- */
-export function applyModelManifest(
-  draft: ServerProviderDraft,
-  manifest: ModelManifestData,
-  driverKind: ProviderDriverKind,
-): ServerProviderDraft {
-  return {
-    ...draft,
-    models: applyManifestDefault(
-      classifyModels(draft.models, manifest, driverKind),
-      manifest,
-      driverKind,
-    ),
-  };
+  return !currentModels.includes(slug);
 }
 
 /** The manifest's chat default for `driverKind`, when it names one. */
@@ -264,14 +236,7 @@ export function applyManifestDefault(
 ): ReadonlyArray<ServerProviderModel> {
   const requestedSlug = manifestDefaultModel(manifest, driverKind);
   if (requestedSlug === undefined) return models;
-  const slug =
-    models.find((model) => model.slug === requestedSlug)?.slug ??
-    (driverKind === "codex"
-      ? models.find(
-          (model) =>
-            !model.isCustom && codexModelFamily(model.slug) === codexModelFamily(requestedSlug),
-        )?.slug
-      : undefined);
+  const slug = models.find((model) => model.slug === requestedSlug)?.slug;
   if (slug === undefined) return models;
   const previous = models.find((model) => model.isDefault && model.slug !== slug);
   if (!previous) return models;

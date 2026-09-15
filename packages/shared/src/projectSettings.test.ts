@@ -2,6 +2,7 @@ import {
   DEFAULT_SERVER_SETTINGS,
   PROJECT_SCOPED_SERVER_SETTING_KEYS,
   ProjectId,
+  ProviderDriverKind,
   ProviderInstanceId,
 } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
@@ -48,9 +49,12 @@ describe("resolveProjectSettings", () => {
   });
 
   it("keeps the environment text generation model when the override's provider is disabled", () => {
-    const disabledSelection = createModelSelection(ProviderInstanceId.make("claudeAgent"), "opus");
+    const disabledSelection = createModelSelection(
+      ProviderInstanceId.make("opencode"),
+      "opencode-model",
+    );
     const settings = applyServerSettingsPatch(DEFAULT_SERVER_SETTINGS, {
-      providers: { claudeAgent: { enabled: false } },
+      providers: { opencode: { enabled: false } },
       projectSettingsOverrides: {
         [projectId]: { textGenerationModelSelection: disabledSelection },
       },
@@ -63,13 +67,21 @@ describe("resolveProjectSettings", () => {
   });
 
   it("honours the aggregate's own fields only until the server has folded them", () => {
-    const aggregateModel = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.5");
+    const aggregateModel = createModelSelection(ProviderInstanceId.make("pi"), "claude-opus-4-6");
+    // Model selections only survive while their provider instance is enabled.
+    const enabledPiInstance = {
+      pi: { driver: ProviderDriverKind.make("pi"), enabled: true, config: {} },
+    };
     const project = {
       defaultModelSelection: aggregateModel,
       defaultThreadEnvMode: "local" as const,
     };
     const unfolded = resolveProjectSettings(
-      { ...DEFAULT_SERVER_SETTINGS, projectSettingsFolded: false },
+      {
+        ...DEFAULT_SERVER_SETTINGS,
+        providerInstances: enabledPiInstance,
+        projectSettingsFolded: false,
+      },
       projectId,
       project,
     );
@@ -80,6 +92,7 @@ describe("resolveProjectSettings", () => {
     const overridden = resolveProjectSettings(
       {
         ...DEFAULT_SERVER_SETTINGS,
+        providerInstances: enabledPiInstance,
         projectSettingsFolded: false,
         projectSettingsOverrides: { [projectId]: { defaultThreadEnvMode: "worktree" } },
       },
@@ -89,7 +102,11 @@ describe("resolveProjectSettings", () => {
     expect(overridden.settings.defaultThreadEnvMode).toBe("worktree");
     // After the fold a reset in the record wins over the stale aggregate.
     const folded = resolveProjectSettings(
-      { ...DEFAULT_SERVER_SETTINGS, projectSettingsFolded: true },
+      {
+        ...DEFAULT_SERVER_SETTINGS,
+        providerInstances: enabledPiInstance,
+        projectSettingsFolded: true,
+      },
       projectId,
       project,
     );
@@ -98,9 +115,12 @@ describe("resolveProjectSettings", () => {
   });
 
   it("keeps the environment default model when the override's provider is disabled", () => {
-    const disabledSelection = createModelSelection(ProviderInstanceId.make("claudeAgent"), "opus");
+    const disabledSelection = createModelSelection(
+      ProviderInstanceId.make("opencode"),
+      "opencode-model",
+    );
     const settings = applyServerSettingsPatch(DEFAULT_SERVER_SETTINGS, {
-      providers: { claudeAgent: { enabled: false } },
+      providers: { opencode: { enabled: false } },
       projectSettingsOverrides: { [projectId]: { defaultModelSelection: disabledSelection } },
     });
     const resolved = resolveProjectSettings(settings, projectId);

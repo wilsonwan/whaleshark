@@ -7,8 +7,7 @@
  * scope because Electron exposes no password store to put them in.
  *
  * Availability is per source and per platform, and the reasons are modelled
- * explicitly: some are a permission the user can grant, one is a limitation
- * no amount of consent works around. The UI needs to tell those apart.
+ * explicitly so the UI can distinguish recoverable failures from limitations.
  *
  * @module BrowserImport
  */
@@ -25,7 +24,6 @@ const BROWSER_IMPORT_SOURCE_IDS = [
   "arc",
   "helium",
   "firefox",
-  "safari",
 ] as const;
 
 export const BrowserImportSourceId = Schema.Literals(BROWSER_IMPORT_SOURCE_IDS);
@@ -43,7 +41,6 @@ export const BrowserImportUnavailableReason = Schema.Literals([
   "notInstalled",
   "needsKeychainApproval",
   "keychainItemMissing",
-  "needsFullDiskAccess",
   "browserRunning",
   "unsupportedPlatform",
 ]);
@@ -89,8 +86,7 @@ export const BrowserImportSourceProfile = Schema.Struct({
   name: TrimmedNonEmptyString,
   /**
    * How many cookies the profile holds. Counted without decrypting, so it is
-   * cheap; absent when the store could not be read yet (Safari before Full
-   * Disk Access is granted).
+   * cheap; absent when the store could not be read yet.
    */
   cookieCount: Schema.optional(Schema.Int),
 });
@@ -144,8 +140,7 @@ const BROWSER_IMPORT_UNAVAILABLE_COPY: Readonly<Record<BrowserImportUnavailableR
   needsKeychainApproval: "Needs Keychain access to read its cookies.",
   keychainItemMissing:
     "No encryption key in your Keychain — sign in to that browser once, then retry.",
-  needsFullDiskAccess:
-    "Give T3 Code Full Disk Access in System Settings → Privacy & Security, then retry.",
+
   browserRunning: "Quit the browser first so its cookie database can be read.",
   unsupportedPlatform: "Importing from this browser isn't possible on this platform.",
 };

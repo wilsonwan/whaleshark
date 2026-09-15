@@ -341,7 +341,7 @@ describe("findAccessibleWindow", () => {
     expect(findAccessibleWindow(windows, captured)).toBe(windows[1]);
   });
 
-  it("uses the matched source title when macOS omits the active title", () => {
+  it("uses the matched source title when the active title is missing", () => {
     const windows = [{ name: "Editor", bounds: captured.bounds }];
     expect(
       findAccessibleWindow(windows, {
@@ -583,19 +583,6 @@ describe("toElectronAccelerator", () => {
     ).toBe("CommandOrControl+Shift+2");
   });
 
-  it("maps the portable meta key to Super", () => {
-    expect(
-      toElectronAccelerator({
-        key: "k",
-        metaKey: true,
-        ctrlKey: false,
-        shiftKey: false,
-        altKey: false,
-        modKey: false,
-      }),
-    ).toBe("Super+K");
-  });
-
   it("normalizes Electron key names", () => {
     expect(
       toElectronAccelerator({
@@ -655,7 +642,6 @@ describe("isWaylandSession", () => {
     ["linux", { XDG_SESSION_TYPE: "wayland" }, true],
     ["linux", { WAYLAND_DISPLAY: "wayland-0" }, true],
     ["linux", { XDG_SESSION_TYPE: "x11" }, false],
-    ["darwin", { XDG_SESSION_TYPE: "wayland", WAYLAND_DISPLAY: "wayland-0" }, false],
   ] as const)("detects %s session %o as portal=%s", (platform, environment, expected) => {
     expect(isWaylandSession(platform, environment)).toBe(expected);
   });
@@ -707,33 +693,30 @@ describe("isWaylandSession", () => {
 
 describe("snapShotShortcutRegistrationFailureMessage", () => {
   it("distinguishes a modifier listener failure from a reserved key chord", () => {
+    expect(snapShotShortcutRegistrationFailureMessage({ kind: "both-shift-keys" })).toMatch(
+      /Shift \+ Shift is not available/,
+    );
     expect(
-      snapShotShortcutRegistrationFailureMessage({ kind: "both-shift-keys" }, "darwin"),
-    ).toMatch(/Shift \+ Shift is not available/);
+      snapShotShortcutRegistrationFailureMessage({
+        kind: "modifier-pair",
+        modifier: "control",
+      }),
+    ).toMatch(/Ctrl \+ Ctrl is not available/);
     expect(
-      snapShotShortcutRegistrationFailureMessage(
-        { kind: "modifier-pair", modifier: "meta" },
-        "darwin",
-      ),
-    ).toMatch(/Command \+ Command is not available/);
+      snapShotShortcutRegistrationFailureMessage({
+        kind: "modifier-pair",
+        modifier: "control",
+      }),
+    ).toMatch(/Ctrl \+ Ctrl is not available/);
     expect(
-      snapShotShortcutRegistrationFailureMessage(
-        { kind: "modifier-pair", modifier: "meta" },
-        "linux",
-      ),
-    ).toMatch(/Super \+ Super is not available/);
-    expect(
-      snapShotShortcutRegistrationFailureMessage(
-        {
-          key: "2",
-          metaKey: false,
-          ctrlKey: false,
-          shiftKey: true,
-          altKey: false,
-          modKey: true,
-        },
-        "darwin",
-      ),
+      snapShotShortcutRegistrationFailureMessage({
+        key: "2",
+        metaKey: false,
+        ctrlKey: false,
+        shiftKey: true,
+        altKey: false,
+        modKey: true,
+      }),
     ).toMatch(/already used/);
   });
 });

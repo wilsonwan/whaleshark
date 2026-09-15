@@ -206,7 +206,7 @@ function openCodeCapabilitiesForModel(input: {
   const rawVariantValues = Object.keys(input.model.variants ?? {});
   // When a model advertises no variants, synthesize the standard reasoning
   // levels so the composer still offers a Reasoning selector (mirrors the
-  // Codex experience where reasoning is always configurable). The set
+  // Claude experience where reasoning is always configurable). The set
   // covers the common OpenCode variant spectrum; `inferDefaultVariant`
   // picks the provider-appropriate default (e.g. medium for openai/opencode).
   const variantValues =

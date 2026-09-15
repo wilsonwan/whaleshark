@@ -1099,7 +1099,7 @@ export const layer: Layer.Layer<
             if (yield* Ref.get(providerThreadOwnerLost)) {
               return true;
             }
-            // Claude background Bash has no turn-item projection. Keep the
+            // Background Bash has no turn-item projection. Keep the
             // stream open while this root's provider thread still reports
             // pending roster work so late empty updates can clear Waiting.
             // Use only the thread-scoped probe: session-wide pending work

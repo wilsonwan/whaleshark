@@ -47,7 +47,6 @@ function makeElectronAppLayer(
     isDefaultProtocolClient: () => Effect.succeed(false),
     setAsDefaultProtocolClient: () => Effect.succeed(true),
     setDesktopName: () => Effect.void,
-    setDockIcon: () => Effect.void,
     appendCommandLineSwitch: () => Effect.void,
     removeCommandLineSwitch: () => Effect.void,
     onBeforeQuitForUpdate: (listener) => registerListener("before-quit-for-update", listener),
@@ -103,7 +102,7 @@ function makeDesktopWindowLayer(
 }
 
 describe("DesktopLifecycle", () => {
-  for (const platform of ["darwin", "win32", "linux"] satisfies ReadonlyArray<NodeJS.Platform>) {
+  for (const platform of ["win32", "linux"] satisfies ReadonlyArray<NodeJS.Platform>) {
     it.effect(`lets the updater's quit event proceed on ${platform}`, () => {
       const appListeners = new Map<string, (...args: readonly unknown[]) => void>();
       let windowsDestroyed = false;
@@ -186,7 +185,7 @@ describe("DesktopLifecycle", () => {
       });
 
       const environmentLayer = Layer.succeed(DesktopEnvironment.DesktopEnvironment, {
-        platform: "darwin",
+        platform: "linux",
         isDevelopment: false,
       } as DesktopEnvironment.DesktopEnvironment["Service"]);
 
@@ -228,7 +227,7 @@ describe("DesktopLifecycle", () => {
         activationCount += 1;
       });
       const environmentLayer = Layer.succeed(DesktopEnvironment.DesktopEnvironment, {
-        platform: "darwin",
+        platform: "linux",
         isDevelopment: false,
       } as DesktopEnvironment.DesktopEnvironment["Service"]);
       const layer = DesktopLifecycle.layer.pipe(

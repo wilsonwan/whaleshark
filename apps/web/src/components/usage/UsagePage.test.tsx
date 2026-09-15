@@ -65,7 +65,6 @@ vi.mock("./usageProviders", async (importOriginal) => {
   return {
     ...actual,
     PROVIDER_PRESENTATION: {
-      codex: { color: "white", label: "Codex", mark: "span" },
       claude: { color: "orange", label: "Claude Code", mark: "span" },
     },
   };
@@ -74,11 +73,8 @@ vi.mock("./usageProviders", async (importOriginal) => {
 import { UsagePage } from "./UsagePage";
 import { readUsagePagePreferences } from "./usagePagePreferences";
 
-const providerTotals = (codex: number, claude: number) =>
-  new Map([
-    ["codex", { costUsd: codex, totalTokens: codex * 1_000 }],
-    ["claude", { costUsd: claude, totalTokens: claude * 1_000 }],
-  ] as const);
+const providerTotals = (claude: number) =>
+  new Map([["claude", { costUsd: claude, totalTokens: claude * 1_000 }]] as const);
 
 const modelTotals = Object.freeze([
   {
@@ -92,7 +88,7 @@ const modelTotals = Object.freeze([
   },
   {
     model: "token-heavy-model",
-    provider: "codex" as const,
+    provider: "claude" as const,
     costUsd: 5,
     totalTokens: 1_000,
     records: 1,
@@ -101,7 +97,7 @@ const modelTotals = Object.freeze([
   },
   {
     model: "token-heavy-cheaper-model",
-    provider: "codex" as const,
+    provider: "claude" as const,
     costUsd: 1,
     totalTokens: 1_000,
     records: 1,
@@ -110,7 +106,7 @@ const modelTotals = Object.freeze([
   },
   {
     model: "unpriced-model",
-    provider: "codex" as const,
+    provider: "claude" as const,
     costUsd: 0,
     totalTokens: 500,
     records: 2,
@@ -152,14 +148,14 @@ beforeEach(() => {
           hourStart: "2026-08-10T13:37:00.000Z",
           costUsd: 13,
           totalTokens: 13_000,
-          byProvider: providerTotals(7, 6),
+          byProvider: providerTotals(13),
         },
         {
           day: "2026-08-11",
           hourStart: "2026-08-11T11:37:00.000Z",
           costUsd: 11,
           totalTokens: 11_000,
-          byProvider: providerTotals(6, 5),
+          byProvider: providerTotals(11),
         },
       ],
     },

@@ -27,14 +27,14 @@ export type ThreadFixtureOverrides = Partial<Thread> & {
 export function makeThreadProjectionFixture(): OrchestrationV2ThreadProjection {
   const now = DateTime.makeUnsafe(DEFAULT_TIMESTAMP);
   const id = ThreadId.make("thread-test");
-  const providerInstanceId = ProviderInstanceId.make("codex");
+  const providerInstanceId = ProviderInstanceId.make("pi");
   return {
     thread: {
       id,
       projectId: ProjectId.make("project-test"),
       title: "Thread",
       providerInstanceId,
-      modelSelection: { instanceId: providerInstanceId, model: "gpt-5.4" },
+      modelSelection: { instanceId: providerInstanceId, model: "claude-opus-4-6" },
       runtimeMode: "full-access",
       interactionMode: "default",
       branch: null,
@@ -80,10 +80,10 @@ export function makeThreadFixture(overrides: ThreadFixtureOverrides = {}): Threa
   const providerInstanceId =
     overrides.providerInstanceId ??
     overrides.modelSelection?.instanceId ??
-    ProviderInstanceId.make("codex");
+    ProviderInstanceId.make("pi");
   const modelSelection = overrides.modelSelection ?? {
     instanceId: providerInstanceId,
-    model: "gpt-5.4",
+    model: "claude-opus-4-6",
   };
   const createdAt = DateTime.makeUnsafe(DEFAULT_TIMESTAMP);
   const updatedAt = DateTime.makeUnsafe(DEFAULT_TIMESTAMP);

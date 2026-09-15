@@ -45,9 +45,7 @@ import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import { McpSchema, McpServer } from "effect/unstable/ai";
 
-import { ClaudeProviderCapabilitiesV2 } from "../orchestration-v2/Adapters/ClaudeAdapterV2.ts";
-import { CodexProviderCapabilitiesV2 } from "../orchestration-v2/Adapters/CodexAdapterV2.ts";
-import { CodexOrchestratorReplayHarness } from "../orchestration-v2/Adapters/CodexAdapterV2.testkit.ts";
+import { PiProviderCapabilitiesV2 } from "../orchestration-v2/Adapters/PiAdapterV2.ts";
 import { OrchestratorV2, type OrchestratorV2Shape } from "../orchestration-v2/Orchestrator.ts";
 import { layer as threadManagementServiceLayer } from "../orchestration-v2/ThreadManagementService.ts";
 import {
@@ -62,14 +60,7 @@ import {
   ProviderContinuationRequests,
 } from "../orchestration-v2/ProviderContinuationRequests.ts";
 import { checkpointWorkspace } from "../orchestration-v2/testkit/ReplayFixtureWorkspace.ts";
-import {
-  makeOrchestratorV2ProviderReplayLayer,
-  makeOrchestratorV2ReplayLayerWithRegistry,
-} from "../orchestration-v2/testkit/ProviderReplayHarness.ts";
-import {
-  decodeProviderReplayNdjson,
-  materializeReplayTranscriptWorkspace,
-} from "../orchestration-v2/testkit/ReplayTranscriptNdjson.ts";
+import { makeOrchestratorV2ReplayLayerWithRegistry } from "../orchestration-v2/testkit/ProviderReplayHarness.ts";
 import { makeProviderRegistryLayer } from "../provider/testUtils/providerRegistryMock.ts";
 import { ScheduledTaskService } from "../scheduledTasks/ScheduledTaskService.ts";
 import * as McpHttpServer from "./McpHttpServer.ts";
@@ -78,10 +69,8 @@ import { delegatedTaskRun, hasPendingChildRuns } from "./OrchestratorMcpService.
 
 const parentThreadId = ThreadId.make("thread:mcp-orchestrator-parent");
 const projectId = ProjectId.make("project:mcp-orchestrator");
-const codexInstanceId = ProviderInstanceId.make("codex");
-const claudeInstanceId = ProviderInstanceId.make("claudeAgent");
-const codexModel = "gpt-5.4";
-const claudeModel = "claude-sonnet-4-6";
+const piInstanceId = ProviderInstanceId.make("pi");
+const piModel = "default";
 const parentPrompt = "Keep this parent turn active while orchestration tools are tested.";
 const delegatedPrompt = "Inspect the delegated API boundary and return the result.";
 const delegatedResult = "Delegated API boundary inspected.";
@@ -103,31 +92,10 @@ const decodeThreadSendResult = Schema.decodeUnknownEffect(OrchestratorMcpThreadS
 const decodeThreadWaitResult = Schema.decodeUnknownEffect(OrchestratorMcpThreadWaitResult);
 const decodeThreadUpdateResult = Schema.decodeUnknownEffect(ThreadMetadataMcpUpdateResult);
 
-const codexSelection = {
-  instanceId: codexInstanceId,
-  model: codexModel,
+const piSelection = {
+  instanceId: piInstanceId,
+  model: piModel,
 } satisfies ModelSelection;
-
-const claudeSelection = {
-  instanceId: claudeInstanceId,
-  model: claudeModel,
-} satisfies ModelSelection;
-
-const delegatedTaskStatusTranscriptFile = new URL(
-  "../orchestration-v2/testkit/fixtures/delegated_task_status/codex_transcript.ndjson",
-  import.meta.url,
-);
-
-const readDelegatedTaskStatusTranscript = Effect.fn("readDelegatedTaskStatusTranscript")(
-  function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const text = yield* fs.readFileString(
-      decodeURIComponent(delegatedTaskStatusTranscriptFile.pathname),
-    );
-    return yield* decodeProviderReplayNdjson(text);
-  },
-  Effect.provide(NodeServices.layer),
-);
 
 interface CapturedTurn {
   readonly instanceId: ProviderInstanceId;
@@ -479,13 +447,17 @@ describe("orchestrator MCP toolkit", () => {
           const deliveryTerminalGates = new Map<ThreadId, Deferred.Deferred<void>>();
           const registryLayer = makeProviderAdapterRegistryLayer([
             makeDeterministicAdapter({
-              instanceId: codexInstanceId,
-              driver: ProviderDriverKind.make("codex"),
+              instanceId: piInstanceId,
+              driver: ProviderDriverKind.make("pi"),
               // Exercise queued completion ownership on a session without native steering.
               // Native mailbox delivery and its completion races have dedicated integration tests.
               capabilities: {
-                ...CodexProviderCapabilitiesV2,
-                turns: { ...CodexProviderCapabilitiesV2.turns, supportsActiveSteering: false },
+                ...PiProviderCapabilitiesV2,
+                turns: {
+                  ...PiProviderCapabilitiesV2.turns,
+                  supportsActiveSteering: false,
+                  supportsSteeringByInterruptRestart: true,
+                },
               },
               capturedTurns,
               shouldComplete: (turn) =>
@@ -495,23 +467,10 @@ describe("orchestrator MCP toolkit", () => {
                 turn.message.text.startsWith("Delegated tasks")
                   ? deliveryTerminalGates.get(turn.threadId)
                   : parentTerminalGates.get(turn.threadId),
-              response: (turn) => `Codex completed: ${turn.message.text}`,
-            }),
-            makeDeterministicAdapter({
-              instanceId: claudeInstanceId,
-              driver: ProviderDriverKind.make("claudeAgent"),
-              capabilities: ClaudeProviderCapabilitiesV2,
-              capturedTurns,
-              shouldComplete: (turn) => turn.message.text !== cancellationPrompt,
-              terminalGate: (turn) =>
-                turn.message.text.startsWith("Delegated task") ||
-                turn.message.text.startsWith("Delegated tasks")
-                  ? deliveryTerminalGates.get(turn.threadId)
-                  : parentTerminalGates.get(turn.threadId),
               response: (turn) =>
                 turn.message.text === delegatedPrompt
                   ? delegatedResult
-                  : `Claude completed: ${turn.message.text}`,
+                  : `Pi completed: ${turn.message.text}`,
             }),
           ]);
           // Captures parent-wake offers made when a delegated child
@@ -567,9 +526,9 @@ describe("orchestrator MCP toolkit", () => {
           );
           const providerRegistryLayer = makeProviderRegistryLayer([
             makeProviderSnapshot({
-              instanceId: codexInstanceId,
-              driver: ProviderDriverKind.make("codex"),
-              model: codexModel,
+              instanceId: piInstanceId,
+              driver: ProviderDriverKind.make("pi"),
+              model: piModel,
               optionDescriptors: [
                 {
                   id: "reasoning",
@@ -584,9 +543,9 @@ describe("orchestrator MCP toolkit", () => {
               ],
             }),
             makeProviderSnapshot({
-              instanceId: claudeInstanceId,
-              driver: ProviderDriverKind.make("claudeAgent"),
-              model: claudeModel,
+              instanceId: piInstanceId,
+              driver: ProviderDriverKind.make("pi"),
+              model: piModel,
             }),
             makeProviderSnapshot({
               instanceId: ProviderInstanceId.make("opencode"),
@@ -642,7 +601,7 @@ describe("orchestrator MCP toolkit", () => {
               threadId: parentThreadId,
               projectId,
               title: "MCP parent",
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               runtimeMode: "full-access",
               interactionMode: "default",
               branch: null,
@@ -657,7 +616,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: MessageId.make("message:mcp-parent:start"),
               text: parentPrompt,
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "start_immediately" },
             });
             const parent = yield* waitForProjection(
@@ -675,7 +634,7 @@ describe("orchestrator MCP toolkit", () => {
               environmentId: EnvironmentId.make("environment:mcp-orchestrator"),
               threadId: parentThreadId,
               providerSessionId: "mcp-provider-session-parent",
-              providerInstanceId: codexInstanceId,
+              providerInstanceId: piInstanceId,
               capabilities: new Set(["orchestration"]),
               issuedAt: 1,
             };
@@ -714,7 +673,7 @@ describe("orchestrator MCP toolkit", () => {
                   parentRunId: parentRun.id,
                   parentNodeId: parentRootNodeId,
                   task: taskText,
-                  modelSelection: claudeSelection,
+                  modelSelection: piSelection,
                   runtimeMode: "full-access",
                   interactionMode: "default",
                   completionWake: "always",
@@ -761,7 +720,7 @@ describe("orchestrator MCP toolkit", () => {
                   messageId: delivery.messageId,
                   text: "Delegated task reached a terminal state.",
                   attachments: [],
-                  modelSelection: codexSelection,
+                  modelSelection: piSelection,
                   dispatchMode: { type: "queue_after_active" },
                   delegatedCompletion: {
                     parentRunId: parentRun.id,
@@ -802,7 +761,7 @@ describe("orchestrator MCP toolkit", () => {
                 parentRunId: parentRun.id,
                 parentNodeId: parentRootNodeId,
                 task: `Complete coalesced task ${suffix}.`,
-                modelSelection: claudeSelection,
+                modelSelection: piSelection,
                 runtimeMode: "full-access",
                 interactionMode: "default",
                 completionWake: "always",
@@ -862,7 +821,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: coalescedDelivery.messageId,
               text: "Delegated tasks reached terminal states.",
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "queue_after_active" },
               delegatedCompletion: {
                 parentRunId: parentRun.id,
@@ -1021,7 +980,7 @@ describe("orchestrator MCP toolkit", () => {
             expect(terminalResultRead.items).toMatchObject([
               {
                 type: "assistant_message",
-                text: "Claude completed: Complete before a parent reads this child result directly.",
+                text: "Pi completed: Complete before a parent reads this child result directly.",
                 textTruncated: false,
               },
             ]);
@@ -1056,7 +1015,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: queuedUserMessageId,
               text: "🙂".repeat(16001),
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "queue_after_active" },
             });
             const queueRaceQueued = yield* waitForProjection(
@@ -1127,7 +1086,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: steerMessageId,
               text: "Steer the active parent after receiving the result.",
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "steer_active", targetRunId: parentRun.id },
             });
             const steerRaceStatus = yield* invoke("task_status", { taskId: steerRace.task.id });
@@ -1168,7 +1127,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: restartMessageId,
               text: "Restart the active parent after receiving the result.",
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "restart_active", targetRunId: parentRun.id },
             });
             const restartedParent = yield* waitForProjection(
@@ -1261,8 +1220,8 @@ describe("orchestrator MCP toolkit", () => {
             const capabilities = yield* invoke("orchestrator_capabilities", {});
             expect(capabilities.isError).toBe(false);
             expect(capabilities.structuredContent).toMatchObject({
-              inheritedProviderInstanceId: codexInstanceId,
-              inheritedModel: codexModel,
+              inheritedProviderInstanceId: piInstanceId,
+              inheritedModel: piModel,
               features: {
                 appOwnedSubagents: true,
                 asyncPolling: true,
@@ -1273,7 +1232,7 @@ describe("orchestrator MCP toolkit", () => {
               },
               providers: expect.arrayContaining([
                 expect.objectContaining({
-                  providerInstanceId: claudeInstanceId,
+                  providerInstanceId: piInstanceId,
                   canRunCrossProviderChildTask: true,
                 }),
                 expect.objectContaining({
@@ -1283,10 +1242,10 @@ describe("orchestrator MCP toolkit", () => {
                 // Models advertise their option descriptors so agents can
                 // discover valid target.options ids and values.
                 expect.objectContaining({
-                  providerInstanceId: codexInstanceId,
+                  providerInstanceId: piInstanceId,
                   models: [
                     expect.objectContaining({
-                      id: codexModel,
+                      id: piModel,
                       options: [expect.objectContaining({ id: "reasoning", type: "select" })],
                     }),
                   ],
@@ -1321,7 +1280,7 @@ describe("orchestrator MCP toolkit", () => {
               createdBy: "agent",
               creationSource: "mcp",
               // Inherits the parent thread's model selection.
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
             });
 
             // list_scheduled_tasks returns the task scoped to this project.
@@ -1375,12 +1334,12 @@ describe("orchestrator MCP toolkit", () => {
             const delegatedCall = yield* invoke("delegate_task", {
               task: delegatedPrompt,
               target: {
-                providerInstanceId: claudeInstanceId,
-                model: claudeModel,
+                providerInstanceId: piInstanceId,
+                model: piModel,
               },
               mode: "wait",
               timeoutMs: 10_000,
-              clientRequestId: "delegate-claude-1",
+              clientRequestId: "delegate-pi-1",
             });
             expect(delegatedCall.isError).toBe(false);
             const delegated = yield* decodeDelegateTaskResult(delegatedCall.structuredContent).pipe(
@@ -1388,7 +1347,7 @@ describe("orchestrator MCP toolkit", () => {
             );
             expect(delegated.status).toBe("completed");
             expect(delegated.summary).toBe(delegatedResult);
-            expect(delegated.providerInstanceId).toBe(claudeInstanceId);
+            expect(delegated.providerInstanceId).toBe(piInstanceId);
 
             const completedParent = yield* waitForProjection(
               orchestrator,
@@ -1426,7 +1385,7 @@ describe("orchestrator MCP toolkit", () => {
               createdBy: "agent",
               creationSource: "mcp",
             });
-            expect(child.thread.modelSelection).toEqual(claudeSelection);
+            expect(child.thread.modelSelection).toEqual(piSelection);
             expect(
               child.messages
                 .filter((message) => message.role === "user")
@@ -1443,7 +1402,7 @@ describe("orchestrator MCP toolkit", () => {
               capturedAfterDelegate.filter((turn) => turn.threadId === delegated.childThreadId),
             ).toEqual([
               {
-                instanceId: claudeInstanceId,
+                instanceId: piInstanceId,
                 threadId: delegated.childThreadId,
                 text: delegatedPrompt,
               },
@@ -1617,11 +1576,11 @@ describe("orchestrator MCP toolkit", () => {
             const repeatedDelegatedCall = yield* invoke("delegate_task", {
               task: delegatedPrompt,
               target: {
-                providerInstanceId: claudeInstanceId,
-                model: claudeModel,
+                providerInstanceId: piInstanceId,
+                model: piModel,
               },
               mode: "async",
-              clientRequestId: "delegate-claude-1",
+              clientRequestId: "delegate-pi-1",
             });
             const repeatedDelegated = yield* decodeDelegateTaskResult(
               repeatedDelegatedCall.structuredContent,
@@ -1638,8 +1597,8 @@ describe("orchestrator MCP toolkit", () => {
             const rejectedOptionsCall = yield* invoke("delegate_task", {
               task: cancellationPrompt,
               target: {
-                providerInstanceId: codexInstanceId,
-                model: codexModel,
+                providerInstanceId: piInstanceId,
+                model: piModel,
                 options: { reasoning: "extreme" },
               },
               mode: "async",
@@ -1656,8 +1615,8 @@ describe("orchestrator MCP toolkit", () => {
             const duplicateOptionsCall = yield* invoke("delegate_task", {
               task: cancellationPrompt,
               target: {
-                providerInstanceId: codexInstanceId,
-                model: codexModel,
+                providerInstanceId: piInstanceId,
+                model: piModel,
                 options: [
                   { id: "reasoning", value: "low" },
                   { id: "reasoning", value: "high" },
@@ -1675,8 +1634,8 @@ describe("orchestrator MCP toolkit", () => {
             const cancellableCall = yield* invoke("delegate_task", {
               task: cancellationPrompt,
               target: {
-                providerInstanceId: codexInstanceId,
-                model: codexModel,
+                providerInstanceId: piInstanceId,
+                model: piModel,
                 // Shorthand record form; decodes to the canonical array.
                 options: { reasoning: "low" },
               },
@@ -1710,8 +1669,8 @@ describe("orchestrator MCP toolkit", () => {
               cancellable.childThreadId,
             );
             expect(optionedChild.thread.modelSelection).toEqual({
-              instanceId: codexInstanceId,
-              model: codexModel,
+              instanceId: piInstanceId,
+              model: piModel,
               options: [{ id: "reasoning", value: "low" }],
             });
             const cancelCall = yield* invoke("task_cancel", {
@@ -1751,10 +1710,10 @@ describe("orchestrator MCP toolkit", () => {
                   title: "Inherited empty thread",
                 },
                 {
-                  title: "Claude ordinary thread",
+                  title: "Pi ordinary thread",
                   prompt: createdThreadPrompt,
                   target: {
-                    driverKind: "claudeAgent",
+                    driverKind: "pi",
                   },
                 },
               ],
@@ -1771,14 +1730,14 @@ describe("orchestrator MCP toolkit", () => {
               status: "idle",
               createdBy: "agent",
               creationSource: "mcp",
-              providerInstanceId: codexInstanceId,
-              model: codexModel,
+              providerInstanceId: piInstanceId,
+              model: piModel,
             });
             expect(promptedThread).toMatchObject({
               createdBy: "agent",
               creationSource: "mcp",
-              providerInstanceId: claudeInstanceId,
-              model: claudeModel,
+              providerInstanceId: piInstanceId,
+              model: piModel,
             });
             const emptyProjection = yield* orchestrator.getThreadProjection(emptyThread.threadId);
             expect(emptyProjection.thread.lineage).toEqual({
@@ -1926,15 +1885,15 @@ describe("orchestrator MCP toolkit", () => {
                 targetThreadId: emptyThread.threadId,
                 targetRunId: null,
                 title: emptyThread.title,
-                providerInstanceId: codexInstanceId,
-                model: codexModel,
+                providerInstanceId: piInstanceId,
+                model: piModel,
               },
               {
                 targetThreadId: promptedThread.threadId,
                 targetRunId: promptedThread.runId,
                 title: promptedThread.title,
-                providerInstanceId: claudeInstanceId,
-                model: claudeModel,
+                providerInstanceId: piInstanceId,
+                model: piModel,
               },
             ]);
 
@@ -1982,9 +1941,7 @@ describe("orchestrator MCP toolkit", () => {
               promptedReadNextCall.structuredContent,
             ).pipe(Effect.orDie);
             expect(promptedReadNext.items.map((item) => item.type)).toEqual(["assistant_message"]);
-            expect(promptedReadNext.items[0]?.text).toBe(
-              `Claude completed: ${createdThreadPrompt}`,
-            );
+            expect(promptedReadNext.items[0]?.text).toBe(`Pi completed: ${createdThreadPrompt}`);
 
             const forkedThreadId = ThreadId.make("thread:mcp-orchestrator-inherited-read");
             yield* orchestrator.dispatch({
@@ -2078,8 +2035,8 @@ describe("orchestrator MCP toolkit", () => {
               title: "Managed active thread",
               targetThreadId: activeThread.threadId,
               targetRunId: activeThread.runId,
-              targetProviderInstanceId: codexInstanceId,
-              targetModel: codexModel,
+              targetProviderInstanceId: piInstanceId,
+              targetModel: piModel,
             });
             const activeProjection = yield* waitForProjection(
               orchestrator,
@@ -2154,7 +2111,7 @@ describe("orchestrator MCP toolkit", () => {
               threadId: foreignThreadId,
               projectId: ProjectId.make("project:mcp-foreign"),
               title: "Foreign project thread",
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               runtimeMode: "full-access",
               interactionMode: "default",
               branch: null,
@@ -2220,8 +2177,8 @@ describe("orchestrator MCP toolkit", () => {
             const upgradedCall = yield* invoke("delegate_task", {
               task: cancellationPrompt,
               target: {
-                providerInstanceId: codexInstanceId,
-                model: codexModel,
+                providerInstanceId: piInstanceId,
+                model: piModel,
               },
               mode: "wait",
               timeoutMs: 1,
@@ -2299,7 +2256,7 @@ describe("orchestrator MCP toolkit", () => {
               parentRunId: parentRun.id,
               parentNodeId: parentRootNodeId,
               task: cancellationPrompt,
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               runtimeMode: "full-access",
               interactionMode: "default",
             });
@@ -2335,7 +2292,7 @@ describe("orchestrator MCP toolkit", () => {
               parentRunId: parentRun.id,
               parentNodeId: parentRootNodeId,
               task: "Complete the stop barrier delivery task.",
-              modelSelection: claudeSelection,
+              modelSelection: piSelection,
               runtimeMode: "full-access",
               interactionMode: "default",
               completionWake: "always",
@@ -2377,7 +2334,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: stopQueuedDelivery.messageId,
               text: "Delegated task reached a terminal state.",
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "queue_after_active" },
               delegatedCompletion: {
                 parentRunId: parentRun.id,
@@ -2503,7 +2460,7 @@ describe("orchestrator MCP toolkit", () => {
               threadId: lateParentThreadId,
               projectId,
               title: "Late completion parent",
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               runtimeMode: "full-access",
               interactionMode: "default",
               branch: null,
@@ -2518,7 +2475,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: MessageId.make("message:mcp-late-parent:start"),
               text: "Hold this parent until its completion delivery is queued.",
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "start_immediately" },
             });
             const lateParentProjection = yield* waitForProjection(
@@ -2541,7 +2498,7 @@ describe("orchestrator MCP toolkit", () => {
               parentRunId: lateParentRun.id,
               parentNodeId: lateParentRun.rootNodeId,
               task: "Complete before the first delivery starts.",
-              modelSelection: claudeSelection,
+              modelSelection: piSelection,
               runtimeMode: "full-access",
               interactionMode: "default",
               completionWake: "always",
@@ -2555,7 +2512,7 @@ describe("orchestrator MCP toolkit", () => {
               parentRunId: lateParentRun.id,
               parentNodeId: lateParentRun.rootNodeId,
               task: cancellationPrompt,
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               runtimeMode: "full-access",
               interactionMode: "default",
               completionWake: "always",
@@ -2582,7 +2539,7 @@ describe("orchestrator MCP toolkit", () => {
               parentRunId: lateParentRun.id,
               parentNodeId: lateParentRun.rootNodeId,
               task: cancellationPrompt,
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               runtimeMode: "full-access",
               interactionMode: "default",
               completionWake: "always",
@@ -2619,7 +2576,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: firstLateDelivery.messageId,
               text: "Delegated task reached a terminal state.",
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "queue_after_active" },
               delegatedCompletion: {
                 parentRunId: lateParentRun.id,
@@ -2715,7 +2672,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: successorDelivery.messageId,
               text: "Delegated task reached a terminal state.",
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "queue_after_active" },
               delegatedCompletion: {
                 parentRunId: lateParentRun.id,
@@ -2819,7 +2776,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: removeParentMessageId,
               text: "Keep the parent active while removing automatic delivery.",
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "start_immediately" },
             });
             const removeParentProjection = yield* waitForProjection(
@@ -2845,7 +2802,7 @@ describe("orchestrator MCP toolkit", () => {
               parentRunId: removeParentRun.id,
               parentNodeId: removeParentRun.rootNodeId,
               task: "Complete before Queue Remove disposes this automatic delivery.",
-              modelSelection: claudeSelection,
+              modelSelection: piSelection,
               runtimeMode: "full-access",
               interactionMode: "default",
               completionWake: "always",
@@ -2886,7 +2843,7 @@ describe("orchestrator MCP toolkit", () => {
               messageId: removeDelivery.messageId,
               text: "Delegated task reached a terminal state.",
               attachments: [],
-              modelSelection: codexSelection,
+              modelSelection: piSelection,
               dispatchMode: { type: "queue_after_active" },
               delegatedCompletion: {
                 parentRunId: removeParentRun.id,
@@ -2938,307 +2895,5 @@ describe("orchestrator MCP toolkit", () => {
           }).pipe(Effect.provide(testLayer));
         }),
       ),
-  );
-
-  it.live("reports running and queued child follow-ups from a Codex replay transcript", () =>
-    Effect.scoped(
-      Effect.gen(function* () {
-        const cwd = yield* checkpointWorkspace("delegated-task-status");
-        const rawTranscript = yield* readDelegatedTaskStatusTranscript();
-        const transcript = yield* CodexOrchestratorReplayHarness.decodeTranscript(
-          materializeReplayTranscriptWorkspace(rawTranscript, cwd),
-        );
-        const orchestratorLayer = makeOrchestratorV2ProviderReplayLayer(
-          {
-            name: "delegated-task-status/codex",
-            transcript,
-            commands: [],
-            runtimePolicyOverride: { cwd },
-          },
-          CodexOrchestratorReplayHarness,
-        );
-        const orchestrationLayer = Layer.merge(
-          orchestratorLayer,
-          threadManagementServiceLayer.pipe(Layer.provide(orchestratorLayer)),
-        );
-        const providerRegistryLayer = makeProviderRegistryLayer([
-          makeProviderSnapshot({
-            instanceId: codexInstanceId,
-            driver: ProviderDriverKind.make("codex"),
-            model: codexModel,
-          }),
-        ]);
-        const testLayer = McpHttpServer.OrchestratorToolkitRegistrationLive.pipe(
-          Layer.provideMerge(McpServer.McpServer.layer),
-          Layer.provideMerge(orchestrationLayer),
-          Layer.provide(providerRegistryLayer),
-          Layer.provide(unusedScheduledTaskStubLayer),
-          Layer.provide(NodeServices.layer),
-        );
-
-        yield* Effect.gen(function* () {
-          const orchestrator = yield* OrchestratorV2;
-          const server = yield* McpServer.McpServer;
-          const parentCreate = yield* orchestrator.dispatch({
-            type: "thread.create",
-            createdBy: "user",
-            creationSource: "web",
-            commandId: CommandId.make("command:mcp-replay-parent:create"),
-            threadId: parentThreadId,
-            projectId,
-            title: "MCP replay parent",
-            modelSelection: codexSelection,
-            runtimeMode: "full-access",
-            interactionMode: "default",
-            branch: null,
-            worktreePath: cwd,
-          });
-          yield* orchestrator.dispatch({
-            type: "message.dispatch",
-            createdBy: "user",
-            creationSource: "web",
-            commandId: CommandId.make("command:mcp-replay-parent:start"),
-            threadId: parentThreadId,
-            messageId: MessageId.make("message:mcp-replay-parent:start"),
-            text: parentPrompt,
-            attachments: [],
-            modelSelection: codexSelection,
-            dispatchMode: { type: "start_immediately" },
-          });
-          yield* orchestrator
-            .streamStoredEventsFrom({
-              threadId: parentThreadId,
-              afterSequence: parentCreate.sequence,
-            })
-            .pipe(
-              Stream.filter(
-                (stored) =>
-                  stored.event.type === "provider-turn.updated" &&
-                  stored.event.payload.status === "running",
-              ),
-              Stream.runHead,
-              Effect.flatMap(
-                Option.match({
-                  onNone: () => Effect.die("Parent provider turn did not start."),
-                  onSome: () => Effect.void,
-                }),
-              ),
-            );
-
-          const invocation: McpInvocationContext.McpInvocationScope = {
-            environmentId: EnvironmentId.make("environment:mcp-replay"),
-            threadId: parentThreadId,
-            providerSessionId: "mcp-provider-session-replay-parent",
-            providerInstanceId: codexInstanceId,
-            capabilities: new Set(["orchestration"]),
-            issuedAt: 1,
-          };
-          const invoke = (name: string, args: Record<string, unknown>) =>
-            server
-              .callTool({ name, arguments: args })
-              .pipe(
-                Effect.provideService(McpInvocationContext.McpInvocationContext, invocation),
-                Effect.provideService(McpSchema.McpServerClient, client),
-              );
-
-          const delegationStartSequence =
-            yield* orchestrator.getThreadEventSequence(parentThreadId);
-          const delegatedCall = yield* invoke("delegate_task", {
-            task: delegatedPrompt,
-            target: {
-              providerInstanceId: codexInstanceId,
-              model: codexModel,
-            },
-            mode: "async",
-            clientRequestId: "delegate-codex-replay-1",
-          });
-          const delegatedStart = yield* decodeDelegateTaskResult(
-            delegatedCall.structuredContent,
-          ).pipe(Effect.orDie);
-          expect(delegatedStart.childRunId).not.toBeNull();
-          yield* orchestrator
-            .streamStoredEventsFrom({
-              threadId: parentThreadId,
-              afterSequence: delegationStartSequence,
-            })
-            .pipe(
-              Stream.filter(
-                (stored) =>
-                  stored.event.type === "context-transfer.created" &&
-                  stored.event.payload.type === "subagent_result" &&
-                  stored.event.payload.sourceThreadId === delegatedStart.childThreadId &&
-                  stored.event.payload.sourcePoint.runId === delegatedStart.childRunId,
-              ),
-              Stream.runHead,
-              Effect.flatMap(
-                Option.match({
-                  onNone: () => Effect.die("Delegated result transfer was not created."),
-                  onSome: () => Effect.void,
-                }),
-              ),
-            );
-          const delegatedStatusCall = yield* invoke("task_status", {
-            taskId: delegatedStart.taskId,
-          });
-          const delegated = yield* decodeDelegateTaskResult(
-            delegatedStatusCall.structuredContent,
-          ).pipe(Effect.orDie);
-          expect(delegated).toMatchObject({
-            status: "completed",
-            summary: delegatedResult,
-            providerInstanceId: codexInstanceId,
-            hasPendingChildRuns: false,
-            latestTerminalRunId: delegated.childRunId,
-            latestTerminalStatus: "completed",
-            latestTerminalSummary: delegatedResult,
-          });
-          expect(delegated.resultContextTransferId).not.toBeNull();
-          expect(delegated.latestTerminalResultContextTransferId).toBe(
-            delegated.resultContextTransferId,
-          );
-
-          const followupStartSequence = yield* orchestrator.getThreadEventSequence(
-            delegated.childThreadId,
-          );
-          const runningFollowupCall = yield* invoke("t3_thread_send", {
-            threadId: delegated.childThreadId,
-            message: cancellationPrompt,
-            clientRequestId: "delegated-child-replay-running-1",
-          });
-          const runningFollowup = yield* decodeThreadSendResult(
-            runningFollowupCall.structuredContent,
-          ).pipe(Effect.orDie);
-          yield* orchestrator
-            .streamStoredEventsFrom({
-              threadId: delegated.childThreadId,
-              afterSequence: followupStartSequence,
-            })
-            .pipe(
-              Stream.filter(
-                (stored) =>
-                  stored.event.type === "provider-turn.updated" &&
-                  stored.event.payload.status === "running",
-              ),
-              Stream.runHead,
-              Effect.flatMap(
-                Option.match({
-                  onNone: () => Effect.die("Follow-up provider turn did not start."),
-                  onSome: () => Effect.void,
-                }),
-              ),
-            );
-
-          const queuedFollowupCall = yield* invoke("t3_thread_send", {
-            threadId: delegated.childThreadId,
-            message: queuedFollowupPrompt,
-            mode: "queue",
-            clientRequestId: "delegated-child-replay-queued-1",
-          });
-          const queuedFollowup = yield* decodeThreadSendResult(
-            queuedFollowupCall.structuredContent,
-          ).pipe(Effect.orDie);
-          expect(queuedFollowup).toMatchObject({
-            status: "queued",
-            delivery: "queued",
-          });
-
-          const pendingProjection = yield* orchestrator.getThreadProjection(
-            delegated.childThreadId,
-          );
-          expect(
-            pendingProjection.runs.find((run) => run.id === delegated.childRunId)?.status,
-          ).toBe("completed");
-          expect(
-            pendingProjection.runs.find((run) => run.id === runningFollowup.runId)?.status,
-          ).toBe("running");
-          expect(
-            pendingProjection.runs.find((run) => run.id === queuedFollowup.runId)?.status,
-          ).toBe("queued");
-          expect(
-            (yield* orchestrator.getThreadProjection(parentThreadId)).runs.some(
-              (run) => run.status === "running",
-            ),
-          ).toBe(true);
-
-          const pendingStatusCall = yield* invoke("task_status", {
-            taskId: delegated.taskId,
-          });
-          const pendingStatus = yield* decodeDelegateTaskResult(
-            pendingStatusCall.structuredContent,
-          ).pipe(Effect.orDie);
-          expect(pendingStatus).toMatchObject({
-            childRunId: delegated.childRunId,
-            status: "completed",
-            summary: delegatedResult,
-            resultContextTransferId: delegated.resultContextTransferId,
-            hasPendingChildRuns: true,
-            latestTerminalRunId: delegated.childRunId,
-            latestTerminalStatus: "completed",
-            latestTerminalSummary: delegatedResult,
-            latestTerminalResultContextTransferId: delegated.resultContextTransferId,
-          });
-
-          const finalSequence = yield* orchestrator.getThreadEventSequence(delegated.childThreadId);
-          const interruptCall = yield* invoke("t3_thread_interrupt", {
-            threadId: delegated.childThreadId,
-            runId: runningFollowup.runId,
-            reason: "Allow the queued replay follow-up to run.",
-            clientRequestId: "interrupt-delegated-child-replay-1",
-          });
-          const interrupt = yield* decodeThreadInterruptResult(
-            interruptCall.structuredContent,
-          ).pipe(Effect.orDie);
-          expect(interrupt).toMatchObject({
-            runId: runningFollowup.runId,
-            status: "interrupt_requested",
-          });
-          yield* orchestrator
-            .streamStoredEventsFrom({
-              threadId: delegated.childThreadId,
-              afterSequence: finalSequence,
-            })
-            .pipe(
-              Stream.filter(
-                (stored) =>
-                  stored.event.type === "run.updated" &&
-                  stored.event.payload.id === queuedFollowup.runId &&
-                  stored.event.payload.status === "completed",
-              ),
-              Stream.runHead,
-              Effect.flatMap(
-                Option.match({
-                  onNone: () => Effect.die("Queued follow-up did not complete."),
-                  onSome: () => Effect.void,
-                }),
-              ),
-            );
-
-          const finalProjection = yield* orchestrator.getThreadProjection(delegated.childThreadId);
-          expect(finalProjection.runs.find((run) => run.id === runningFollowup.runId)?.status).toBe(
-            "interrupted",
-          );
-          expect(finalProjection.runs.find((run) => run.id === queuedFollowup.runId)?.status).toBe(
-            "completed",
-          );
-          const finalStatusCall = yield* invoke("task_status", {
-            taskId: delegated.taskId,
-          });
-          const finalStatus = yield* decodeDelegateTaskResult(
-            finalStatusCall.structuredContent,
-          ).pipe(Effect.orDie);
-          expect(finalStatus).toMatchObject({
-            childRunId: delegated.childRunId,
-            status: "completed",
-            summary: delegatedResult,
-            resultContextTransferId: delegated.resultContextTransferId,
-            hasPendingChildRuns: false,
-            latestTerminalRunId: queuedFollowup.runId,
-            latestTerminalStatus: "completed",
-            latestTerminalSummary: queuedFollowupResult,
-            latestTerminalResultContextTransferId: null,
-          });
-        }).pipe(Effect.provide(testLayer));
-      }),
-    ),
   );
 });

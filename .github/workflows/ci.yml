@@ -1,8 +1,9 @@
 name: CI
 
 # This fork temporarily uses GitHub-hosted runners because its Blacksmith
-# runners are not configured. Restore the Blacksmith labels when that capacity
-# is available, together with the setup-apt-mirrors step for those images.
+# runners are not configured. Once they are available, restore the original
+# labels: blacksmith-8vcpu-ubuntu-2404 for the Ubuntu jobs and
+# blacksmith-4vcpu-ubuntu-2404 for Rust.
 
 on:
   pull_request:
@@ -28,7 +29,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Reject repository-owned PR assets
@@ -83,7 +83,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       # Ubuntu runner images ship gcc, but ACP process-tree live tests compile a
@@ -133,7 +132,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
@@ -196,7 +194,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Rust
@@ -215,11 +212,6 @@ jobs:
           for crate in resource-monitor kde-snap-shot hyprland-snap-shot; do
             cargo test --locked --manifest-path "native/$crate/Cargo.toml"
           done
-
-  # The static analysis below needs a macOS runner, which bills ~6.7x a Linux
-  # minute, so gate it on the native sources it actually lints instead of paying
-  # for it on every push. Detection is API-only (no checkout) and fails open: if
-  # the diff cannot be resolved, the lint runs.
   release_smoke:
     name: Release Smoke
     runs-on: ubuntu-24.04
@@ -230,7 +222,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !/.repos/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+

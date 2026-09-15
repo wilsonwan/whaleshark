@@ -35,12 +35,12 @@ describe("ComposerCommandMenu", () => {
       <ComposerCommandMenu
         items={[
           {
-            id: "skill:codex:browser",
+            id: "skill:pi:browser",
             type: "skill",
-            provider: ProviderDriverKind.make("codex"),
+            provider: ProviderDriverKind.make("pi"),
             skill: {
               name: "browser",
-              path: "/Users/maria/.codex/plugins/browser/skills/browser/SKILL.md",
+              path: "/Users/maria/.agents/plugins/browser/skills/browser/SKILL.md",
               scope: "user",
               enabled: true,
             },
@@ -51,7 +51,7 @@ describe("ComposerCommandMenu", () => {
         resolvedTheme="dark"
         isLoading={false}
         triggerKind="skill"
-        activeItemId="skill:codex:browser"
+        activeItemId="skill:pi:browser"
         onHighlightedItemChange={() => {}}
         onSelect={() => {}}
       />,
@@ -69,9 +69,9 @@ describe("ComposerCommandMenu", () => {
       <ComposerCommandMenu
         items={[
           {
-            id: "skill:codex:ask-matt",
+            id: "skill:pi:ask-matt",
             type: "skill",
-            provider: ProviderDriverKind.make("codex"),
+            provider: ProviderDriverKind.make("pi"),
             skill: {
               name: "ask-matt",
               displayName: "Ask Matt",
@@ -86,7 +86,7 @@ describe("ComposerCommandMenu", () => {
         resolvedTheme="dark"
         isLoading={false}
         triggerKind="slash-command"
-        activeItemId="skill:codex:ask-matt"
+        activeItemId="skill:pi:ask-matt"
         onHighlightedItemChange={() => {}}
         onSelect={() => {}}
       />,

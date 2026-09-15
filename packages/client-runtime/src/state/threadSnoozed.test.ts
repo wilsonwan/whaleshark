@@ -43,7 +43,7 @@ function makeShell(input: {
         : {
             threadId,
             status: input.sessionStatus,
-            providerName: "Codex",
+            providerName: "Claude",
             runtimeMode: "full-access",
             activeTurnId: null,
             lastError: input.sessionStatus === "error" ? "boom" : null,
@@ -239,7 +239,7 @@ describe("hasQueuedTurnStart", () => {
       session: {
         threadId: ThreadId.make("thread-failed"),
         status: "error",
-        providerName: "Codex",
+        providerName: "Claude",
         runtimeMode: "full-access",
         activeTurnId: null,
         lastError: "failed",

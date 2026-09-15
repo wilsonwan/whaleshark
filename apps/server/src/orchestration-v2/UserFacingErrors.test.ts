@@ -10,14 +10,14 @@ describe("userFacingDispatchErrorMessage", () => {
         message: "Provider adapter failed while dispatching orchestration command command-1.",
         cause: {
           message:
-            "claudeAgent cannot satisfy rollback for command command-1: provider conversation rollback is unavailable",
+            "pi cannot satisfy rollback for command command-1: provider conversation rollback is unavailable",
         },
       },
     });
 
     assert.equal(
       message,
-      "claudeAgent cannot satisfy rollback for command command-1: provider conversation rollback is unavailable",
+      "pi cannot satisfy rollback for command command-1: provider conversation rollback is unavailable",
     );
   });
 
@@ -59,10 +59,10 @@ describe("userFacingDispatchErrorMessage", () => {
       userFacingDispatchErrorMessage({
         message: "Failed to dispatch orchestration command message.dispatch (command-1).",
         cause: {
-          detail: "Claude provider thread provider-thread-1 has no live query.",
+          detail: "Pi provider thread provider-thread-1 has no live query.",
         },
       }),
-      "Claude provider thread provider-thread-1 has no live query.",
+      "Pi provider thread provider-thread-1 has no live query.",
     );
   });
 });

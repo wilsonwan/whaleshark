@@ -26,7 +26,7 @@ import * as Schema from "effect/Schema";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
 
 import { SqlitePersistenceMemory } from "../persistence/Layers/Sqlite.ts";
-import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import {
   isTurnItemAtOrBeforeRun,
   layerMemory as projectionStoreMemoryLayer,
@@ -47,10 +47,10 @@ const TestLayer = Layer.mergeAll(
   SqlitePersistenceMemory,
 );
 const modelSelection = {
-  instanceId: ProviderInstanceId.make("codex"),
+  instanceId: ProviderInstanceId.make("opencode"),
   model: "gpt-5.4",
 } satisfies ModelSelection;
-const driver = ProviderDriverKind.make("codex");
+const driver = ProviderDriverKind.make("opencode");
 const providerInstanceId = modelSelection.instanceId;
 const encodeUnknownJsonString = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
 
@@ -238,25 +238,16 @@ const addOrphanedRecoveryCandidate = Effect.fn("addOrphanedRecoveryCandidate")(f
   return threadId;
 });
 
-it("includes imported runless history when selecting fork context through a run", () => {
-  const firstRunId = RunId.make("run:projection-imported-fork:1");
-  const secondRunId = RunId.make("run:projection-imported-fork:2");
+it("selects only run-associated history when selecting fork context through a run", () => {
+  const firstRunId = RunId.make("run:projection-fork:1");
+  const secondRunId = RunId.make("run:projection-fork:2");
   const runOrdinalById = new Map([
     [firstRunId, 1],
     [secondRunId, 2],
   ]);
 
-  assert.isTrue(
-    isTurnItemAtOrBeforeRun({
-      historyOrigin: "v1_import",
-      itemRunId: null,
-      runOrdinalById,
-      sourceRunOrdinal: 1,
-    }),
-  );
   assert.isFalse(
     isTurnItemAtOrBeforeRun({
-      historyOrigin: undefined,
       itemRunId: null,
       runOrdinalById,
       sourceRunOrdinal: 1,
@@ -264,7 +255,6 @@ it("includes imported runless history when selecting fork context through a run"
   );
   assert.isTrue(
     isTurnItemAtOrBeforeRun({
-      historyOrigin: "v1_import",
       itemRunId: firstRunId,
       runOrdinalById,
       sourceRunOrdinal: 1,
@@ -272,7 +262,6 @@ it("includes imported runless history when selecting fork context through a run"
   );
   assert.isFalse(
     isTurnItemAtOrBeforeRun({
-      historyOrigin: "v1_import",
       itemRunId: secondRunId,
       runOrdinalById,
       sourceRunOrdinal: 1,
@@ -764,7 +753,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
             run_id, thread_id, ordinal, provider, provider_thread_id, status,
             requested_at, completed_at, payload_json
           ) VALUES (
-            ${runId}, ${threadId}, ${ordinal}, 'codex', NULL, 'completed', ${nowIso}, ${nowIso},
+            ${runId}, ${threadId}, ${ordinal}, 'opencode', NULL, 'completed', ${nowIso}, ${nowIso},
             ${encodeUnknownJsonString({
               id: runId,
               threadId,
@@ -907,7 +896,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           run_id, thread_id, ordinal, provider, provider_thread_id, status,
           requested_at, completed_at, payload_json
         ) VALUES (
-          ${hiddenRunId}, ${threadId}, 1001, 'codex', NULL, 'rolled_back', ${nowIso}, ${nowIso},
+          ${hiddenRunId}, ${threadId}, 1001, 'opencode', NULL, 'rolled_back', ${nowIso}, ${nowIso},
           ${encodeUnknownJsonString({
             id: hiddenRunId,
             threadId,
@@ -998,7 +987,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           run_id, thread_id, ordinal, provider, provider_thread_id, status,
           requested_at, completed_at, payload_json
         ) VALUES (
-          ${cancelledRunId}, ${threadId}, 1002, 'codex', NULL, 'cancelled', ${nowIso}, ${nowIso},
+          ${cancelledRunId}, ${threadId}, 1002, 'opencode', NULL, 'cancelled', ${nowIso}, ${nowIso},
           ${encodeUnknownJsonString({
             id: cancelledRunId,
             threadId,
@@ -1149,7 +1138,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           run_id, thread_id, ordinal, provider, provider_thread_id, status,
           requested_at, completed_at, payload_json
         ) VALUES (
-          ${interruptRunId}, ${threadId}, 1003, 'codex', 'provider-thread:interrupt', 'completed',
+          ${interruptRunId}, ${threadId}, 1003, 'opencode', 'provider-thread:interrupt', 'completed',
           ${nowIso}, ${nowIso},
           ${encodeUnknownJsonString({
             id: interruptRunId,
@@ -1176,7 +1165,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           provider_instance_id, provider_thread_id, provider_turn_id, status, payload_json
         ) VALUES (
           'attempt:bounded-sql-history:interrupt', ${threadId}, ${interruptRunId}, 1,
-          ${interruptNodeId}, 'codex', ${providerInstanceId}, 'provider-thread:interrupt', NULL,
+          ${interruptNodeId}, 'opencode', ${providerInstanceId}, 'provider-thread:interrupt', NULL,
           'superseded',
           ${encodeUnknownJsonString({
             id: "attempt:bounded-sql-history:interrupt",
@@ -1334,7 +1323,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
             status: "running",
             cwd: "/workspace",
             model: modelSelection.model,
-            capabilities: CodexProviderCapabilitiesV2,
+            capabilities: TestProviderCapabilitiesV2,
             createdAt: now,
             updatedAt: now,
             lastError: null,
@@ -1387,8 +1376,8 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
       const now = yield* DateTime.now;
       const projectId = ProjectId.make("project:provider-history");
       const threadId = ThreadId.make("thread:provider-history");
-      const claudeInstanceId = ProviderInstanceId.make("claude");
-      const claudeDriver = ProviderDriverKind.make("claudeAgent");
+      const piInstanceId = ProviderInstanceId.make("pi");
+      const piDriver = ProviderDriverKind.make("pi");
       yield* projectionStore.apply({
         id: EventId.make("event:provider-history:thread"),
         type: "thread.created",
@@ -1419,18 +1408,18 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
         },
       });
       const providerThreads = [
-        // The root Codex conversation, then a Claude subagent it delegated to
+        // The root OpenCode conversation, then a Pi subagent it delegated to
         // (owned by a node, so not a handoff), then the handoff target.
-        { suffix: "codex", instanceId: providerInstanceId, ownerNodeId: null, seconds: 0 },
+        { suffix: "opencode", instanceId: providerInstanceId, ownerNodeId: null, seconds: 0 },
         {
-          suffix: "claude-subagent",
-          instanceId: claudeInstanceId,
+          suffix: "pi-subagent",
+          instanceId: piInstanceId,
           ownerNodeId: NodeId.make("node:provider-history"),
           seconds: 1,
         },
-        { suffix: "claude", instanceId: claudeInstanceId, ownerNodeId: null, seconds: 2 },
-        // A second Codex conversation after handing back: no duplicate entry.
-        { suffix: "codex-again", instanceId: providerInstanceId, ownerNodeId: null, seconds: 3 },
+        { suffix: "pi", instanceId: piInstanceId, ownerNodeId: null, seconds: 2 },
+        // A second OpenCode conversation after handing back: no duplicate entry.
+        { suffix: "opencode-again", instanceId: providerInstanceId, ownerNodeId: null, seconds: 3 },
       ] as const;
       for (const providerThread of providerThreads) {
         const createdAt = DateTime.add(now, { seconds: providerThread.seconds });
@@ -1438,11 +1427,11 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           id: EventId.make(`event:provider-history:${providerThread.suffix}`),
           type: "provider-thread.updated",
           threadId,
-          driver: providerThread.instanceId === claudeInstanceId ? claudeDriver : driver,
+          driver: providerThread.instanceId === piInstanceId ? piDriver : driver,
           occurredAt: createdAt,
           payload: {
             id: ProviderThreadId.make(`provider-thread:provider-history:${providerThread.suffix}`),
-            driver: providerThread.instanceId === claudeInstanceId ? claudeDriver : driver,
+            driver: providerThread.instanceId === piInstanceId ? piDriver : driver,
             providerInstanceId: providerThread.instanceId,
             providerSessionId: null,
             appThreadId: threadId,
@@ -1463,7 +1452,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
       const shell = (yield* projectionStore.getShellSnapshot()).threads.find(
         (thread) => thread.id === threadId,
       );
-      assert.deepEqual(shell?.providerInstanceHistory, [providerInstanceId, claudeInstanceId]);
+      assert.deepEqual(shell?.providerInstanceHistory, [providerInstanceId, piInstanceId]);
     }),
   );
 
@@ -1962,7 +1951,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
         status: "error" as const,
         cwd: "/workspace",
         model: modelSelection.model,
-        capabilities: CodexProviderCapabilitiesV2,
+        capabilities: TestProviderCapabilitiesV2,
         createdAt: now,
         updatedAt: now,
         lastError: "provider process exited",
@@ -2294,158 +2283,6 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
         ],
       );
       assert.equal(fullProjectionExit._tag, "Failure");
-    }),
-  );
-
-  it.effect("counts imported runless history inherited by fork shells", () =>
-    Effect.gen(function* () {
-      const projectionStore = yield* ProjectionStoreV2;
-      const now = yield* DateTime.now;
-      const projectId = ProjectId.make("project:projection-imported-fork-shell");
-      const sourceThreadId = ThreadId.make("thread:projection-imported-fork-shell:source");
-      const targetThreadId = ThreadId.make("thread:projection-imported-fork-shell:target");
-      const sourceRunId = RunId.make("run:projection-imported-fork-shell:source");
-      const rootNodeId = NodeId.make("node:projection-imported-fork-shell:source");
-
-      yield* projectionStore.apply({
-        id: EventId.make("event:projection-imported-fork-shell:source-thread"),
-        type: "thread.created",
-        threadId: sourceThreadId,
-        occurredAt: now,
-        payload: {
-          createdBy: "system",
-          creationSource: "server",
-          id: sourceThreadId,
-          projectId,
-          title: "Imported fork source",
-          providerInstanceId,
-          modelSelection,
-          runtimeMode: "full-access",
-          interactionMode: "default",
-          branch: null,
-          worktreePath: null,
-          activeProviderThreadId: null,
-          historyOrigin: "v1_import",
-          lineage: {
-            parentThreadId: null,
-            relationshipToParent: null,
-            rootThreadId: sourceThreadId,
-          },
-          forkedFrom: null,
-          createdAt: now,
-          updatedAt: now,
-          archivedAt: null,
-          settledOverride: null,
-          settledAt: null,
-          lastVisitedAt: null,
-          deletedAt: null,
-        },
-      });
-      yield* projectionStore.apply({
-        id: EventId.make("event:projection-imported-fork-shell:target-thread"),
-        type: "thread.created",
-        threadId: targetThreadId,
-        occurredAt: now,
-        payload: {
-          createdBy: "user",
-          creationSource: "web",
-          id: targetThreadId,
-          projectId,
-          title: "Imported fork target",
-          providerInstanceId,
-          modelSelection,
-          runtimeMode: "full-access",
-          interactionMode: "default",
-          branch: null,
-          worktreePath: null,
-          activeProviderThreadId: null,
-          lineage: {
-            parentThreadId: sourceThreadId,
-            relationshipToParent: "fork",
-            rootThreadId: sourceThreadId,
-          },
-          forkedFrom: {
-            type: "run",
-            threadId: sourceThreadId,
-            runId: sourceRunId,
-          },
-          createdAt: now,
-          updatedAt: now,
-          archivedAt: null,
-          settledOverride: null,
-          settledAt: null,
-          lastVisitedAt: null,
-          deletedAt: null,
-        },
-      });
-      yield* projectionStore.apply({
-        id: EventId.make("event:projection-imported-fork-shell:source-run"),
-        type: "run.created",
-        threadId: sourceThreadId,
-        runId: sourceRunId,
-        nodeId: rootNodeId,
-        driver,
-        occurredAt: now,
-        payload: {
-          id: sourceRunId,
-          threadId: sourceThreadId,
-          ordinal: 1,
-          providerInstanceId,
-          modelSelection,
-          providerThreadId: null,
-          userMessageId: MessageId.make("message:projection-imported-fork-shell:run"),
-          rootNodeId,
-          activeAttemptId: null,
-          status: "completed",
-          requestedAt: now,
-          startedAt: now,
-          completedAt: now,
-          checkpointId: null,
-          contextHandoffId: null,
-        },
-      });
-
-      const applyAssistantItem = (suffix: string, runId: RunId | null, ordinal: number) =>
-        projectionStore.apply({
-          id: EventId.make(`event:projection-imported-fork-shell:item:${suffix}`),
-          type: "turn-item.updated",
-          threadId: sourceThreadId,
-          ...(runId === null ? {} : { runId }),
-          occurredAt: now,
-          payload: {
-            id: TurnItemId.make(`turn-item:projection-imported-fork-shell:${suffix}`),
-            threadId: sourceThreadId,
-            runId,
-            nodeId: null,
-            providerThreadId: null,
-            providerTurnId: null,
-            nativeItemRef: null,
-            parentItemId: null,
-            ordinal,
-            status: "completed",
-            title: null,
-            startedAt: now,
-            completedAt: now,
-            updatedAt: now,
-            type: "assistant_message",
-            messageId: MessageId.make(`message:projection-imported-fork-shell:${suffix}`),
-            text: suffix,
-            streaming: false,
-          },
-        });
-
-      yield* applyAssistantItem("imported-one", null, 1);
-      yield* applyAssistantItem("imported-two", null, 2);
-      yield* applyAssistantItem("native-run", sourceRunId, 3);
-
-      const shell = yield* projectionStore.getShellSnapshot();
-      const targetShell = shell.threads.find((thread) => thread.id === targetThreadId);
-      const targetProjection = yield* projectionStore.getThreadProjection(targetThreadId);
-
-      assert.isDefined(targetShell);
-      assert.equal(targetShell.itemCount, 0);
-      assert.equal(targetShell.visibleItemCount, 4);
-      assert.equal(targetProjection.visibleTurnItems.length, 4);
     }),
   );
 
@@ -3347,7 +3184,7 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           provider_instance_id, provider_thread_id, provider_turn_id, status, payload_json
         ) VALUES (
           'attempt:projection-fork-source-rollback:inherited-superseded',
-          ${sourceThreadId}, ${sourceRun2Id}, 2, ${inheritedSupersededNodeId}, 'codex',
+          ${sourceThreadId}, ${sourceRun2Id}, 2, ${inheritedSupersededNodeId}, 'opencode',
           ${providerInstanceId}, ${sourceProviderThreadId}, NULL, 'superseded',
           ${encodeUnknownJsonString({
             id: "attempt:projection-fork-source-rollback:inherited-superseded",
@@ -3626,67 +3463,6 @@ it.layer(TestLayer)("ProjectionStoreV2", (it) => {
           [sourceThreadId, "assistant_message"],
           [sourceThreadId, "fork"],
           [emptyMiddleThreadId, "fork"],
-        ],
-      );
-
-      yield* sql`
-        DELETE FROM orchestration_v2_projection_turn_items
-        WHERE run_id IN (${sourceRun1Id}, ${sourceRun2Id})
-      `;
-      const importedItemId = "turn-item:projection-fork-source-rollback:legacy-import";
-      yield* sql`
-        INSERT INTO orchestration_v2_projection_turn_items (
-          turn_item_id, thread_id, run_id, node_id, provider_thread_id, provider_turn_id,
-          parent_item_id, ordinal, type, status, updated_at, payload_json
-        ) VALUES (
-          ${importedItemId}, ${sourceThreadId}, NULL, NULL, NULL, NULL, NULL, 50,
-          'assistant_message', 'completed', ${nowIso}, ${encodeUnknownJsonString({
-            id: importedItemId,
-            threadId: sourceThreadId,
-            runId: null,
-            nodeId: null,
-            providerThreadId: null,
-            providerTurnId: null,
-            nativeItemRef: null,
-            parentItemId: null,
-            ordinal: 50,
-            status: "completed",
-            title: null,
-            startedAt: nowIso,
-            completedAt: nowIso,
-            updatedAt: nowIso,
-            type: "assistant_message",
-            messageId: MessageId.make("message:projection-fork-source-rollback:legacy-import"),
-            text: "legacy import before empty fork",
-            streaming: false,
-            historyOrigin: "v1_import",
-          })}
-        )
-      `;
-      yield* sql`
-        UPDATE orchestration_v2_projection_threads
-        SET payload_json = json_set(payload_json, '$.historyOrigin', 'v1_import')
-        WHERE thread_id = ${sourceThreadId}
-      `;
-      yield* sql`
-        UPDATE orchestration_v2_projection_threads
-        SET payload_json = json_set(payload_json, '$.forkedFrom.runId', ${emptyBoundaryRunId})
-        WHERE thread_id = ${targetThreadId}
-      `;
-      const importedEmptyBoundary = yield* projectionStore.getThreadSnapshotWindow(targetThreadId, {
-        rowLimit: 2,
-      });
-      assert.deepEqual(
-        importedEmptyBoundary.projection.visibleTurnItems.map((row) => [
-          row.visibility,
-          row.sourceThreadId,
-          row.item.type === "assistant_message" ? row.item.text : row.item.type,
-        ]),
-        [
-          ["inherited", sourceThreadId, "legacy import before empty fork"],
-          ["synthetic", sourceThreadId, "fork"],
-          ["local", targetThreadId, "command_execution"],
-          ["local", targetThreadId, "command_execution"],
         ],
       );
     }),

@@ -29,7 +29,6 @@ or use a package manager:
 | Platform           | Install                         |
 | ------------------ | ------------------------------- |
 | Windows            | `winget install T3Tools.T3Code` |
-| macOS              | `brew install --cask t3-code`   |
 | Arch Linux         | `yay -S t3code-bin`             |
 | Arch Linux nightly | `yay -S t3code-nightly-bin`     |
 
@@ -67,12 +66,11 @@ and enable the provider you want. Installation, login, and configuration belong
 to that environment's machine, even when you connect from a phone or another
 computer.
 
-| Provider | Install and authenticate                                                                     |
-| -------- | -------------------------------------------------------------------------------------------- |
-| Codex    | Install [Codex CLI](https://developers.openai.com/codex/cli), then run `codex login`.        |
-| Claude   | Install [Claude Code](https://claude.com/product/claude-code), then run `claude auth login`. |
-| OpenCode | Install [OpenCode](https://opencode.ai), then run `opencode auth login`.                     |
-| Pi       | Install [Pi](https://pi.dev), then run `pi` once to finish its login or API-key setup.       |
+| Provider | Install and authenticate                                                               |
+| -------- | -------------------------------------------------------------------------------------- |
+| Codex    | Install [Codex CLI](https://developers.openai.com/codex/cli), then run `codex login`.  |
+| OpenCode | Install [OpenCode](https://opencode.ai), then run `opencode auth login`.               |
+| Pi       | Install [Pi](https://pi.dev), then run `pi` once to finish its login or API-key setup. |
 
 Provider CLIs must be on the server's `PATH`. If T3 Code cannot find one, set its
 **Binary path** in provider settings, especially when using a version manager.
@@ -90,8 +88,7 @@ base URL. Mark secret values as sensitive; after saving, T3 Code does not displa
 their original values.
 
 For provider-specific setup and accounts, see [Codex](./providers-codex.md),
-[Claude](./providers-claude.md), [OpenCode](./providers-opencode.md),
-and [Pi](./providers-pi.md).
+[OpenCode](./providers-opencode.md), and [Pi](./providers-pi.md).
 
 ## Next steps
 

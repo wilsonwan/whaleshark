@@ -4,8 +4,6 @@ import type { OrchestrationV2DomainEvent, ProviderReplayTranscript } from "@t3to
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 
-import { ClaudeOrchestratorReplayHarness } from "../Adapters/ClaudeAdapterV2.testkit.ts";
-import { CodexOrchestratorReplayHarness } from "../Adapters/CodexAdapterV2.testkit.ts";
 import { AcpRegistryOrchestratorReplayHarness } from "../Adapters/AcpRegistryAdapterV2.testkit.ts";
 import { OpenCodeOrchestratorReplayHarness } from "../Adapters/OpenCodeAdapterV2.testkit.ts";
 import { layer as idAllocatorLayer } from "../IdAllocator.ts";
@@ -24,7 +22,6 @@ import { checkpointWorkspace } from "./ReplayFixtureWorkspace.ts";
 import {
   decodeProviderReplayNdjson,
   materializeReplayTranscriptRuntimeInstructions,
-  materializeReplayTranscriptWorkspace,
 } from "./ReplayTranscriptNdjson.ts";
 
 const readTranscript = Effect.fn("readOrchestratorReplayTranscript")(function* (file: URL) {
@@ -85,11 +82,7 @@ const runFixtureProvider = Effect.fn("runOrchestratorReplayFixture")(function* <
     { driver: input.driver.driver, model: input.driver.modelSelection.model },
   );
   const workspace = yield* checkpointWorkspace(input.fixtureName);
-  const transcript = yield* input.harness.decodeTranscript(
-    input.driver.driver === "codex"
-      ? materializeReplayTranscriptWorkspace(replayTranscript, workspace)
-      : replayTranscript,
-  );
+  const transcript = yield* input.harness.decodeTranscript(replayTranscript);
   const materialized = yield* materializeFixtureInput({
     scenario: input.fixtureName,
     fixtureInput: input.buildInput(),
@@ -144,16 +137,6 @@ function runFixtureProviderWithRegisteredHarness(input: {
   readonly enableLegacyTokenStreaming?: boolean;
 }) {
   switch (input.driver.driver) {
-    case "codex":
-      return runFixtureProvider({
-        ...input,
-        harness: CodexOrchestratorReplayHarness,
-      }).pipe(Effect.mapError(normalizeTestError), Effect.scoped);
-    case "claudeAgent":
-      return runFixtureProvider({
-        ...input,
-        harness: ClaudeOrchestratorReplayHarness,
-      }).pipe(Effect.mapError(normalizeTestError), Effect.scoped);
     case "acpRegistry":
       return runFixtureProvider({
         ...input,

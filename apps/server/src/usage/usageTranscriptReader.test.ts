@@ -33,36 +33,9 @@ function claudeLine(id: number, outputTokens: number): string {
   })}\n`;
 }
 
-function codexMetaLine(): string {
-  return `${JSON.stringify({
-    type: "session_meta",
-    timestamp: "2026-08-01T10:00:00Z",
-    payload: { type: "session_meta", id: "codex-session-1" },
-  })}\n`;
-}
-
-function codexModelLine(model: string): string {
-  return `${JSON.stringify({
-    type: "turn_context",
-    timestamp: "2026-08-01T10:00:01Z",
-    payload: { type: "turn_context", model },
-  })}\n`;
-}
-
-function codexUsageLine(outputTokens: number, secondsOffset: number): string {
-  return `${JSON.stringify({
-    type: "event_msg",
-    timestamp: `2026-08-01T10:00:${String(secondsOffset).padStart(2, "0")}Z`,
-    payload: {
-      type: "token_count",
-      info: { last_token_usage: { input_tokens: 100, output_tokens: outputTokens } },
-    },
-  })}\n`;
-}
-
 describe("readTranscriptRecords resume", () => {
   it("parses only appended lines when resuming a grown file", async () => {
-    const path = NodePath.join(dir, "claude.jsonl");
+    const path = NodePath.join(dir, "rollout.jsonl");
     await NodeFSP.writeFile(path, claudeLine(1, 5) + claudeLine(2, 7));
     const first = await readTranscriptRecords(path, "claude");
     assert.isNotNull(first);
@@ -82,48 +55,8 @@ describe("readTranscriptRecords resume", () => {
     assert.deepStrictEqual([...first.records, ...second.records], [...full.records]);
   });
 
-  it("carries the Codex reducer state across the resume boundary", async () => {
-    const path = NodePath.join(dir, "rollout.jsonl");
-    await NodeFSP.writeFile(path, codexMetaLine() + codexModelLine("gpt-5.2-codex"));
-    const first = await readTranscriptRecords(path, "codex");
-    assert.isNotNull(first);
-    assert.strictEqual(first.records.length, 0);
-
-    // The appended usage event has no turn_context or session_meta of its own;
-    // model and session must come from the state captured before the boundary.
-    await NodeFSP.appendFile(path, codexUsageLine(9, 5));
-    const second = await readTranscriptRecords(path, "codex", first.position);
-    assert.isNotNull(second);
-    assert.isTrue(second.resumed);
-    assert.strictEqual(second.records.length, 1);
-    assert.strictEqual(second.records[0]?.model, "gpt-5.2-codex");
-    assert.strictEqual(second.records[0]?.sessionId, "codex-session-1");
-  });
-
-  it("suppresses a Codex duplicate usage event that straddles the boundary", async () => {
-    const path = NodePath.join(dir, "rollout.jsonl");
-    await NodeFSP.writeFile(
-      path,
-      codexMetaLine() + codexModelLine("gpt-5.2-codex") + codexUsageLine(9, 5),
-    );
-    const first = await readTranscriptRecords(path, "codex");
-    assert.isNotNull(first);
-    assert.strictEqual(first.records.length, 1);
-
-    // Codex re-emits an unchanged token_count on stream boundaries; the copy
-    // lands after the resume point and must still be dropped.
-    await NodeFSP.appendFile(path, codexUsageLine(9, 5) + codexUsageLine(21, 8));
-    const second = await readTranscriptRecords(path, "codex", first.position);
-    assert.isNotNull(second);
-    assert.isTrue(second.resumed);
-    assert.deepStrictEqual(
-      second.records.map((record) => record.totals.outputTokens),
-      [21],
-    );
-  });
-
   it("defers an unterminated trailing line to tailRecords, then consumes it once terminated", async () => {
-    const path = NodePath.join(dir, "claude.jsonl");
+    const path = NodePath.join(dir, "rollout.jsonl");
     const unterminated = claudeLine(2, 7).trimEnd();
     await NodeFSP.writeFile(path, claudeLine(1, 5) + unterminated);
     const first = await readTranscriptRecords(path, "claude");
@@ -146,7 +79,7 @@ describe("readTranscriptRecords resume", () => {
   });
 
   it("re-parses from the start when the guard bytes no longer match", async () => {
-    const path = NodePath.join(dir, "claude.jsonl");
+    const path = NodePath.join(dir, "rollout.jsonl");
     await NodeFSP.writeFile(path, claudeLine(1, 5));
     const first = await readTranscriptRecords(path, "claude");
     assert.isNotNull(first);
@@ -163,7 +96,7 @@ describe("readTranscriptRecords resume", () => {
   });
 
   it("re-parses from the start when the file shrank below the resume point", async () => {
-    const path = NodePath.join(dir, "claude.jsonl");
+    const path = NodePath.join(dir, "rollout.jsonl");
     await NodeFSP.writeFile(path, claudeLine(1, 5) + claudeLine(2, 7));
     const first = await readTranscriptRecords(path, "claude");
     assert.isNotNull(first);
@@ -181,17 +114,17 @@ describe("readTranscriptRecords resume", () => {
   it("parses a line larger than one stream chunk", async () => {
     // Tool-heavy transcripts carry multi-megabyte single lines; they arrive
     // split across many chunks and must reassemble into one record.
-    const path = NodePath.join(dir, "claude.jsonl");
+    const path = NodePath.join(dir, "rollout.jsonl");
     const bigLine = `${JSON.stringify({
       type: "assistant",
-      timestamp: "2026-08-01T10:00:00Z",
+      timestamp: "2026-08-01T10:00:04Z",
       requestId: "req_big",
       sessionId: "session-1",
-      padding: "x".repeat(512 * 1024),
       message: {
         id: "msg_big",
         model: "claude-fable-5",
-        usage: { input_tokens: 10, output_tokens: 42 },
+        usage: { input_tokens: 100, output_tokens: 42 },
+        content: "x".repeat(512 * 1024),
       },
     })}\n`;
     await NodeFSP.writeFile(path, bigLine + claudeLine(2, 7));

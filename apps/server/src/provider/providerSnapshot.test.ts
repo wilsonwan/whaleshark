@@ -109,7 +109,7 @@ describe("ProviderCommandNotFoundError", () => {
   });
 
   it.effect("retains safe failed-command diagnostics without process output", () => {
-    const stderr = "'codex' is not recognized: secret-token-value";
+    const stderr = "'claude' is not recognized: secret-token-value";
     const spawner = ChildProcessSpawner.make(() =>
       Effect.succeed(
         ChildProcessSpawner.makeHandle({
@@ -129,8 +129,8 @@ describe("ProviderCommandNotFoundError", () => {
     );
     return Effect.gen(function* () {
       const error = yield* spawnAndCollect(
-        "C:\\tools\\codex.cmd",
-        ChildProcess.make("codex", ["--version"]),
+        "C:\\tools\\claude.cmd",
+        ChildProcess.make("claude", ["--version"]),
       ).pipe(
         Effect.provide(Layer.succeed(ChildProcessSpawner.ChildProcessSpawner, spawner)),
         Effect.provideService(HostProcessPlatform, "win32"),
@@ -141,12 +141,12 @@ describe("ProviderCommandNotFoundError", () => {
         throw new Error(`Unexpected error: ${error._tag}`);
       }
 
-      expect(error.binaryPath).toBe("C:\\tools\\codex.cmd");
+      expect(error.binaryPath).toBe("C:\\tools\\claude.cmd");
       expect(error.exitCode).toBe(9009);
       expect(error.stdoutLength).toBe(0);
       expect(error.stderrLength).toBe(stderr.length);
       expect(error.message).toBe(
-        "Provider command C:\\tools\\codex.cmd was not found (exit code 9009).",
+        "Provider command C:\\tools\\claude.cmd was not found (exit code 9009).",
       );
       expect(isCommandMissingCause(error)).toBe(true);
       expect(error).not.toHaveProperty("stdout");

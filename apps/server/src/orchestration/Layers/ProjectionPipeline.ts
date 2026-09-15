@@ -1,6 +1,5 @@
 import {
   ApprovalRequestId,
-  isImportedAgentSessionMessageId,
   UserInputAttachmentAnswerPayload,
   type ChatAttachment,
   ThreadId,
@@ -160,6 +159,15 @@ function shouldRefreshThreadShellSummary(event: OrchestrationEvent): boolean {
   }
 }
 
+/**
+ * Provider-agnostic wording for a `provider.user-input.respond.failed` detail
+ * that marks the request gone: `<stale|unknown> pending [<provider>] user-input
+ * request`. Must stay in step with the decider's `isStaleRequestFailureDetail`
+ * and the equivalent SQL predicate in `ProjectionSnapshotQuery`.
+ */
+const PENDING_USER_INPUT_FAILURE_DETAIL =
+  /(?:stale|unknown) pending (?:[a-z0-9_-]+ )*user[ -]input request/;
+
 function derivePendingUserInputCountFromActivities(
   activities: ReadonlyArray<ProjectionThreadActivity>,
 ): number {
@@ -194,10 +202,7 @@ function derivePendingUserInputCountFromActivities(
     if (
       activity.kind === "provider.user-input.respond.failed" &&
       detail !== null &&
-      (detail.includes("stale pending user-input request") ||
-        detail.includes("unknown pending user-input request") ||
-        detail.includes("unknown pending user input request") ||
-        detail.includes("unknown pending codex user input request"))
+      PENDING_USER_INPUT_FAILURE_DETAIL.test(detail)
     ) {
       openRequestIds.delete(requestId);
     }
@@ -232,7 +237,7 @@ function retainProjectionMessagesAfterRevert(
   }
 
   for (const message of messages) {
-    if (message.role === "system" || isImportedAgentSessionMessageId(message.messageId)) {
+    if (message.role === "system") {
       retainedMessageIds.add(message.messageId);
       continue;
     }
@@ -242,10 +247,7 @@ function retainProjectionMessagesAfterRevert(
   }
 
   const retainedUserCount = messages.filter(
-    (message) =>
-      message.role === "user" &&
-      !isImportedAgentSessionMessageId(message.messageId) &&
-      retainedMessageIds.has(message.messageId),
+    (message) => message.role === "user" && retainedMessageIds.has(message.messageId),
   ).length;
   const missingUserCount = Math.max(0, turnCount - retainedUserCount);
   if (missingUserCount > 0) {
@@ -268,10 +270,7 @@ function retainProjectionMessagesAfterRevert(
   }
 
   const retainedAssistantCount = messages.filter(
-    (message) =>
-      message.role === "assistant" &&
-      !isImportedAgentSessionMessageId(message.messageId) &&
-      retainedMessageIds.has(message.messageId),
+    (message) => message.role === "assistant" && retainedMessageIds.has(message.messageId),
   ).length;
   const missingAssistantCount = Math.max(0, turnCount - retainedAssistantCount);
   if (missingAssistantCount > 0) {
@@ -1001,7 +1000,6 @@ const makeOrchestrationProjectionPipeline = Effect.fn("makeOrchestrationProjecti
             updatedAt: event.occurredAt,
             latestUserMessageAt:
               event.payload.role === "user" &&
-              !isImportedAgentSessionMessageId(event.payload.messageId) &&
               (previousLatest === null || event.payload.createdAt > previousLatest)
                 ? event.payload.createdAt
                 : previousLatest,

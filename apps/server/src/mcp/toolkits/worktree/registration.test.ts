@@ -81,7 +81,7 @@ it.effect("production mcp layer lists worktree tools over http", () =>
 
       const registry = McpSessionRegistry.issueActiveMcpCredential({
         threadId: ThreadId.make("thread-scratch"),
-        providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+        providerInstanceId: ProviderInstanceId.make("pi"),
       });
       const credential = yield* registry;
       expect(credential).toBeDefined();

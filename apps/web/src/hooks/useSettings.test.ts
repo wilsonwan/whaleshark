@@ -40,7 +40,7 @@ describe("client settings hydration", () => {
   const savedSettings = {
     ...DEFAULT_CLIENT_SETTINGS,
     timestampFormat: "12-hour" as const,
-    favorites: [{ provider: ProviderInstanceId.make("codex_work"), model: "gpt-5.6" }],
+    favorites: [{ provider: ProviderInstanceId.make("claude_work"), model: "gpt-5.6" }],
   };
   const onboardingCompletedAt = "2026-09-05T12:00:00.000Z";
   const complete = (current: ClientSettings) => ({ ...current, onboardingCompletedAt });
@@ -374,8 +374,8 @@ describe("mergeEnvironmentSettings", () => {
     const serverSettings = {
       ...DEFAULT_SERVER_SETTINGS,
       providerInstances: {
-        [ProviderInstanceId.make("codex_remote")]: {
-          driver: ProviderDriverKind.make("codex"),
+        [ProviderInstanceId.make("claude_remote")]: {
+          driver: ProviderDriverKind.make("pi"),
           enabled: true,
         },
       },
@@ -384,7 +384,7 @@ describe("mergeEnvironmentSettings", () => {
       ...DEFAULT_CLIENT_SETTINGS,
       favorites: [
         {
-          provider: ProviderInstanceId.make("codex_remote"),
+          provider: ProviderInstanceId.make("claude_remote"),
           model: "gpt-5.4",
         },
       ],
@@ -427,7 +427,7 @@ describe("onboarding completion persistence", () => {
       timestampFormat: "12-hour" as const,
       favorites: [
         {
-          provider: ProviderInstanceId.make("codex_work"),
+          provider: ProviderInstanceId.make("claude_work"),
           model: "gpt-5.6",
         },
       ],

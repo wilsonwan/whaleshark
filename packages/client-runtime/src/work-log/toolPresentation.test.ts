@@ -93,7 +93,7 @@ describe("extractToolActivityPresentation", () => {
             arguments: { code: 'await sky.click({ app: "Finder" })' },
             result: {
               _meta: {
-                "codex/toolSurface": {
+                "claude/toolSurface": {
                   kind: "computerUse",
                   app: { kind: "displayName", displayName: "Finder" },
                 },

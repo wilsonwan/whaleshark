@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { ProviderDriverKind, type ModelCapabilities } from "@t3tools/contracts";
+import { type ModelCapabilities } from "@t3tools/contracts";
 
 import {
   DESCRIPTOR_PRESETS_BY_KIND,
@@ -72,23 +72,20 @@ describe("customModelEditor.logic", () => {
   });
 
   it("preserves the current choice when it differs from the built-in default", () => {
-    const descriptors = descriptorsFromCapabilities(
-      {
-        optionDescriptors: [
-          {
-            id: "effort",
-            label: "Reasoning",
-            type: "select",
-            currentValue: "high",
-            options: [
-              { id: "low", label: "Low", isDefault: true },
-              { id: "high", label: "High" },
-            ],
-          },
-        ],
-      },
-      ProviderDriverKind.make("claudeAgent"),
-    );
+    const descriptors = descriptorsFromCapabilities({
+      optionDescriptors: [
+        {
+          id: "effort",
+          label: "Reasoning",
+          type: "select",
+          currentValue: "high",
+          options: [
+            { id: "low", label: "Low", isDefault: true },
+            { id: "high", label: "High" },
+          ],
+        },
+      ],
+    });
     expect(descriptors[0]!.choices.map((choice) => choice.isDefault)).toEqual([false, true]);
     expect(
       definitionFromDraft(draft({ descriptors })).capabilities?.optionDescriptors?.[0],
@@ -96,23 +93,20 @@ describe("customModelEditor.logic", () => {
   });
 
   it("drops prompt-injected choices when copying a built-in's descriptors", () => {
-    const [copied] = descriptorsFromCapabilities(
-      {
-        optionDescriptors: [
-          {
-            id: "effort",
-            label: "Reasoning",
-            type: "select",
-            options: [
-              { id: "high", label: "High", isDefault: true },
-              { id: "ultrathink", label: "Ultrathink" },
-            ],
-            promptInjectedValues: ["ultrathink"],
-          },
-        ],
-      },
-      ProviderDriverKind.make("claudeAgent"),
-    );
+    const [copied] = descriptorsFromCapabilities({
+      optionDescriptors: [
+        {
+          id: "effort",
+          label: "Reasoning",
+          type: "select",
+          options: [
+            { id: "high", label: "High", isDefault: true },
+            { id: "ultrathink", label: "Ultrathink" },
+          ],
+          promptInjectedValues: ["ultrathink"],
+        },
+      ],
+    });
     expect(copied!.choices.map((choice) => choice.id)).toEqual(["high"]);
   });
 
@@ -131,10 +125,7 @@ describe("customModelEditor.logic", () => {
       };
       const copied = definitionFromDraft(
         draft({
-          descriptors: descriptorsFromCapabilities(
-            capabilities,
-            ProviderDriverKind.make("opencode"),
-          ),
+          descriptors: descriptorsFromCapabilities(capabilities),
         }),
       );
       expect(copied.capabilities).toEqual(capabilities);
@@ -145,7 +136,7 @@ describe("customModelEditor.logic", () => {
     },
   );
 
-  it("excludes Claude context choices from presets and copies without changing other providers or authored entries", () => {
+  it("copies every authored descriptor, including context choices", () => {
     const capabilities: ModelCapabilities = {
       optionDescriptors: [
         {
@@ -157,24 +148,25 @@ describe("customModelEditor.logic", () => {
         { id: "thinking", label: "Thinking", type: "boolean", currentValue: true },
       ],
     };
-    const claude = ProviderDriverKind.make("claudeAgent");
     const copied = definitionFromDraft(
-      draft({ descriptors: descriptorsFromCapabilities(capabilities, claude) }),
+      draft({ descriptors: descriptorsFromCapabilities(capabilities) }),
     );
-    expect(copied.capabilities?.optionDescriptors).toEqual([capabilities.optionDescriptors![1]]);
-    const presets = definitionFromDraft(
-      draft({
-        descriptors: (DESCRIPTOR_PRESETS_BY_KIND[claude] ?? []).map(descriptorFromPreset),
-      }),
-    );
-    expect(
-      presets.capabilities?.optionDescriptors?.some((option) => option.id === "contextWindow"),
-    ).toBe(false);
-    const otherProviderCopy = descriptorsFromCapabilities(
-      capabilities,
-      ProviderDriverKind.make("opencode"),
-    );
-    expect(otherProviderCopy.map((option) => option.id)).toEqual(["contextWindow", "thinking"]);
+    const copiedDescriptors = copied.capabilities?.optionDescriptors ?? [];
+    expect(copiedDescriptors.map((descriptor) => descriptor.id)).toEqual([
+      "contextWindow",
+      "thinking",
+    ]);
+    expect(copiedDescriptors[0]).toMatchObject({
+      label: "Context",
+      type: "select",
+      options: [{ id: "1m", label: "1M", isDefault: true }],
+    });
+    expect(copiedDescriptors[1]).toEqual({
+      id: "thinking",
+      label: "Thinking",
+      type: "boolean",
+      currentValue: true,
+    });
     const authored = { slug: "custom", name: "Custom", capabilities };
     expect(
       definitionFromDraft(draftFromDefinition(authored)).capabilities?.optionDescriptors?.[0],
@@ -198,10 +190,7 @@ describe("customModelEditor.logic", () => {
     };
     const copied = definitionFromDraft(
       draft({
-        descriptors: descriptorsFromCapabilities(
-          capabilities,
-          ProviderDriverKind.make("claudeAgent"),
-        ),
+        descriptors: descriptorsFromCapabilities(capabilities),
       }),
     );
     const reopened = draftFromDefinition(copied);

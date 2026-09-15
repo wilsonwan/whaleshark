@@ -291,10 +291,6 @@ export const make = Effect.gen(function* () {
             window.moveTop();
           }
 
-          if (platform === "darwin") {
-            Electron.app.focus({ steal: true });
-          }
-
           window.focus();
 
           if (captureReveal) {

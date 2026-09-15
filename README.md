@@ -43,12 +43,6 @@ Install the latest version of the desktop app from [GitHub Releases](https://git
 winget install T3Tools.T3Code
 ```
 
-#### macOS (Homebrew)
-
-```bash
-brew install --cask t3-code
-```
-
 #### Arch Linux (AUR)
 
 Stable:
@@ -83,7 +77,6 @@ Full docs live in [docs/](./docs). There's no docs site yet.
 - [Remote access from a phone or another machine](./docs/user/remote-access.md)
 - [Keeping app and server in sync](./docs/user/updating.md)
 - [Source control integrations](./docs/user/source-control.md)
-- Multiple accounts: [Codex](./docs/user/providers-codex.md) · [Claude](./docs/user/providers-claude.md)
 - [Run T3 Code as a background service](./docs/user/background-service.md)
 
 Building from source? Start at [docs/internals/overview.md](./docs/internals/overview.md).
@@ -94,7 +87,7 @@ Building from source? Start at [docs/internals/overview.md](./docs/internals/ove
 
 T3 Code uses Vite+ so you'll need to install the global `vp` command-line tool.
 
-#### macOS / Linux
+#### Linux
 
 ```bash
 curl -fsSL https://vite.plus | bash

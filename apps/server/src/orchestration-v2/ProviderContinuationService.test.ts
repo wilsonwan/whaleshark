@@ -166,7 +166,7 @@ describe("ProviderContinuationService", () => {
           readonly creationSource: string;
           readonly notification: OrchestrationV2Notification;
         };
-        // ClaudeAdapterV2 keys on this to attach buffered CLI output.
+        // The adapter keys on this to attach buffered CLI output.
         assert.equal(command.creationSource, "provider");
         assert.deepEqual(command.notification, {
           source: { kind: "background_task" },
@@ -205,7 +205,7 @@ describe("ProviderContinuationService", () => {
           readonly notification: OrchestrationV2Notification;
         };
         // An app-owned child buffers nothing in the adapter, so this text is
-        // the whole wake. Marking it "provider" would make ClaudeAdapterV2
+        // the whole wake. Marking it "provider" would make the adapter
         // drop it and settle the turn having prompted nothing.
         assert.notEqual(command.creationSource, "provider");
         assert.equal(command.creationSource, "server");

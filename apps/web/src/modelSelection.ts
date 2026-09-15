@@ -34,7 +34,7 @@ import { sortModelsForProviderInstance } from "./modelOrdering";
 
 const MAX_CUSTOM_MODEL_COUNT = 32;
 export const MAX_CUSTOM_MODEL_LENGTH = 256;
-const DEFAULT_TEXT_GENERATION_INSTANCE_ID = ProviderInstanceId.make("codex");
+const DEFAULT_TEXT_GENERATION_INSTANCE_ID = ProviderInstanceId.make("pi");
 
 /**
  * Resolve the custom-model list for a given instance, preferring the
@@ -49,8 +49,8 @@ const DEFAULT_TEXT_GENERATION_INSTANCE_ID = ProviderInstanceId.make("codex");
  * so readers pick up that promotion immediately — and so first-time
  * viewers on pre-migration settings still see their legacy list on
  * default slots. Custom instances intentionally do not read the legacy
- * per-driver bucket; otherwise one custom model added to `claude_openrouter`
- * can appear on the stock `claudeAgent` instance.
+ * per-driver bucket; otherwise one custom model added to a custom instance
+ * can appear on the driver's stock instance.
  */
 function readInstanceCustomModels(
   settings: UnifiedSettings,

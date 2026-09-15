@@ -124,7 +124,7 @@ export function acpProviderOptionDescriptors(input: {
     );
     const currentValue = modeState.currentModeId;
     // Some agents mirror one knob through both the modes API and a config
-    // option (codex-acp advertises its thinking levels as modes too). Skip
+    // option (they advertise their thinking levels as modes too). Skip
     // the synthetic descriptor when an existing descriptor already exposes
     // the same choice set, so the composer shows the knob once.
     const duplicatesKnownModeDescriptor = mirroredModeChoiceSets.some(

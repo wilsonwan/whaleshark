@@ -24,7 +24,7 @@ import {
 } from "./AcpRegistryProbe.ts";
 import { AcpRegistryCatalog } from "./AcpRegistrySupport.ts";
 
-const instanceId = ProviderInstanceId.make("acpRegistry_codex");
+const instanceId = ProviderInstanceId.make("acpRegistry_probe");
 const __dirname = NodePath.dirname(NodeURL.fileURLToPath(import.meta.url));
 const mockAgentPath = NodePath.join(__dirname, "../../../scripts/acp-mock-agent.ts");
 const decodeSettings = Schema.decodeSync(AcpRegistrySettings);

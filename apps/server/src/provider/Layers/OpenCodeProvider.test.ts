@@ -199,7 +199,7 @@ const checkProvider = Effect.fn("checkProvider")(function* (
 });
 
 it.layer(testLayer)("checkOpenCodeProviderStatus", (it) => {
-  it.effect("shows a codex-style missing binary message", () =>
+  it.effect("shows a provider-style missing binary message", () =>
     Effect.gen(function* () {
       runtimeMock.state.runVersionError = new Error("spawn opencode ENOENT");
       const snapshot = yield* checkProvider(makeOpenCodeSettings());

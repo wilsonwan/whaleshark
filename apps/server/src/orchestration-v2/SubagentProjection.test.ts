@@ -27,7 +27,7 @@ import { emptyProjection } from "./ProjectionStore.ts";
 
 const parentThreadId = ThreadId.make("thread:subagent-snoozed-parent");
 const childThreadId = ThreadId.make("thread:subagent-awake-child");
-const parentProviderInstanceId = ProviderInstanceId.make("codex");
+const parentProviderInstanceId = ProviderInstanceId.make("pi");
 const childProviderInstanceId = ProviderInstanceId.make("claude");
 const parentModelSelection = {
   instanceId: parentProviderInstanceId,
@@ -71,7 +71,6 @@ function makeParentThread(): OrchestrationV2AppThread {
     snoozedUntil,
     snoozedAt,
     deletedAt: null,
-    historyOrigin: "v1_import",
   };
 }
 
@@ -102,7 +101,6 @@ it("keeps a subagent child awake when its parent thread is snoozed", () => {
   assert.equal(childThread.providerInstanceId, childProviderInstanceId);
   assert.deepEqual(childThread.modelSelection, childModelSelection);
   assert.equal(childThread.activeProviderThreadId, childProviderThreadId);
-  assert.isUndefined(childThread.historyOrigin);
   assert.deepEqual(childThread.lineage, {
     parentThreadId,
     relationshipToParent: "subagent",

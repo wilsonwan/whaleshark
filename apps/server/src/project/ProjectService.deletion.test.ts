@@ -12,13 +12,11 @@ import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import * as Schema from "effect/Schema";
 import { TestClock } from "effect/testing";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
 
 import { ServerConfig } from "../config.ts";
 import { OrchestrationLayerLive } from "../orchestration/runtimeLayer.ts";
-import { OrchestrationEffectRequestV2 } from "../orchestration-v2/EffectOutbox.ts";
 import {
   EventSinkV2,
   type EventSinkV2Shape,
@@ -27,14 +25,6 @@ import {
 } from "../orchestration-v2/EventSink.ts";
 import { layer as eventStoreLayer } from "../orchestration-v2/EventStore.ts";
 import { layer as idAllocatorLayer } from "../orchestration-v2/IdAllocator.ts";
-import {
-  LegacyV1ThreadImporter,
-  layer as legacyImporterLayer,
-} from "../orchestration-v2/LegacyV1ThreadImporter.ts";
-import {
-  ProjectionMaintenanceV2,
-  layer as projectionMaintenanceLayer,
-} from "../orchestration-v2/ProjectionMaintenance.ts";
 import {
   ProjectionStoreV2,
   layer as projectionStoreLayer,
@@ -52,8 +42,7 @@ const eventPersistenceLayer = eventSinkLayer.pipe(
   Layer.provideMerge(Layer.merge(eventStoreLayer, projectionStoreLayer)),
 );
 const servicesLayer = Layer.mergeAll(
-  legacyImporterLayer.pipe(Layer.provideMerge(eventPersistenceLayer)),
-  projectionMaintenanceLayer.pipe(Layer.provide(eventPersistenceLayer)),
+  eventPersistenceLayer,
   OrchestrationLayerLive,
   ProjectionProjectRepositoryLive,
   idAllocatorLayer,
@@ -83,9 +72,6 @@ const databaseLayer = SqlitePersistenceMemory.pipe(
   Layer.provideMerge(ServerConfig.layerTest(process.cwd(), { prefix: "project-deletion-test-" })),
   Layer.provideMerge(NodeServices.layer),
 );
-const decodeEffectRequest = Schema.decodeUnknownEffect(
-  Schema.fromJsonString(OrchestrationEffectRequestV2),
-);
 
 const seedProject = Effect.fn("ProjectDeletionTest.seedProject")(function* (projectId: ProjectId) {
   const sql = yield* SqlClient.SqlClient;
@@ -102,7 +88,7 @@ const seedProject = Effect.fn("ProjectDeletionTest.seedProject")(function* (proj
 
 function nativeThreadCreated(projectId: ProjectId, threadId: ThreadId) {
   const createdAt = DateTime.makeUnsafe("2026-01-01T00:00:00.000Z");
-  const providerInstanceId = ProviderInstanceId.make("codex");
+  const providerInstanceId = ProviderInstanceId.make("pi");
   const payload: OrchestrationV2AppThread = {
     createdBy: "user",
     creationSource: "web",
@@ -110,7 +96,7 @@ function nativeThreadCreated(projectId: ProjectId, threadId: ThreadId) {
     projectId,
     title: threadId,
     providerInstanceId,
-    modelSelection: { instanceId: providerInstanceId, model: "gpt-5" },
+    modelSelection: { instanceId: providerInstanceId, model: "claude-sonnet-5" },
     runtimeMode: "full-access",
     interactionMode: "default",
     branch: null,
@@ -256,119 +242,6 @@ it.effect("retries a partial project deletion without repeating child events or 
       }
     }).pipe(Effect.provide(servicesLayer));
   }).pipe(Effect.provide(databaseLayer)),
-);
-
-it.effect(
-  "hydrates a migrated transcript before deleting its project and cleaning attachments",
-  () =>
-    Effect.gen(function* () {
-      const sql = yield* SqlClient.SqlClient;
-      const projectId = ProjectId.make("project:legacy-deletion");
-      const threadId = ThreadId.make("thread:legacy-deletion");
-      const commandId = CommandId.make("command:legacy-project-delete");
-      yield* seedProject(projectId);
-      yield* sql`
-      INSERT INTO projection_threads (
-        thread_id, project_id, title, model_selection_json,
-        runtime_mode, interaction_mode, branch, worktree_path, latest_turn_id,
-        created_at, updated_at, archived_at, deleted_at
-      ) VALUES (
-        ${threadId}, ${projectId}, 'Legacy thread', '{"instanceId":"codex","model":"gpt-5.4"}',
-        'full-access', 'default', NULL, NULL, NULL,
-        '2026-01-01T00:00:00.000Z', '2026-01-04T00:00:00.000Z', NULL, NULL
-      )
-    `;
-      yield* sql`
-      INSERT INTO projection_thread_messages (
-        message_id, thread_id, turn_id, role, text, attachments_json,
-        is_streaming, created_at, updated_at
-      ) VALUES
-        (
-          'message:legacy-delete:1', ${threadId}, NULL, 'user', 'First question with screenshot',
-          '[{"type":"image","id":"legacy_screenshot","name":"screenshot.png","mimeType":"image/png","sizeBytes":128}]',
-          0, '2026-01-01T01:00:00.000Z', '2026-01-01T01:00:00.000Z'
-        ),
-        (
-          'message:legacy-delete:2', ${threadId}, NULL, 'assistant', 'First answer', '[]',
-          0, '2026-01-02T01:00:00.000Z', '2026-01-02T01:00:00.000Z'
-        ),
-        (
-          'message:legacy-delete:3', ${threadId}, NULL, 'user', 'Follow-up question', '[]',
-          0, '2026-01-03T01:00:00.000Z', '2026-01-03T01:00:00.000Z'
-        ),
-        (
-          'message:legacy-delete:4', ${threadId}, NULL, 'assistant', 'Follow-up answer', '[]',
-          0, '2026-01-04T01:00:00.000Z', '2026-01-04T01:00:00.000Z'
-        )
-    `;
-      yield* TestClock.setTime(Date.parse("2026-09-04T12:00:00.000Z"));
-
-      // Build the engine after seeding the legacy database, as on a real restart.
-      yield* Effect.gen(function* () {
-        const importer = yield* LegacyV1ThreadImporter;
-        const maintenance = yield* ProjectionMaintenanceV2;
-        const projections = yield* ProjectionStoreV2;
-        const service = yield* ProjectService.make;
-        assert.deepEqual(yield* importer.reconcileShells, {
-          importedThreadCount: 1,
-          importedMessageCount: 2,
-        });
-        assert.equal(yield* importer.pendingThreadCount, 1);
-        assert.isTrue((yield* maintenance.rebuild).valid);
-        const shellProjection = yield* projections.getThreadProjection(threadId);
-        assert.deepEqual(
-          shellProjection.messages.map((message) => message.id),
-          ["message:legacy-delete:3", "message:legacy-delete:4"],
-        );
-        assert.deepEqual(
-          shellProjection.messages.flatMap((message) => message.attachments),
-          [],
-        );
-
-        const deletedProject = yield* service.delete({ commandId, projectId, force: true });
-        assert.isNotNull(deletedProject.deletedAt);
-        assert.isTrue(Option.isNone(yield* service.getById(projectId)));
-        const projection = yield* projections.getThreadProjection(threadId);
-        assert.isNotNull(projection.thread.deletedAt);
-        assert.lengthOf(projection.messages, 4);
-        assert.equal(yield* importer.pendingThreadCount, 0);
-        const rows = yield* sql<{
-          readonly legacy_deleted_at: string | null;
-          readonly v2_deleted_at: string | null;
-          readonly project_deleted_at: string | null;
-        }>`
-        SELECT legacy.deleted_at AS legacy_deleted_at,
-          v2.deleted_at AS v2_deleted_at,
-          project.deleted_at AS project_deleted_at
-        FROM projection_threads AS legacy
-        JOIN orchestration_v2_projection_threads AS v2 ON v2.thread_id = legacy.thread_id
-        JOIN projection_projects AS project ON project.project_id = legacy.project_id
-        WHERE legacy.thread_id = ${threadId}
-      `;
-        assert.lengthOf(rows, 1);
-        assert.isNotNull(rows[0]?.legacy_deleted_at);
-        assert.isNotNull(rows[0]?.v2_deleted_at);
-        assert.isNotNull(rows[0]?.project_deleted_at);
-
-        const cleanup = yield* sql<{
-          readonly command_id: string;
-          readonly payload_json: string;
-          readonly status: string;
-        }>`
-        SELECT command_id, payload_json, status
-        FROM orchestration_v2_effect_outbox
-        WHERE thread_id = ${threadId} AND effect_type = 'attachment.cleanup'
-      `;
-        assert.lengthOf(cleanup, 1);
-        assert.equal(cleanup[0]?.command_id, `${commandId}:delete-thread:${threadId}`);
-        assert.equal(cleanup[0]?.status, "pending");
-        const request = yield* decodeEffectRequest(cleanup[0]?.payload_json);
-        assert.deepEqual(request, {
-          type: "attachment.cleanup",
-          attachmentIds: ["legacy_screenshot"],
-        });
-      }).pipe(Effect.provide(servicesLayer));
-    }).pipe(Effect.provide(databaseLayer)),
 );
 
 it.effect("rejects a child deletion command ID already accepted for an unrelated thread", () =>

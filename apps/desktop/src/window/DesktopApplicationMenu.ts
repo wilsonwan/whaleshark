@@ -7,10 +7,8 @@ import * as Schema from "effect/Schema";
 import type * as Electron from "electron";
 
 import { makeComponentLogger } from "../app/DesktopObservability.ts";
-import * as ElectronApp from "../electron/ElectronApp.ts";
 import * as ElectronDialog from "../electron/ElectronDialog.ts";
 import * as ElectronMenu from "../electron/ElectronMenu.ts";
-import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopUpdates from "../updates/DesktopUpdates.ts";
 import * as DesktopWindow from "./DesktopWindow.ts";
 
@@ -105,10 +103,7 @@ const handleCheckForUpdatesMenuClick = Effect.gen(function* () {
 
 /** @public Service construction is part of the canonical Effect module API. */
 export const make = Effect.gen(function* () {
-  const electronApp = yield* ElectronApp.ElectronApp;
   const electronMenu = yield* ElectronMenu.ElectronMenu;
-  const environment = yield* DesktopEnvironment.DesktopEnvironment;
-  const appName = yield* electronApp.name;
   const context = yield* Effect.context<DesktopApplicationMenuRuntimeServices>();
   const runPromise = Effect.runPromiseWith(context);
 
@@ -138,50 +133,17 @@ export const make = Effect.gen(function* () {
     const zoomClick = (direction: DesktopWindow.MainWindowZoomDirection) => () => {
       runMenuEffect(`zoom-${direction}`, zoomMainWindow(direction));
     };
-    const template: Electron.MenuItemConstructorOptions[] = [];
-
-    if (environment.platform === "darwin") {
-      template.push({
-        label: appName,
+    const template: Electron.MenuItemConstructorOptions[] = [
+      {
+        label: "File",
         submenu: [
-          { role: "about" },
-          {
-            label: "Check for Updates...",
-            click: checkForUpdatesClick,
-          },
-          { type: "separator" },
           {
             label: "Settings...",
             accelerator: "CmdOrCtrl+,",
             click: settingsClick,
           },
           { type: "separator" },
-          { role: "services" },
-          { type: "separator" },
-          { role: "hide" },
-          { role: "hideOthers" },
-          { role: "unhide" },
-          { type: "separator" },
           { role: "quit" },
-        ],
-      });
-    }
-
-    template.push(
-      {
-        label: "File",
-        submenu: [
-          ...(environment.platform === "darwin"
-            ? []
-            : [
-                {
-                  label: "Settings...",
-                  accelerator: "CmdOrCtrl+,",
-                  click: settingsClick,
-                },
-                { type: "separator" as const },
-              ]),
-          { role: environment.platform === "darwin" ? "close" : "quit" },
         ],
       },
       { role: "editMenu" },
@@ -221,7 +183,7 @@ export const make = Effect.gen(function* () {
           },
         ],
       },
-    );
+    ];
 
     yield* electronMenu.setApplicationMenu(template);
   }).pipe(Effect.withSpan("desktop.menu.configure"));

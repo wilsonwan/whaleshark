@@ -33,7 +33,7 @@ export interface ProviderContinuationRequest {
    *
    * `adapter_buffered` (default) is the provider-native wake: the adapter has
    * already buffered the CLI's wake output, and the dispatched message only
-   * triggers ingestion. `ClaudeAdapterV2` deliberately discards the message
+   * triggers ingestion. Buffered adapters deliberately discard the message
    * text on that path.
    *
    * `message_text` is for app-owned work with no buffered provider output, such

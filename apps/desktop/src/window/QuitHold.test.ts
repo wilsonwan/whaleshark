@@ -17,8 +17,8 @@ function makeInput(overrides: Partial<QuitHoldKeyInput>): QuitHoldKeyInput {
   return {
     type: "keyDown",
     key: "q",
-    meta: true,
-    control: false,
+    meta: false,
+    control: true,
     alt: false,
     shift: false,
     isAutoRepeat: false,
@@ -28,14 +28,12 @@ function makeInput(overrides: Partial<QuitHoldKeyInput>): QuitHoldKeyInput {
 
 function makeHarness(options?: {
   mode?: QuitConfirmationMode;
-  platform?: NodeJS.Platform;
   getMode?: () => Promise<QuitConfirmationMode>;
 }) {
   const notifications: Array<QuitShortcutHintEvent> = [];
   const concealWindow = vi.fn();
   const quit = vi.fn();
   const handler = makeQuitShortcutHandler({
-    platform: options?.platform ?? "darwin",
     getMode: options?.getMode ?? (() => Promise.resolve(options?.mode ?? "hold")),
     notify: (event) => notifications.push(event),
     concealWindow,
@@ -71,7 +69,7 @@ describe("makeQuitShortcutHandler", () => {
   });
 
   it("shows the hint on a tap without quitting, even when the release is never seen", async () => {
-    // macOS suppresses the letter's keyUp while Cmd is held, so a tap may
+    // Some platforms suppress the letter's keyUp while the modifier is held, so a tap may
     // produce no keyUp at all. Quit must still not fire.
     const harness = makeHarness();
     await harness.send(makeInput({}));
@@ -90,7 +88,7 @@ describe("makeQuitShortcutHandler", () => {
     await harness.holdFor(QUIT_HOLD_DURATION_MS + 200);
     expect(harness.concealWindow).toHaveBeenCalledTimes(1);
     expect(harness.quit).not.toHaveBeenCalled();
-    await harness.send(makeInput({ type: "keyUp", key: "Meta", meta: false }));
+    await harness.send(makeInput({ type: "keyUp", key: "Control", control: false }));
     expect(harness.quit).not.toHaveBeenCalled();
     vi.advanceTimersByTime(QUIT_HOLD_RELEASE_GRACE_MS);
     expect(harness.quit).toHaveBeenCalledTimes(1);
@@ -110,7 +108,7 @@ describe("makeQuitShortcutHandler", () => {
     expect(harness.quit).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps a concealed hold committed through a fresh Cmd+Q press", async () => {
+  it("keeps a concealed hold committed through a fresh Control+Q press", async () => {
     const harness = makeHarness();
     await harness.send(makeInput({}));
     await harness.holdFor(QUIT_HOLD_DURATION_MS);
@@ -172,37 +170,37 @@ describe("makeQuitShortcutHandler", () => {
     expect(harness.quit).toHaveBeenCalledTimes(1);
   });
 
-  it("waits for Q release when Cmd is released first", async () => {
+  it("waits for Q release when Control is released first", async () => {
     const harness = makeHarness();
     await harness.send(makeInput({}));
     await harness.holdFor(QUIT_HOLD_DURATION_MS + 200);
-    await harness.send(makeInput({ type: "keyUp", key: "Meta", meta: false }));
+    await harness.send(makeInput({ type: "keyUp", key: "Control", control: false }));
     harness.preventDefault.mockClear();
     // Repeats without the modifier prove Q is still down, so they hold the
     // quit back for as long as they keep arriving.
-    await harness.holdFor(QUIT_HOLD_RELEASE_GRACE_MS * 2, { meta: false });
+    await harness.holdFor(QUIT_HOLD_RELEASE_GRACE_MS * 2, { control: false });
     expect(harness.preventDefault).toHaveBeenCalled();
     expect(harness.quit).not.toHaveBeenCalled();
-    await harness.send(makeInput({ type: "keyUp", meta: false }));
+    await harness.send(makeInput({ type: "keyUp", control: false }));
     expect(harness.quit).toHaveBeenCalledTimes(1);
   });
 
   it("commits a concealed hold when the last Q repeat is never released", async () => {
-    // macOS can drop the final Q keyUp. The quit must land on its own once
+    // A platform can drop the final Q keyUp. The quit must land on its own once
     // repeats stop, rather than sitting armed until an unrelated key arrives.
     const harness = makeHarness();
     await harness.send(makeInput({}));
     await harness.holdFor(QUIT_HOLD_DURATION_MS + 200);
-    await harness.send(makeInput({ type: "keyUp", key: "Meta", meta: false }));
-    await harness.send(makeInput({ meta: false, isAutoRepeat: true }));
+    await harness.send(makeInput({ type: "keyUp", key: "Control", control: false }));
+    await harness.send(makeInput({ control: false, isAutoRepeat: true }));
 
     vi.advanceTimersByTime(QUIT_HOLD_RELEASE_GRACE_MS);
     expect(harness.quit).toHaveBeenCalledTimes(1);
 
-    // A lone Cmd tap afterwards must not quit a second time.
+    // A lone Control tap afterwards must not quit a second time.
     harness.quit.mockClear();
-    await harness.send(makeInput({ key: "Meta" }));
-    await harness.send(makeInput({ type: "keyUp", key: "Meta", meta: false }));
+    await harness.send(makeInput({ key: "Control" }));
+    await harness.send(makeInput({ type: "keyUp", key: "Control", control: false }));
     vi.advanceTimersByTime(QUIT_HOLD_RELEASE_GRACE_MS * 4);
     expect(harness.quit).not.toHaveBeenCalled();
   });
@@ -221,7 +219,7 @@ describe("makeQuitShortcutHandler", () => {
   it("cancels the hold when the modifier is released first", async () => {
     const harness = makeHarness();
     await harness.send(makeInput({}));
-    await harness.send(makeInput({ type: "keyUp", key: "Meta", meta: false }));
+    await harness.send(makeInput({ type: "keyUp", key: "Control", control: false }));
     expect(harness.notifications).toEqual([HOLD_DOWN, UP]);
     vi.advanceTimersByTime((QUIT_HOLD_DURATION_MS + QUIT_HOLD_RELEASE_GRACE_MS) * 2);
     expect(harness.quit).not.toHaveBeenCalled();
@@ -353,10 +351,10 @@ describe("makeQuitShortcutHandler", () => {
     const harness = makeHarness({ mode: "double-click" });
     await harness.send(makeInput({}));
     await harness.send(makeInput({ type: "keyUp" }));
-    await harness.send(makeInput({ type: "keyUp", key: "Meta", meta: false }));
+    await harness.send(makeInput({ type: "keyUp", key: "Control", control: false }));
     vi.advanceTimersByTime(100);
 
-    await harness.send(makeInput({ key: "Meta" }));
+    await harness.send(makeInput({ key: "Control" }));
     await harness.send(makeInput({}));
 
     expect(harness.quit).toHaveBeenCalledTimes(1);
@@ -464,17 +462,8 @@ describe("makeQuitShortcutHandler", () => {
     const harness = makeHarness();
     await harness.send(makeInput({ key: "w" }));
     await harness.send(makeInput({ shift: true }));
-    await harness.send(makeInput({ meta: false }));
+    await harness.send(makeInput({ control: false }));
     expect(harness.preventDefault).not.toHaveBeenCalled();
     expect(harness.notifications).toEqual([]);
-  });
-
-  it("uses control on non-mac platforms", async () => {
-    const harness = makeHarness({ platform: "linux" });
-    await harness.send(makeInput({ meta: false, control: true }));
-    expect(harness.preventDefault).toHaveBeenCalledTimes(1);
-    await harness.holdFor(QUIT_HOLD_DURATION_MS + 200, { meta: false, control: true });
-    await harness.send(makeInput({ type: "keyUp", meta: false, control: true }));
-    expect(harness.quit).toHaveBeenCalledTimes(1);
   });
 });

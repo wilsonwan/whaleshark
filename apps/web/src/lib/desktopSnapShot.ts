@@ -14,7 +14,6 @@ export function subscribeSnapShotComposerFocus(listener: () => void): () => void
 }
 
 type SnapShotMethods =
-  | "requestSnapShotPermissions"
   | "getSnapShotState"
   | "checkSnapShotShortcut"
   | "setSnapShotShortcutSuppressed"
@@ -28,7 +27,6 @@ export type DesktopSnapShotBridge = DesktopBridge & Required<Pick<DesktopBridge,
 export function getDesktopSnapShotBridge(): DesktopSnapShotBridge | undefined {
   const bridge = typeof window === "undefined" ? undefined : window.desktopBridge;
   if (
-    typeof bridge?.requestSnapShotPermissions !== "function" ||
     typeof bridge?.getSnapShotState !== "function" ||
     typeof bridge.checkSnapShotShortcut !== "function" ||
     typeof bridge.setSnapShotShortcutSuppressed !== "function" ||

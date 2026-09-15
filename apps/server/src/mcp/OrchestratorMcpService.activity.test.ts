@@ -32,10 +32,10 @@ const cancelledRunId = RunId.make("run-mcp-cancelled");
 const childRunId = RunId.make("run-mcp-child");
 const taskId = NodeId.make("node-mcp-task-1");
 const now = DateTime.makeUnsafe("2026-08-04T12:00:00.000Z");
-const codexDriver = ProviderDriverKind.make("codex");
+const claudeDriver = ProviderDriverKind.make("pi");
 // Distinct from driver kind so a regression that re-derives from driver fails.
-const customCodexInstanceId = ProviderInstanceId.make("codex-custom-workspace");
-const parentInstanceId = ProviderInstanceId.make("codex");
+const customClaudeInstanceId = ProviderInstanceId.make("claude-custom-workspace");
+const parentInstanceId = ProviderInstanceId.make("pi");
 
 const makeScope = (): McpInvocationContext.McpInvocationScope => ({
   environmentId,
@@ -218,8 +218,8 @@ it("taskStatus returns task.providerInstanceId rather than the driver kind", asy
         parentNodeId: NodeId.make("node-parent"),
         origin: "app_owned",
         createdBy: "agent",
-        driver: codexDriver,
-        providerInstanceId: customCodexInstanceId,
+        driver: claudeDriver,
+        providerInstanceId: customClaudeInstanceId,
         providerThreadId: null,
         childThreadId,
         nativeTaskRef: null,
@@ -241,7 +241,7 @@ it("taskStatus returns task.providerInstanceId rather than the driver kind", asy
       ...baseThread({
         threadId: childThreadId,
         title: "Child",
-        instanceId: customCodexInstanceId,
+        instanceId: customClaudeInstanceId,
         model: "gpt-5.4",
       }),
       lineage: {
@@ -256,7 +256,7 @@ it("taskStatus returns task.providerInstanceId rather than the driver kind", asy
         id: childRunId,
         ordinal: 1,
         status: "running",
-        instanceId: customCodexInstanceId,
+        instanceId: customClaudeInstanceId,
       }),
     ],
     visibleTurnItems: [],
@@ -299,8 +299,8 @@ it("taskStatus returns task.providerInstanceId rather than the driver kind", asy
   await Effect.gen(function* () {
     const service = yield* OrchestratorMcpService;
     const result = yield* service.taskStatus(makeScope(), taskId);
-    expect(result.providerInstanceId).toBe(customCodexInstanceId);
-    expect(result.providerInstanceId).not.toBe(ProviderInstanceId.make(String(codexDriver)));
+    expect(result.providerInstanceId).toBe(customClaudeInstanceId);
+    expect(result.providerInstanceId).not.toBe(ProviderInstanceId.make(String(claudeDriver)));
     expect(result.status).toBe("running");
     expect(result.taskId).toBe(taskId);
     expect(result.childThreadId).toBe(childThreadId);

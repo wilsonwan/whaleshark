@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { ProviderDriverKind, ProviderInstanceId, type ModelCapabilities } from "@t3tools/contracts";
 
 import {
-  applyClaudePromptEffortPrefix,
+  applyPromptEffortPrefix,
   buildExplicitProviderOptionSelectionsFromDescriptors,
   buildProviderOptionSelectionsFromDescriptors,
   createModelCapabilities,
@@ -19,7 +19,7 @@ import {
   modelSelectionsEqual,
 } from "./model.ts";
 
-const codexCaps: ModelCapabilities = createModelCapabilities({
+const sampleCaps: ModelCapabilities = createModelCapabilities({
   optionDescriptors: [
     {
       id: "reasoningEffort",
@@ -43,9 +43,9 @@ describe("model slug normalization", () => {
   it("preserves exact custom slugs instead of expanding provider aliases", () => {
     // Claude aliases now resolve through the model catalog (#9084), so the
     // provider alias table passes unknown slugs through unchanged.
-    const claude = ProviderDriverKind.make("claudeAgent");
+    const pi = ProviderDriverKind.make("pi");
 
-    expect(normalizeModelSlug("opus", claude)).toBe("opus");
+    expect(normalizeModelSlug("opus", pi)).toBe("opus");
     expect(normalizeCustomModelSlug(" opus ")).toBe("opus");
   });
 });
@@ -115,7 +115,7 @@ describe("descriptor helpers", () => {
 
   it("builds wire-format option selections from descriptors", () => {
     const descriptors = getProviderOptionDescriptors({
-      caps: codexCaps,
+      caps: sampleCaps,
       selections: [
         { id: "reasoningEffort", value: "high" },
         { id: "fastMode", value: true },
@@ -130,7 +130,7 @@ describe("descriptor helpers", () => {
 
   it("builds dispatch options only from explicit selections", () => {
     const descriptors = getProviderOptionDescriptors({
-      caps: codexCaps,
+      caps: sampleCaps,
       selections: [{ id: "fastMode", value: true }],
     });
 
@@ -146,12 +146,12 @@ describe("descriptor helpers", () => {
 
   it("stores option selection arrays in model selections", () => {
     expect(
-      createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+      createModelSelection(ProviderInstanceId.make("opencode"), "gpt-5.4", [
         { id: "reasoningEffort", value: "high" },
         { id: "fastMode", value: true },
       ]),
     ).toEqual({
-      instanceId: "codex",
+      instanceId: "opencode",
       model: "gpt-5.4",
       options: [
         { id: "reasoningEffort", value: "high" },
@@ -161,7 +161,7 @@ describe("descriptor helpers", () => {
   });
 
   it("reads typed option selection values", () => {
-    const selection = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+    const selection = createModelSelection(ProviderInstanceId.make("opencode"), "gpt-5.4", [
       { id: "reasoningEffort", value: "high" },
       { id: "fastMode", value: true },
     ]);
@@ -179,11 +179,11 @@ describe("descriptor helpers", () => {
   });
 
   it("compares complete model selections independent of option ordering", () => {
-    const left = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+    const left = createModelSelection(ProviderInstanceId.make("opencode"), "gpt-5.4", [
       { id: "reasoningEffort", value: "high" },
       { id: "fastMode", value: true },
     ]);
-    const reordered = createModelSelection(ProviderInstanceId.make("codex"), "gpt-5.4", [
+    const reordered = createModelSelection(ProviderInstanceId.make("opencode"), "gpt-5.4", [
       { id: "fastMode", value: true },
       { id: "reasoningEffort", value: "high" },
     ]);
@@ -202,31 +202,27 @@ describe("descriptor helpers", () => {
   });
 });
 
-describe("applyClaudePromptEffortPrefix", () => {
+describe("applyPromptEffortPrefix", () => {
   it("keeps slash commands intact when ultrathink is selected", () => {
-    expect(applyClaudePromptEffortPrefix("/compact", "ultrathink")).toBe("/compact");
-    expect(applyClaudePromptEffortPrefix(" /compact keep recent errors ", "ultrathink")).toBe(
+    expect(applyPromptEffortPrefix("/compact", "ultrathink")).toBe("/compact");
+    expect(applyPromptEffortPrefix(" /compact keep recent errors ", "ultrathink")).toBe(
       "/compact keep recent errors",
     );
-    expect(applyClaudePromptEffortPrefix(" /review src/model.ts ", "ultrathink")).toBe(
+    expect(applyPromptEffortPrefix(" /review src/model.ts ", "ultrathink")).toBe(
       "/review src/model.ts",
     );
-    expect(applyClaudePromptEffortPrefix("/security-review", "ultrathink")).toBe(
-      "/security-review",
-    );
-    expect(applyClaudePromptEffortPrefix("/plugin:skill run", "ultrathink")).toBe(
-      "/plugin:skill run",
-    );
-    expect(applyClaudePromptEffortPrefix("/deploy.prod to staging", "ultrathink")).toBe(
+    expect(applyPromptEffortPrefix("/security-review", "ultrathink")).toBe("/security-review");
+    expect(applyPromptEffortPrefix("/plugin:skill run", "ultrathink")).toBe("/plugin:skill run");
+    expect(applyPromptEffortPrefix("/deploy.prod to staging", "ultrathink")).toBe(
       "/deploy.prod to staging",
     );
   });
 
   it("still adds the ultrathink prefix to ordinary prompts", () => {
-    expect(applyClaudePromptEffortPrefix("Investigate this failure", "ultrathink")).toBe(
+    expect(applyPromptEffortPrefix("Investigate this failure", "ultrathink")).toBe(
       "Ultrathink:\nInvestigate this failure",
     );
-    expect(applyClaudePromptEffortPrefix("/home/theo/app.ts crashed on load", "ultrathink")).toBe(
+    expect(applyPromptEffortPrefix("/home/theo/app.ts crashed on load", "ultrathink")).toBe(
       "Ultrathink:\n/home/theo/app.ts crashed on load",
     );
   });

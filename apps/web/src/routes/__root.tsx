@@ -3,7 +3,6 @@ import { scopedProjectKey, scopeProjectRef } from "@t3tools/client-runtime/envir
 import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
 import {
   Outlet,
-  redirect,
   createRootRoute,
   type ErrorComponentProps,
   useLocation,
@@ -22,7 +21,7 @@ import { SshPasswordPromptDialog } from "../components/desktop/SshPasswordPrompt
 import { SnapShotCoordinator } from "../components/desktop/SnapShotCoordinator";
 import { DesktopAppActivationCoordinator } from "../components/desktop/DesktopAppActivationCoordinator";
 import { ProviderUpdateLaunchNotification } from "../components/ProviderUpdateLaunchNotification";
-import { LegacyThreadMigrationToast } from "../components/LegacyThreadMigrationToast";
+
 import { SlowRpcRequestToastCoordinator } from "../components/SlowRpcRequestToastCoordinator";
 import { ThemeEditorHost } from "../components/settings/ThemeEditorHost";
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
@@ -64,20 +63,9 @@ import {
   type KeybindingsUpdateToastController,
 } from "../components/KeybindingsUpdateToast.logic";
 
-import { getDesktopSnapShotBridge } from "../lib/desktopSnapShot";
-import { shouldResumeSnapShotSetupOnStartup } from "../lib/snapShotSetupResume";
-
 export const Route = createRootRoute({
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async () => {
     const authGateState = await resolveInitialServerAuthGateState();
-    if (
-      authGateState.status === "authenticated" &&
-      getDesktopSnapShotBridge() &&
-      shouldResumeSnapShotSetupOnStartup() &&
-      location.pathname !== "/settings/snap-shot"
-    ) {
-      throw redirect({ to: "/settings/snap-shot", replace: true });
-    }
     return {
       authGateState,
     };
@@ -176,7 +164,7 @@ function RootRouteView() {
           <SnapShotCoordinator />
           <ConfirmDialogHost />
           <SlowRpcRequestToastCoordinator />
-          {primaryEnvironmentAuthenticated ? <LegacyThreadMigrationToast /> : null}
+
           {primaryEnvironmentAuthenticated ? (
             <EventRouter skipInitialBootstrapNavigation={returningFromWelcomeRef.current} />
           ) : null}

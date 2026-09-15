@@ -36,7 +36,7 @@ import { makeProviderAuthService } from "./ProviderAuthService.ts";
 
 const instanceId = ProviderInstanceId.make("acp-registry-personal");
 const otherInstanceId = ProviderInstanceId.make("acp-registry-work");
-const unsupportedInstanceId = ProviderInstanceId.make("codex");
+const unsupportedInstanceId = ProviderInstanceId.make("geminiCli");
 const driverKind = ProviderDriverKind.make("acpRegistry");
 const owner = "paired-client-owner";
 const otherOwner = "paired-client-other";

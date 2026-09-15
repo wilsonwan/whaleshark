@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-import * as Cause from "effect/Cause";
+
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
@@ -10,7 +10,6 @@ import * as ElectronDialog from "../../electron/ElectronDialog.ts";
 import * as DesktopSnapShot from "../../snapShot/DesktopSnapShot.ts";
 import {
   checkSnapShotShortcut,
-  requestSnapShotPermissions,
   setupSnapShot,
   previewSnapShotConfig,
   applySnapShotConfig,
@@ -212,56 +211,6 @@ describe("window capture IPC", () => {
       });
     }).pipe(Effect.provide(layer));
   });
-
-  it.effect("forwards the accessibility permission preference from a trusted renderer", () => {
-    let includeAccessibility: boolean | undefined;
-    const webContents = { id: 7 };
-    const layer = Layer.mergeAll(
-      Layer.succeed(
-        ElectronWindow.ElectronWindow,
-        ElectronWindow.ElectronWindow.of({
-          main: Effect.succeed(Option.some({ webContents })),
-        } as ElectronWindow.ElectronWindow["Service"]),
-      ),
-      Layer.succeed(
-        DesktopSnapShot.DesktopSnapShot,
-        DesktopSnapShot.DesktopSnapShot.of({
-          requestPermissions: (include: boolean) =>
-            Effect.sync(() => {
-              includeAccessibility = include;
-            }),
-        } as unknown as DesktopSnapShot.DesktopSnapShot["Service"]),
-      ),
-    );
-
-    return Effect.gen(function* () {
-      yield* requestSnapShotPermissions.handler(false, { sender: webContents });
-      assert.isFalse(includeAccessibility);
-    }).pipe(Effect.provide(layer));
-  });
-
-  it.effect("rejects an untrusted renderer at the IPC boundary", () =>
-    Effect.gen(function* () {
-      const exit = yield* Effect.exit(
-        requestSnapShotPermissions.handler(false, { sender: { id: 8 } }),
-      );
-      assert(Exit.isFailure(exit));
-      const failure = Cause.findErrorOption(exit.cause);
-      assert(Option.isSome(failure));
-      const error = failure.value;
-
-      assert.equal((error as { readonly _tag: string })._tag, "SnapShotIpcUnauthorizedSenderError");
-      assert.equal((error as Error).message, "Snapshot request was rejected.");
-    }).pipe(
-      Effect.provideService(
-        ElectronWindow.ElectronWindow,
-        ElectronWindow.ElectronWindow.of({
-          main: Effect.succeed(Option.some({ webContents: { id: 7 } })),
-        } as ElectronWindow.ElectronWindow["Service"]),
-      ),
-      Effect.provideService(DesktopSnapShot.DesktopSnapShot, null as never),
-    ),
-  );
 
   it.effect("allows capture setup only from the trusted main renderer", () => {
     const actions: string[] = [];

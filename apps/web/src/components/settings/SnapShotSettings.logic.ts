@@ -3,7 +3,6 @@ import {
   captureSetupBackend,
   captureSetupDesktopName,
   captureSetupAccessReady,
-  captureSetupMacPermissionsReady,
 } from "./SnapShotSetupDialog.logic";
 
 export function snapShotStatus(state: DesktopSnapShotState | null, enabled: boolean): string {
@@ -56,21 +55,11 @@ export function snapShotSetupButtonLabel(state: DesktopSnapShotState | null): st
   return desktop ? `Set up ${desktop} capture` : "Continue setup";
 }
 
-// Windows needs no permissions or setup: turning capture on is enough. macOS setup
-// has nothing left to manage once permissions and the shortcut are in place; the
-// shortcut row stays editable inline. Revoking a permission brings the button back
-// as "Continue setup" through the state message.
-export function snapShotSetupComplete(
-  state: DesktopSnapShotState | null,
-  includeAccessibility: boolean,
-): boolean {
-  if (state?.windows) return true;
-  return (
-    state?.macPermissions !== undefined &&
-    captureSetupAccessReady(state) &&
-    captureSetupMacPermissionsReady(state, includeAccessibility) &&
-    state.shortcutRegistered
-  );
+// Windows needs no permissions or setup: turning capture on is enough.
+export function snapShotSetupComplete(state: DesktopSnapShotState | null): boolean {
+  // Windows needs no follow-up setup. Linux keeps the setup entry point so
+  // users can manage helpers and shortcuts after initial configuration.
+  return state?.windows === true;
 }
 
 export type SnapShotSoundSelection = SnapShotSound | "off";

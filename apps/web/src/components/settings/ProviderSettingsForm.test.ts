@@ -9,13 +9,11 @@ import {
 
 describe("ProviderSettingsForm helpers", () => {
   it("derives visible provider config fields from the client definition schema", () => {
-    const codex = DRIVER_OPTION_BY_VALUE[ProviderDriverKind.make("codex")];
+    const pi = DRIVER_OPTION_BY_VALUE[ProviderDriverKind.make("pi")];
 
-    expect(codex).toBeDefined();
-    expect(deriveProviderSettingsFields(codex!).map((field) => field.key)).toEqual([
+    expect(pi).toBeDefined();
+    expect(deriveProviderSettingsFields(pi!).map((field) => field.key)).toEqual([
       "binaryPath",
-      "homePath",
-      "shadowHomePath",
       "launchArgs",
     ]);
   });
@@ -44,18 +42,6 @@ describe("ProviderSettingsForm helpers", () => {
       "agentId",
       "commandPath",
       "authMethodId",
-    ]);
-  });
-
-  it("shows the auto-compaction threshold for Claude providers", () => {
-    const claude = DRIVER_OPTION_BY_VALUE[ProviderDriverKind.make("claudeAgent")];
-    expect(claude).toBeDefined();
-
-    expect(deriveProviderSettingsFields(claude!).map((field) => field.key)).toEqual([
-      "binaryPath",
-      "homePath",
-      "autoCompactWindow",
-      "launchArgs",
     ]);
   });
 

@@ -41,7 +41,7 @@ it.effect("loads only due tasks and skips a corrupt due row without decoding set
         project_id: "project:test",
         thread_id: null,
         workspace_strategy_json: '{"type":"root"}',
-        model_selection_json: '{"instanceId":"codex","model":"gpt-5"}',
+        model_selection_json: '{"instanceId":"pi","model":"gpt-5"}',
         runtime_mode: "full-access",
         interaction_mode: "default",
         created_by: "user",

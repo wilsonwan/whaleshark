@@ -14,14 +14,14 @@ describe("decodeProviderReplayNdjson", () => {
   it.effect("decodes a self-describing provider replay fixture", () =>
     Effect.gen(function* () {
       const transcript = yield* decodeProviderReplayNdjson(`
-        {"type":"transcript_start","provider":"codex","protocol":"codex.app-server","version":"0.120.0","scenario":"simple"}
+        {"type":"transcript_start","provider":"pi","protocol":"claude-agent-sdk.query","version":"0.120.0","scenario":"simple"}
         {"type":"expect_outbound","label":"initialize","frame":{"id":1,"method":"initialize","params":{}}}
         {"type":"emit_inbound","label":"initialized","afterMs":5,"frame":{"id":1,"result":{"ok":true}}}
         {"type":"runtime_exit","status":"success"}
       `);
 
-      assert.equal(transcript.provider, "codex");
-      assert.equal(transcript.protocol, "codex.app-server");
+      assert.equal(transcript.provider, "pi");
+      assert.equal(transcript.protocol, "claude-agent-sdk.query");
       assert.equal(transcript.scenario, "simple");
       assert.deepEqual(
         transcript.entries.map((entry) => entry.type),
@@ -38,14 +38,14 @@ describe("decodeProviderReplayNdjson", () => {
           {"type":"runtime_exit","status":"success"}
         `,
         {
-          provider: "claudeAgent",
-          protocol: "claude-agent-sdk",
+          provider: "pi",
+          protocol: "pi.rpc",
           version: "0.2.111",
           scenario: "entry-only",
         },
       );
 
-      assert.equal(transcript.provider, "claudeAgent");
+      assert.equal(transcript.provider, "pi");
       assert.equal(transcript.entries.length, 2);
     }),
   );
@@ -75,7 +75,7 @@ describe("decodeProviderReplayNdjson", () => {
   it.effect("materializes outbound workspace placeholders without weakening replay frames", () =>
     Effect.gen(function* () {
       const transcript = yield* decodeProviderReplayNdjson(`
-        {"type":"transcript_start","provider":"codex","protocol":"codex.app-server","version":"0.120.0","scenario":"workspace"}
+        {"type":"transcript_start","provider":"pi","protocol":"claude-agent-sdk.query","version":"0.120.0","scenario":"workspace"}
         {"type":"expect_outbound","frame":{"method":"turn/start","params":{"cwd":"<workspace>","nested":["<workspace>"]}}}
         {"type":"emit_inbound","frame":{"method":"item/completed","params":{"text":"<workspace>"}}}
       `);

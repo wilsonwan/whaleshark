@@ -152,7 +152,7 @@ describe("V2 client presentation", () => {
   });
 
   it("stacks earlier provider owners behind the current one, newest history first to go", () => {
-    const codex = ProviderInstanceId.make("codex");
+    const opencode = ProviderInstanceId.make("opencode");
     const claude = ProviderInstanceId.make("claude");
     const cursor = ProviderInstanceId.make("cursor");
     const pi = ProviderInstanceId.make("pi");
@@ -160,15 +160,14 @@ describe("V2 client presentation", () => {
       ...v2ThreadShell,
       providerInstanceId: pi,
       modelSelection: { instanceId: pi, model: "pi-4" },
-      providerInstanceHistory: [codex, claude, cursor, pi],
+      providerInstanceHistory: [opencode, claude, cursor, pi],
     });
 
     // Three slots: the two most recent earlier owners, then the current one.
     expect(resolveThreadProviderStack(shell)).toEqual([claude, cursor, pi]);
-    expect(resolveThreadProviderStack({ ...shell, providerInstanceHistory: [codex, pi] })).toEqual([
-      codex,
-      pi,
-    ]);
+    expect(
+      resolveThreadProviderStack({ ...shell, providerInstanceHistory: [opencode, pi] }),
+    ).toEqual([opencode, pi]);
     expect(resolveThreadProviderStack({ ...shell, providerInstanceHistory: [] })).toEqual([pi]);
     // Servers that predate the field decode to an empty history.
     expect(

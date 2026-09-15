@@ -12,7 +12,7 @@ import * as DateTime from "effect/DateTime";
 export const v2Now = DateTime.makeUnsafe("2026-06-20T00:00:00.000Z");
 const v2ProjectId = ProjectId.make("project-v2");
 export const v2ThreadId = ThreadId.make("thread-v2");
-const v2ProviderInstanceId = ProviderInstanceId.make("codex");
+const v2ProviderInstanceId = ProviderInstanceId.make("pi");
 
 export const v2Project: OrchestrationProjectShell = {
   id: v2ProjectId,

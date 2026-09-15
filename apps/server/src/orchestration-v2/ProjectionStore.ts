@@ -718,7 +718,6 @@ type ShellThreadRow = {
   readonly latest_user_message_at: string | null;
   readonly has_actionable_proposed_plan: number;
   readonly item_count: number;
-  readonly runless_item_count: number;
 };
 
 type ShellRunRow = {
@@ -1002,13 +1001,12 @@ function makeForkMarkerTurnItem(input: {
 }
 
 export function isTurnItemAtOrBeforeRun(input: {
-  readonly historyOrigin: OrchestrationV2ThreadProjection["thread"]["historyOrigin"];
   readonly itemRunId: OrchestrationV2TurnItem["runId"];
   readonly runOrdinalById: ReadonlyMap<NonNullable<OrchestrationV2TurnItem["runId"]>, number>;
   readonly sourceRunOrdinal: number;
 }): boolean {
   if (input.itemRunId === null) {
-    return input.historyOrigin === "v1_import";
+    return false;
   }
   const ordinal = input.runOrdinalById.get(input.itemRunId);
   return ordinal !== undefined && ordinal <= input.sourceRunOrdinal;
@@ -1046,7 +1044,6 @@ function visibleTurnItemsThroughRun(input: {
         return false;
       }
       return isTurnItemAtOrBeforeRun({
-        historyOrigin: input.sourceProjection.thread.historyOrigin,
         itemRunId: item.runId,
         runOrdinalById,
         sourceRunOrdinal: sourceRun.ordinal,
@@ -1159,9 +1156,6 @@ export function threadShellFromProjection(
     lineage: projection.thread.lineage,
     forkedFrom: projection.thread.forkedFrom,
     activeProviderThreadId: projection.thread.activeProviderThreadId,
-    ...(projection.thread.historyOrigin === undefined
-      ? {}
-      : { historyOrigin: projection.thread.historyOrigin }),
     latestRunId: latestRun?.id ?? null,
     latestRunRequestedAt: latestRun?.requestedAt ?? null,
     latestRunStartedAt: latestRun?.startedAt ?? null,
@@ -1212,7 +1206,7 @@ export function threadShellFromProjection(
 /**
  * Provider instances that have owned this thread's root conversation, oldest
  * first. Subagent provider threads carry an owner node and are excluded so a
- * delegated Codex child does not make a Claude thread look handed off.
+ * delegated subagent child does not make a Claude thread look handed off.
  */
 function providerInstanceHistoryForShell(input: {
   readonly threadId: ThreadId;
@@ -1266,7 +1260,6 @@ type ShellThreadState = {
   readonly pendingBackgroundTasks: OrchestrationV2ThreadShell["pendingBackgroundTasks"];
   readonly providerInstanceHistory: OrchestrationV2ThreadShell["providerInstanceHistory"];
   readonly itemCount: number;
-  readonly runlessItemCount: number;
   readonly updatedAt: OrchestrationV2ThreadProjection["updatedAt"];
   readonly runOrdinalById: ReadonlyMap<RunId, number>;
   readonly itemCountByRunId: ReadonlyMap<RunId, number>;
@@ -1301,7 +1294,7 @@ function itemCountThroughRun(input: {
     return 0;
   }
 
-  let count = input.state.thread.historyOrigin === "v1_import" ? input.state.runlessItemCount : 0;
+  let count = 0;
   for (const [runId, itemCount] of input.state.itemCountByRunId) {
     const itemRunOrdinal = input.state.runOrdinalById.get(runId);
     if (itemRunOrdinal !== undefined && itemRunOrdinal <= runOrdinal) {
@@ -1383,9 +1376,6 @@ function shellFromState(input: {
     lineage: input.state.thread.lineage,
     forkedFrom: input.state.thread.forkedFrom,
     activeProviderThreadId: input.state.thread.activeProviderThreadId,
-    ...(input.state.thread.historyOrigin === undefined
-      ? {}
-      : { historyOrigin: input.state.thread.historyOrigin }),
     latestRunId: input.state.latestRunId,
     latestRunRequestedAt: input.state.latestRunRequestedAt,
     latestRunStartedAt: input.state.latestRunStartedAt,
@@ -2365,15 +2355,6 @@ export const layer: Layer.Layer<ProjectionStoreV2, never, SqlClient.SqlClient> =
                     )
                     AND (
                       ${window.requiredRunId ?? null} IS NULL
-                      OR (
-                        item.run_id IS NULL
-                        AND EXISTS (
-                          SELECT 1
-                          FROM orchestration_v2_projection_threads AS source_thread
-                          WHERE source_thread.thread_id = item.thread_id
-                            AND json_extract(source_thread.payload_json, '$.historyOrigin') = 'v1_import'
-                        )
-                      )
                       OR run.ordinal <= (
                         SELECT required_run.ordinal
                         FROM orchestration_v2_projection_runs AS required_run
@@ -2908,15 +2889,6 @@ export const layer: Layer.Layer<ProjectionStoreV2, never, SqlClient.SqlClient> =
                   ), effective_boundary AS (
                     SELECT COALESCE(
                       (SELECT ordinal FROM fork_boundary),
-                      (
-                        SELECT ordinal
-                        FROM orchestration_v2_projection_turn_items
-                        WHERE thread_id = ${forkedFrom.threadId}
-                          AND run_id IS NULL
-                          AND json_extract(payload_json, '$.historyOrigin') = 'v1_import'
-                        ORDER BY ordinal DESC, turn_item_id DESC
-                        LIMIT 1
-                      ),
                       -1
                     ) AS ordinal
                   )
@@ -4008,13 +3980,7 @@ export const layer: Layer.Layer<ProjectionStoreV2, never, SqlClient.SqlClient> =
                   ON r.run_id = i.run_id
                 WHERE i.thread_id = t.thread_id
                   AND (i.run_id IS NULL OR r.status <> 'rolled_back')
-              ) AS item_count,
-              (
-                SELECT COUNT(*)
-                FROM orchestration_v2_projection_turn_items i
-                WHERE i.thread_id = t.thread_id
-                  AND i.run_id IS NULL
-              ) AS runless_item_count
+              ) AS item_count
             FROM orchestration_v2_projection_threads t
             WHERE t.deleted_at IS NULL${threadId === undefined ? sql`` : sql` AND t.thread_id = ${threadId}`}${
               location === "active"
@@ -4332,7 +4298,6 @@ export const layer: Layer.Layer<ProjectionStoreV2, never, SqlClient.SqlClient> =
             providerThreads: providerThreadsByThreadId.get(thread.id) ?? [],
           }),
           itemCount: row.item_count,
-          runlessItemCount: row.runless_item_count,
           updatedAt: thread.updatedAt,
           runOrdinalById: runOrdinalsByThreadId.get(ThreadId.make(row.thread_id)) ?? new Map(),
           itemCountByRunId: itemCountsByThreadId.get(ThreadId.make(row.thread_id)) ?? new Map(),

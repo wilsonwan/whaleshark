@@ -519,8 +519,8 @@ effectIt.layer(NodeServices.layer)("resolveSpawnCommand", (it) => {
   it.effect("resolves against the effective environment when extending host env", () =>
     Effect.gen(function* () {
       let resolvedEnvironment: NodeJS.ProcessEnv | undefined;
-      yield* resolveSpawnCommand("codex", ["app-server"], {
-        env: { CODEX_HOME: "C:\\Users\\tester\\.codex" },
+      yield* resolveSpawnCommand("claude", ["--version"], {
+        env: { CLAUDE_CONFIG_DIR: "C:\\Users\\tester\\.claude" },
         extendEnv: true,
       }).pipe(
         Effect.provideService(HostProcessPlatform, "win32"),
@@ -530,14 +530,14 @@ effectIt.layer(NodeServices.layer)("resolveSpawnCommand", (it) => {
         }),
         Effect.provideService(SpawnExecutableResolution, (_command, _platform, env) => {
           resolvedEnvironment = env;
-          return "C:\\Users\\tester\\AppData\\Roaming\\npm\\codex.cmd";
+          return "C:\\Users\\tester\\AppData\\Roaming\\npm\\claude.cmd";
         }),
       );
 
       expect(resolvedEnvironment).toEqual({
         PATH: "C:\\Users\\tester\\AppData\\Roaming\\npm",
         PATHEXT: ".COM;.EXE;.BAT;.CMD",
-        CODEX_HOME: "C:\\Users\\tester\\.codex",
+        CLAUDE_CONFIG_DIR: "C:\\Users\\tester\\.claude",
       });
     }),
   );

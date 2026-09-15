@@ -1,9 +1,4 @@
-import { MAC_PERMISSION_SETTINGS_URLS } from "../permissions/MacPermission.ts";
-import {
-  REMOTE_CAPABLE_EDITOR_IDS,
-  remoteSchemeForEditor,
-  type SystemSettingsPane,
-} from "@t3tools/contracts";
+import { REMOTE_CAPABLE_EDITOR_IDS, remoteSchemeForEditor } from "@t3tools/contracts";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -54,8 +49,6 @@ export class ElectronShell extends Context.Service<
   ElectronShell,
   {
     readonly openExternal: (rawUrl: unknown) => Effect.Effect<boolean>;
-    /** Opens a known System Settings pane by identifier, not by URL. */
-    readonly openSystemSettings: (pane: SystemSettingsPane) => Effect.Effect<boolean>;
     readonly copyText: (text: string) => Effect.Effect<void>;
   }
 >()("@t3tools/desktop/electron/ElectronShell") {}
@@ -73,13 +66,7 @@ export const make = ElectronShell.of({
           ),
         ),
     }),
-  openSystemSettings: (pane) =>
-    Effect.promise(() =>
-      Electron.shell.openExternal(MAC_PERMISSION_SETTINGS_URLS[pane]).then(
-        () => true,
-        () => false,
-      ),
-    ),
+
   copyText: (text) =>
     Effect.promise(() => Electron.clipboard.writeText(text).catch(() => undefined)),
 });

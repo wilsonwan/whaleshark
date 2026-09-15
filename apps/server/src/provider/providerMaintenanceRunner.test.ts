@@ -29,10 +29,10 @@ import {
 } from "./providerMaintenance.ts";
 const isServerProviderUpdateError = Schema.is(ServerProviderUpdateError);
 
-const CODEX_DRIVER = ProviderDriverKind.make("codex");
+const PI_DRIVER = ProviderDriverKind.make("pi");
 const NATIVE_CLI_DRIVER = ProviderDriverKind.make("nativeCli");
 const OPENCODE_DRIVER = ProviderDriverKind.make("opencode");
-const CODEX_INSTANCE_ID = ProviderInstanceId.make("codex");
+const PI_INSTANCE_ID = ProviderInstanceId.make("pi");
 const NATIVE_CLI_INSTANCE_ID = ProviderInstanceId.make("nativeCli");
 const OPENCODE_INSTANCE_ID = ProviderInstanceId.make("opencode");
 const encoder = new TextEncoder();
@@ -55,19 +55,19 @@ function lifecycleFor(provider: ProviderDriverKind): ProviderMaintenanceCapabili
   }
   return makeProviderMaintenanceCapabilities({
     provider,
-    packageName: provider === OPENCODE_DRIVER ? "opencode-ai" : "@openai/codex",
+    packageName: provider === OPENCODE_DRIVER ? "opencode-ai" : "@example/pi-cli",
     updateExecutable: "npm",
     updateArgs:
       provider === OPENCODE_DRIVER
         ? ["install", "-g", "opencode-ai@latest"]
-        : ["install", "-g", "@openai/codex@latest"],
+        : ["install", "-g", "@example/pi-cli@latest"],
     updateLockKey: "npm-global",
   });
 }
 
 const baseProvider: ServerProvider = {
-  instanceId: CODEX_INSTANCE_ID,
-  driver: CODEX_DRIVER,
+  instanceId: PI_INSTANCE_ID,
+  driver: PI_DRIVER,
   enabled: true,
   installed: true,
   version: "0.0.0",
@@ -268,7 +268,7 @@ describe("providerMaintenanceRunner", () => {
           ),
       });
 
-      const result = yield* updater.updateProvider(CODEX_DRIVER);
+      const result = yield* updater.updateProvider(PI_DRIVER);
       assert.strictEqual(result.providers[0]?.updateState?.status, "unchanged");
       assert.match(result.providers[0]?.updateState?.message ?? "", /could not verify/);
     }).pipe(
@@ -320,17 +320,17 @@ describe("providerMaintenanceRunner", () => {
           Effect.succeed({
             ...lifecycleFor(provider),
             update: {
-              command: "codex update",
-              executable: "/work/codex-home/packages/standalone/bin/codex",
+              command: "pi update",
+              executable: "/work/pi-home/packages/standalone/bin/pi",
               args: ["update"],
-              lockKey: "codex-native",
-              env: { CODEX_HOME: "/work/codex-home" },
+              lockKey: "pi-native",
+              env: { PI_HOME: "/work/pi-home" },
             },
           }),
       });
 
-      yield* updater.updateProvider(CODEX_DRIVER);
-      assert.deepStrictEqual(seen, [{ CODEX_HOME: "/work/codex-home" }]);
+      yield* updater.updateProvider(PI_DRIVER);
+      assert.deepStrictEqual(seen, [{ PI_HOME: "/work/pi-home" }]);
     }).pipe(
       Effect.provide(
         Layer.mergeAll(
@@ -357,20 +357,20 @@ describe("providerMaintenanceRunner", () => {
           return Effect.succeed(
             makeProviderMaintenanceCapabilities({
               provider,
-              packageName: "@openai/codex",
+              packageName: "@example/pi-cli",
               updateExecutable: options?.fresh ? "/opt/homebrew/bin/brew" : "brew",
-              updateArgs: ["upgrade", "--cask", "codex"],
+              updateArgs: ["upgrade", "--cask", "pi"],
               updateLockKey: "homebrew",
             }),
           );
         },
       });
 
-      yield* updater.updateProvider(CODEX_DRIVER);
+      yield* updater.updateProvider(PI_DRIVER);
       // Cached read picks the lock; the two fresh reads bracket the command.
       assert.deepStrictEqual(fresh, [false, true, true]);
       assert.deepStrictEqual(calls, [
-        { command: "/opt/homebrew/bin/brew", args: ["upgrade", "--cask", "codex"] },
+        { command: "/opt/homebrew/bin/brew", args: ["upgrade", "--cask", "pi"] },
       ]);
     }).pipe(
       Effect.provide(
@@ -397,7 +397,7 @@ describe("providerMaintenanceRunner", () => {
             options?.fresh
               ? makeProviderMaintenanceCapabilities({
                   provider,
-                  packageName: "@openai/codex",
+                  packageName: "@example/pi-cli",
                   updateExecutable: null,
                   updateArgs: [],
                   updateLockKey: null,
@@ -406,7 +406,7 @@ describe("providerMaintenanceRunner", () => {
           ),
       });
 
-      const result = yield* updater.updateProvider(CODEX_DRIVER);
+      const result = yield* updater.updateProvider(PI_DRIVER);
       assert.deepStrictEqual(calls, []);
       assert.strictEqual(result.providers[0]?.updateState?.status, "failed");
       assert.strictEqual(
@@ -451,20 +451,20 @@ describe("providerMaintenanceRunner", () => {
         getProviderMaintenanceCapabilitiesForInstance: () =>
           Effect.succeed(
             makeProviderMaintenanceCapabilities({
-              provider: CODEX_DRIVER,
-              packageName: "@openai/codex",
+              provider: PI_DRIVER,
+              packageName: "@example/pi-cli",
               updateExecutable: "bun",
-              updateArgs: ["i", "-g", "@openai/codex@latest"],
+              updateArgs: ["i", "-g", "@example/pi-cli@latest"],
               updateLockKey: "bun-global",
             }),
           ),
       });
 
-      yield* updater.updateProvider(CODEX_DRIVER);
+      yield* updater.updateProvider(PI_DRIVER);
       assert.deepStrictEqual(calls, [
         {
           command: "bun",
-          args: ["i", "-g", "@openai/codex@latest"],
+          args: ["i", "-g", "@example/pi-cli@latest"],
         },
       ]);
     }).pipe(
@@ -489,12 +489,12 @@ describe("providerMaintenanceRunner", () => {
         const { registry } = yield* makeRegistry(baseProvider);
         const runner = yield* makeTestRunner(registry);
 
-        const result = yield* runner.updateProvider(CODEX_DRIVER);
+        const result = yield* runner.updateProvider(PI_DRIVER);
 
         assert.deepStrictEqual(calls, [
           {
             command: "npm",
-            args: ["install", "-g", "@openai/codex@latest"],
+            args: ["install", "-g", "@example/pi-cli@latest"],
           },
         ]);
         assert.strictEqual(result.providers[0]?.updateState?.status, "succeeded");
@@ -516,8 +516,8 @@ describe("providerMaintenanceRunner", () => {
   it.effect("updates a single provider instance without touching sibling instances", () => {
     const calls: Array<{ command: string; args: ReadonlyArray<string> }> = [];
     return Effect.gen(function* () {
-      const personalInstanceId = ProviderInstanceId.make("codex_personal");
-      const workInstanceId = ProviderInstanceId.make("codex_work");
+      const personalInstanceId = ProviderInstanceId.make("pi_personal");
+      const workInstanceId = ProviderInstanceId.make("pi_work");
       const refreshedInstanceIds: Array<ProviderInstanceId> = [];
       const { registry } = yield* makeRegistry([
         {
@@ -537,9 +537,9 @@ describe("providerMaintenanceRunner", () => {
           Effect.succeed(
             makeProviderMaintenanceCapabilities({
               provider,
-              packageName: "@openai/codex-instance-test",
+              packageName: "@example/pi-cli-instance-test",
               updateExecutable: "vp",
-              updateArgs: ["i", "-g", "@openai/codex"],
+              updateArgs: ["i", "-g", "@example/pi-cli"],
               updateLockKey: "vite-plus-global",
             }),
           ).pipe(
@@ -556,14 +556,14 @@ describe("providerMaintenanceRunner", () => {
       });
 
       const result = yield* updater.updateProvider({
-        provider: CODEX_DRIVER,
+        provider: PI_DRIVER,
         instanceId: personalInstanceId,
       });
 
       assert.deepStrictEqual(calls, [
         {
           command: "vp",
-          args: ["i", "-g", "@openai/codex"],
+          args: ["i", "-g", "@example/pi-cli"],
         },
       ]);
       assert.deepStrictEqual(refreshedInstanceIds, [personalInstanceId]);
@@ -590,7 +590,7 @@ describe("providerMaintenanceRunner", () => {
       const { registry } = yield* makeRegistry();
       const updater = yield* makeTestRunner(registry);
 
-      const result = yield* updater.updateProvider(CODEX_DRIVER);
+      const result = yield* updater.updateProvider(PI_DRIVER);
       const updateState = result.providers[0]?.updateState;
 
       assert.strictEqual(updateState?.status, "failed");
@@ -618,7 +618,7 @@ describe("providerMaintenanceRunner", () => {
         });
         const updater = yield* makeTestRunner(registry);
 
-        const result = yield* updater.updateProvider(CODEX_DRIVER);
+        const result = yield* updater.updateProvider(PI_DRIVER);
 
         assert.strictEqual(result.providers[0]?.updateState?.status, "unchanged");
         assert.include(result.providers[0]?.updateState?.message ?? "", "still detects");
@@ -646,10 +646,10 @@ describe("providerMaintenanceRunner", () => {
       const { registry } = yield* makeRegistry();
       const updater = yield* makeTestRunner(registry);
 
-      const first = yield* updater.updateProvider(CODEX_DRIVER).pipe(Effect.forkScoped);
+      const first = yield* updater.updateProvider(PI_DRIVER).pipe(Effect.forkScoped);
       yield* Effect.promise(() => started);
 
-      const second = yield* updater.updateProvider(CODEX_DRIVER).pipe(Effect.exit);
+      const second = yield* updater.updateProvider(PI_DRIVER).pipe(Effect.exit);
       assert.strictEqual(Exit.isFailure(second), true);
       if (Exit.isFailure(second)) {
         const error = Cause.squash(second.cause);
@@ -698,18 +698,18 @@ describe("providerMaintenanceRunner", () => {
           Effect.succeed(
             makeProviderMaintenanceCapabilities({
               provider,
-              packageName: provider === OPENCODE_DRIVER ? "opencode-ai" : "@openai/codex",
+              packageName: provider === OPENCODE_DRIVER ? "opencode-ai" : "@example/pi-cli",
               updateExecutable: "npm",
               updateArgs:
                 provider === OPENCODE_DRIVER
                   ? ["install", "-g", "opencode-ai@latest"]
-                  : ["install", "-g", "@openai/codex@latest"],
+                  : ["install", "-g", "@example/pi-cli@latest"],
               updateLockKey: "npm-global",
             }),
           ),
       });
 
-      const first = yield* updater.updateProvider(CODEX_DRIVER).pipe(Effect.forkScoped);
+      const first = yield* updater.updateProvider(PI_DRIVER).pipe(Effect.forkScoped);
       yield* Effect.promise(() => firstStarted);
 
       const second = yield* updater.updateProvider(OPENCODE_DRIVER).pipe(Effect.forkScoped);
@@ -724,7 +724,7 @@ describe("providerMaintenanceRunner", () => {
         }
         yield* Effect.yieldNow;
       }
-      assert.deepStrictEqual(calls, ["install -g @openai/codex@latest"]);
+      assert.deepStrictEqual(calls, ["install -g @example/pi-cli@latest"]);
       assert.strictEqual(
         providersWhileQueued.find((provider) => provider.instanceId === OPENCODE_INSTANCE_ID)
           ?.updateState?.status,
@@ -735,7 +735,7 @@ describe("providerMaintenanceRunner", () => {
       yield* Fiber.join(first);
       yield* Fiber.join(second);
       assert.deepStrictEqual(calls, [
-        "install -g @openai/codex@latest",
+        "install -g @example/pi-cli@latest",
         "install -g opencode-ai@latest",
       ]);
     }).pipe(
@@ -771,17 +771,17 @@ describe("providerMaintenanceRunner", () => {
           Effect.succeed(
             makeProviderMaintenanceCapabilities({
               provider,
-              packageName: "@openai/codex",
+              packageName: "@example/pi-cli",
               updateExecutable: "npm",
-              updateArgs: ["install", "-g", "@openai/codex@latest"],
+              updateArgs: ["install", "-g", "@example/pi-cli@latest"],
               updateLockKey: "unknown-lock-key",
             }),
           ),
       });
 
-      const result = yield* updater.updateProvider(CODEX_DRIVER);
+      const result = yield* updater.updateProvider(PI_DRIVER);
       assert.strictEqual(result.providers[0]?.updateState?.status, "succeeded");
-      assert.deepStrictEqual(calls, ["install -g @openai/codex@latest"]);
+      assert.deepStrictEqual(calls, ["install -g @example/pi-cli@latest"]);
     }).pipe(
       Effect.provide(
         Layer.mergeAll(
@@ -825,14 +825,14 @@ describe("providerMaintenanceRunner", () => {
           }),
         });
 
-        const first = yield* updater.updateProvider(CODEX_DRIVER).pipe(Effect.forkScoped);
+        const first = yield* updater.updateProvider(PI_DRIVER).pipe(Effect.forkScoped);
         yield* Effect.promise(() => queuedStateWritten);
         blockQueuedState = false;
 
         yield* Fiber.interrupt(first);
         releaseQueuedStateLatch.resolve();
 
-        const second = yield* updater.updateProvider(CODEX_DRIVER).pipe(Effect.exit);
+        const second = yield* updater.updateProvider(PI_DRIVER).pipe(Effect.exit);
         assert.strictEqual(Exit.isSuccess(second), true);
         if (Exit.isSuccess(second)) {
           assert.strictEqual(second.value.providers[0]?.updateState?.status, "succeeded");
@@ -858,7 +858,7 @@ describe("providerMaintenanceRunner", () => {
       const { registry } = yield* makeRegistry(baseProvider);
       const runner = yield* makeTestRunner(registry);
 
-      const result = yield* runner.updateProvider(CODEX_DRIVER);
+      const result = yield* runner.updateProvider(PI_DRIVER);
 
       // On win32, resolveSpawnCommand resolves `npm` to the `.cmd` shim and
       // routes the spawn through cmd.exe (shell: true), escaping every arg.
@@ -871,11 +871,11 @@ describe("providerMaintenanceRunner", () => {
       assert.match(call.command, /npm\.cmd/i);
       assert.strictEqual(call.shell, true);
       // Args are escaped for cmd.exe shell mode (each quoted) but still carry
-      // the original install command (`install -g @openai/codex@latest`) in order.
+      // the original install command (`install -g @example/pi-cli@latest`) in order.
       assert.strictEqual(call.args.length, 3);
       assert.match(call.args[0] ?? "", /install/);
       assert.match(call.args[1] ?? "", /-g/);
-      assert.match(call.args[2] ?? "", /@openai\/codex@latest/);
+      assert.match(call.args[2] ?? "", /@example\/pi-cli@latest/);
       assert.strictEqual(result.providers[0]?.updateState?.status, "succeeded");
     }).pipe(
       Effect.provide(
