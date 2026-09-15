@@ -3,7 +3,6 @@ import { describe, it, assert } from "@effect/vitest";
 import * as DateTime from "effect/DateTime";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
-import * as Path from "effect/Path";
 import * as Exit from "effect/Exit";
 import * as Fiber from "effect/Fiber";
 import * as Layer from "effect/Layer";
@@ -19,10 +18,8 @@ import {
   ProviderInstanceId,
   ServerSettings,
   type ServerProvider,
-  type ServerProviderSlashCommand,
   type ServerSettings as ContractServerSettings,
 } from "@t3tools/contracts";
-import * as PlatformError from "effect/PlatformError";
 import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 import { ChildProcessSpawner } from "effect/unstable/process";
 import { deepMerge } from "@t3tools/shared/Struct";
@@ -45,7 +42,6 @@ import {
 import * as ServerConfig from "../../config.ts";
 import * as ServerSettingsModule from "../../serverSettings.ts";
 import { readProviderStatusCache, resolveProviderStatusCachePath } from "../providerStatusCache.ts";
-import { COMPACT_SLASH_COMMAND } from "../providerSnapshot.ts";
 import type { ProviderInstance } from "../ProviderDriver.ts";
 import * as ProviderInstanceRegistry from "../Services/ProviderInstanceRegistry.ts";
 import * as ProviderRegistry from "../Services/ProviderRegistry.ts";
@@ -135,49 +131,6 @@ function mockHandle(result: { stdout: string; stderr: string; code: number }) {
   });
 }
 
-function mockSpawnerLayer(
-  handler: (args: ReadonlyArray<string>) => {
-    stdout: string;
-    stderr: string;
-    code: number;
-  },
-) {
-  return Layer.succeed(
-    ChildProcessSpawner.ChildProcessSpawner,
-    ChildProcessSpawner.make((command) => {
-      const cmd = command as unknown as { args: ReadonlyArray<string> };
-      return Effect.succeed(mockHandle(handler(cmd.args)));
-    }),
-  );
-}
-
-function recordingMockSpawnerLayer(
-  handler: (args: ReadonlyArray<string>) => {
-    stdout: string;
-    stderr: string;
-    code: number;
-  },
-) {
-  const commands: Array<{
-    readonly args: ReadonlyArray<string>;
-    readonly env: NodeJS.ProcessEnv | undefined;
-  }> = [];
-  const layer = Layer.succeed(
-    ChildProcessSpawner.ChildProcessSpawner,
-    ChildProcessSpawner.make((command) => {
-      const cmd = command as unknown as {
-        args: ReadonlyArray<string>;
-        options?: {
-          readonly env?: NodeJS.ProcessEnv;
-        };
-      };
-      commands.push({ args: cmd.args, env: cmd.options?.env });
-      return Effect.succeed(mockHandle(handler(cmd.args)));
-    }),
-  );
-  return { layer, commands };
-}
-
 function mockCommandSpawnerLayer(
   handler: (
     command: string,
@@ -193,47 +146,6 @@ function mockCommandSpawnerLayer(
       };
       return Effect.succeed(mockHandle(handler(cmd.command, cmd.args)));
     }),
-  );
-}
-
-function failingSpawnerLayer(description: string) {
-  return Layer.succeed(
-    ChildProcessSpawner.ChildProcessSpawner,
-    ChildProcessSpawner.make(() =>
-      Effect.fail(
-        PlatformError.systemError({
-          _tag: "NotFound",
-          module: "ChildProcess",
-          method: "spawn",
-          description,
-        }),
-      ),
-    ),
-  );
-}
-
-function hangingScopedSpawnerLayer(killCalls: Ref.Ref<number>) {
-  return Layer.succeed(
-    ChildProcessSpawner.ChildProcessSpawner,
-    ChildProcessSpawner.make(() =>
-      Effect.gen(function* () {
-        const handle = ChildProcessSpawner.makeHandle({
-          pid: ChildProcessSpawner.ProcessId(1),
-          exitCode: Effect.never,
-          isRunning: Effect.succeed(true),
-          kill: () => Ref.update(killCalls, (current) => current + 1),
-          unref: Effect.succeed(Effect.void),
-          stdin: Sink.drain,
-          stdout: Stream.never,
-          stderr: Stream.never,
-          all: Stream.never,
-          getInputFd: () => Sink.drain,
-          getOutputFd: () => Stream.empty,
-        });
-        yield* Effect.addFinalizer(() => handle.kill().pipe(Effect.ignore));
-        return handle;
-      }),
-    ),
   );
 }
 
@@ -735,15 +647,6 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
           isCustom: true,
           capabilities: null,
         } as const;
-        const refreshedProvider = {
-          ...cachedProvider,
-          checkedAt: "2026-09-04T19:01:00.000Z",
-          models: [
-            { slug: "gpt-6-astra", name: "GPT 6 Astra", isCustom: false, capabilities: null },
-            cachedProvider.models[0]!,
-            customModel,
-          ],
-        } satisfies ServerProvider;
         const pendingProvider = {
           ...cachedProvider,
           status: "warning",
