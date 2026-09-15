@@ -4099,12 +4099,7 @@ const makeNativeOperations = Effect.fn("PreviewManager.makeOperations")(function
     // WebContents.focus() is a no-op for webview guests. Native input targets
     // this guest's widget directly, so Enter cannot submit the host composer.
     yield* Effect.gen(function* () {
-      const { sessionId } = yield* resolveKeyboardTarget(
-        tabId,
-        send,
-        sendCleanup,
-        checkControl,
-      );
+      const { sessionId } = yield* resolveKeyboardTarget(tabId, send, sendCleanup, checkControl);
       // Only descendant renderer sessions bypass Chromium's desktop focus lookup.
       if (sessionId) {
         const keys = makePreviewAutomationKeySequence(input);
