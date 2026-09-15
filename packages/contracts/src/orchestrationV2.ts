@@ -613,7 +613,7 @@ export type OrchestrationV2ProviderSessionDetached =
 
 /**
  * Provider-owned background work that can outlive the root turn (for example a
- * Claude background Bash task). Associated with the provider thread so shared
+ * provider background Bash task). Associated with the provider thread so shared
  * runtimes cannot make an unrelated app thread look busy.
  */
 export const OrchestrationV2PendingBackgroundTask = Schema.Struct({
@@ -946,7 +946,7 @@ export const OrchestrationV2ProviderFailure = Schema.Struct({
 export type OrchestrationV2ProviderFailure = typeof OrchestrationV2ProviderFailure.Type;
 
 /**
- * Provider-reported retry progress. Some providers expose all fields (Claude),
+ * Provider-reported retry progress. Some providers expose all fields,
  * while others only expose `willRetry` and encode counters in display text
  * (e.g. a provider-synthesized child agent), so the protocol-specific values remain nullable.
  */

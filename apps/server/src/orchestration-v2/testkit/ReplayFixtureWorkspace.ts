@@ -66,9 +66,3 @@ export const checkpointWorkspace = (fixtureName: string) =>
   Effect.acquireRelease(makeCheckpointWorkspaceEffect(fixtureName), (cwd) =>
     removeCheckpointWorkspaceEffect(cwd).pipe(Effect.orDie),
   ).pipe(Effect.provide(NodeServices.layer));
-
-export async function makeCheckpointWorkspace(fixtureName: string): Promise<string> {
-  return await Effect.runPromise(
-    makeCheckpointWorkspaceEffect(fixtureName).pipe(Effect.provide(NodeServices.layer)),
-  );
-}

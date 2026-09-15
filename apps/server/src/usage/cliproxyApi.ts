@@ -3,14 +3,18 @@ import {
   UsageLimitSourceError,
   type UsageLimitSourceAccount,
   type UsageLimitSourceConfig,
+  type ServerProviderUsageWindow,
 } from "@t3tools/contracts";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http";
 
-import { claudeUsageResponseToLimits } from "../provider/Layers/claudeUsageLimits.ts";
-import { makeUnavailableUsageLimits } from "../provider/providerUsageLimits.ts";
+import {
+  clampPercent,
+  makeUnavailableUsageLimits,
+  makeUsageLimits,
+} from "../provider/providerUsageLimits.ts";
 
 const AuthFile = Schema.Struct({
   id: Schema.String,
@@ -56,6 +60,55 @@ const decodeAuthFiles = Schema.decodeUnknownEffect(AuthFiles);
 const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
 const decodeApiResponse = Schema.decodeUnknownEffect(ApiResponse);
 const decodeClaudeUsage = Schema.decodeUnknownEffect(Schema.fromJsonString(ClaudeUsage));
+
+function makeCliproxyUsageLimits(
+  checkedAt: string,
+  usage: typeof ClaudeUsage.Type,
+): ReturnType<typeof makeUsageLimits> {
+  const windows: ServerProviderUsageWindow[] = [];
+  const fiveHour = usage.five_hour;
+  if (fiveHour?.utilization !== undefined) {
+    windows.push({
+      id: "five_hour",
+      kind: "session",
+      label: "Session",
+      windowDurationMins: 5 * 60,
+      usedPercent: clampPercent(fiveHour.utilization),
+      ...(fiveHour.resets_at ? { resetsAt: fiveHour.resets_at } : {}),
+    });
+  }
+  const sevenDay = usage.seven_day;
+  if (sevenDay?.utilization !== undefined) {
+    windows.push({
+      id: "seven_day",
+      kind: "weekly",
+      label: "Weekly",
+      windowDurationMins: 7 * 24 * 60,
+      usedPercent: clampPercent(sevenDay.utilization),
+      ...(sevenDay.resets_at ? { resetsAt: sevenDay.resets_at } : {}),
+    });
+  }
+  for (const limit of usage.limits ?? []) {
+    const model = limit.scope?.model?.display_name;
+    if (
+      limit.kind !== "weekly_scoped" ||
+      model === undefined ||
+      typeof limit.percent !== "number"
+    ) {
+      continue;
+    }
+    const id = `seven_day_${model.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`;
+    windows.push({
+      id,
+      kind: "weekly",
+      label: `Weekly · ${model}`,
+      windowDurationMins: 7 * 24 * 60,
+      usedPercent: clampPercent(limit.percent),
+      ...(limit.resets_at ? { resetsAt: limit.resets_at } : {}),
+    });
+  }
+  return makeUsageLimits({ checkedAt, windows });
+}
 
 export const makeCliproxyApi = Effect.gen(function* () {
   const client = yield* HttpClient.HttpClient;
@@ -120,37 +173,16 @@ export const makeCliproxyApi = Effect.gen(function* () {
     const checkedAt = DateTime.formatIso(yield* DateTime.now);
     const base = {
       id: account.id,
-      driver: ProviderDriverKind.make("claudeAgent"),
+      driver: ProviderDriverKind.make("pi"),
       ...(account.email ? { email: account.email } : {}),
     };
     const read = Effect.gen(function* () {
       const body = yield* apiCall(config, account, "https://api.anthropic.com/api/oauth/usage");
       const usage = yield* decodeClaudeUsage(body);
-      const model_scoped = (usage.limits ?? []).flatMap((limit) =>
-        limit.kind === "weekly_scoped" && limit.scope?.model && typeof limit.percent === "number"
-          ? [
-              {
-                display_name: limit.scope.model.display_name,
-                utilization: limit.percent,
-                resets_at: limit.resets_at ?? null,
-              },
-            ]
-          : [],
-      );
       return {
         ...base,
         plan: "Claude Subscription",
-        usageLimits: claudeUsageResponseToLimits({
-          checkedAt,
-          response: {
-            rate_limits_available: true,
-            rate_limits: {
-              five_hour: usage.five_hour ?? null,
-              seven_day: usage.seven_day ?? null,
-              model_scoped,
-            },
-          },
-        }).limits,
+        usageLimits: makeCliproxyUsageLimits(checkedAt, usage),
       };
     });
     return yield* read.pipe(

@@ -38,7 +38,7 @@ interface TestSettings {
 }
 
 const maintenanceCapabilities = {
-  provider: ProviderDriverKind.make("claudeAgent"),
+  provider: ProviderDriverKind.make("pi"),
   packageName: "@anthropic-ai/claude-code",
   update: {
     command: "npm install -g @anthropic-ai/claude-code@latest",
@@ -52,8 +52,8 @@ const maintenanceCapabilities = {
 } as const;
 
 const initialSnapshot: ServerProvider = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
-  driver: ProviderDriverKind.make("claudeAgent"),
+  instanceId: ProviderInstanceId.make("pi"),
+  driver: ProviderDriverKind.make("pi"),
   enabled: true,
   installed: true,
   version: null,
@@ -67,8 +67,8 @@ const initialSnapshot: ServerProvider = {
 };
 
 const refreshedSnapshot: ServerProvider = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
-  driver: ProviderDriverKind.make("claudeAgent"),
+  instanceId: ProviderInstanceId.make("pi"),
+  driver: ProviderDriverKind.make("pi"),
   enabled: true,
   installed: true,
   version: "1.0.0",

@@ -84,12 +84,15 @@ const makeScannerTestLayer = (input: ScannerTestInput) =>
     Layer.provide(
       Layer.mergeAll(
         ServerSettings.layerTest({
-          providers: {
-            claudeAgent: { homePath: input.claudeHomePath },
+          providerInstances: {
+            [ProviderInstanceId.make("claudeAgent")]: {
+              driver: ProviderDriverKind.make("claudeAgent"),
+              environment: [
+                { name: "CLAUDE_CONFIG_DIR", value: input.claudeHomePath, sensitive: false },
+              ],
+            },
+            ...(input.providerInstances ?? {}),
           },
-          ...(input.providerInstances === undefined
-            ? {}
-            : { providerInstances: input.providerInstances }),
         }),
         ServerConfig.layerTest(
           input.claudeHomePath,

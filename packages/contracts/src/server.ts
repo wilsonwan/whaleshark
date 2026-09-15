@@ -106,12 +106,12 @@ export const ServerProviderSkill = Schema.Struct({
   shortDescription: Schema.optional(TrimmedNonEmptyString),
   /**
    * The skill is hidden from the agent's own skill tool, so only the user can
-   * start it — Claude Code's `disable-model-invocation`. Composers must offer
+   * start it — the CLI's `disable-model-invocation`. Composers must offer
    * it as a slash command; naming it in prose does nothing.
    */
   userInvocationOnly: Schema.optional(Schema.Boolean),
   /**
-   * The mirror of {@link ServerProviderSkill.userInvocationOnly}: Claude Code's
+   * The mirror of {@link ServerProviderSkill.userInvocationOnly}: the CLI's
    * `user-invocable: false` keeps the skill out of its own slash commands, so
    * only the agent can start it. Composers must not offer it under `/`.
    */

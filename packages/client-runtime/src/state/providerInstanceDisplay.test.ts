@@ -9,7 +9,7 @@ import {
 } from "./providerInstanceDisplay.ts";
 
 const pi = ProviderDriverKind.make("pi");
-const claude = ProviderDriverKind.make("claudeAgent");
+const opencode = ProviderDriverKind.make("opencode");
 
 describe("resolveProviderInstanceDisplayName", () => {
   it("keeps a snapshot name that differs from the brand label", () => {
@@ -102,7 +102,7 @@ describe("shouldShowInstanceBadge", () => {
 
   it("hides the badge for a single instance of a driver with no accent", () => {
     const entry = { driverKind: pi, accentColor: undefined };
-    const other = { driverKind: claude, accentColor: undefined };
+    const other = { driverKind: opencode, accentColor: undefined };
     expect(shouldShowInstanceBadge(entry, [entry, other])).toBe(false);
   });
 });

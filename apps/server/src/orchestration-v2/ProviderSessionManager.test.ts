@@ -36,7 +36,7 @@ import * as McpProviderSession from "../mcp/McpProviderSession.ts";
 import * as McpSessionRegistry from "../mcp/McpSessionRegistry.ts";
 import { SqlitePersistenceMemory } from "../persistence/Layers/Sqlite.ts";
 import * as ServerSettings from "../serverSettings.ts";
-import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import { EventSinkV2, EventSinkWriteError, layer as eventSinkLayer } from "./EventSink.ts";
 import { layer as eventStoreLayer } from "./EventStore.ts";
 import {
@@ -85,23 +85,11 @@ const FailingReleaseEventSinkLayer = Layer.effect(
   }),
 ).pipe(Layer.provide(TestEventSinkLayer));
 
-const ClaudeCapabilities: OrchestrationV2ProviderCapabilities = ClaudeProviderCapabilitiesV2;
-// The manager's shared-session paths (one live provider process serving several
-// app threads, and the credential reuse they depend on) are provider-neutral,
-// but no shipped adapter advertises multi-thread sessions any more. The fixture
-// provider keeps advertising them, the way the removed provider did, and
-// `ExclusiveCapabilities` covers the single-thread paths.
-const SharedCapabilities: OrchestrationV2ProviderCapabilities = {
-  ...ClaudeCapabilities,
-  sessions: {
-    ...ClaudeCapabilities.sessions,
-    supportsMultipleProviderThreadsPerSession: true,
-  },
-};
+const TestCapabilities: OrchestrationV2ProviderCapabilities = TestProviderCapabilitiesV2;
 const ExclusiveCapabilities: OrchestrationV2ProviderCapabilities = {
-  ...ClaudeCapabilities,
+  ...TestCapabilities,
   sessions: {
-    ...ClaudeCapabilities.sessions,
+    ...TestCapabilities.sessions,
     supportsMultipleProviderThreadsPerSession: false,
   },
 };
@@ -123,10 +111,10 @@ const emptyState: TestProviderRuntimeState = {
 };
 
 const modelSelection = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
+  instanceId: ProviderInstanceId.make("opencode"),
   model: "gpt-5.4",
 } satisfies ModelSelection;
-const CLAUDE_DRIVER = ProviderDriverKind.make("claudeAgent");
+const OPENCODE_DRIVER = ProviderDriverKind.make("opencode");
 
 const runtimePolicy = {
   runtimeMode: "full-access",
@@ -141,12 +129,12 @@ function makeProviderSession(input: {
 }): OrchestrationV2ProviderSession {
   return {
     id: input.providerSessionId,
-    driver: CLAUDE_DRIVER,
+    driver: OPENCODE_DRIVER,
     providerInstanceId: modelSelection.instanceId,
     status: "ready",
     cwd: process.cwd(),
     model: "gpt-5.4",
-    capabilities: input.capabilities ?? SharedCapabilities,
+    capabilities: input.capabilities ?? TestCapabilities,
     createdAt: input.now,
     updatedAt: input.now,
     lastError: null,
@@ -166,7 +154,7 @@ function makeThreadCreatedEvent(input: {
         fixtureName: "provider-session-manager",
       }));
     const providerThreadId = input.idAllocator.derive.providerThread({
-      driver: CLAUDE_DRIVER,
+      driver: OPENCODE_DRIVER,
       nativeThreadId: "native-thread",
     });
     const thread: OrchestrationV2AppThread = {
@@ -214,16 +202,16 @@ function makeProviderThread(input: {
 }): OrchestrationV2ProviderThread {
   return {
     id: input.idAllocator.derive.providerThread({
-      driver: CLAUDE_DRIVER,
+      driver: OPENCODE_DRIVER,
       nativeThreadId: "native-thread",
     }),
-    driver: CLAUDE_DRIVER,
+    driver: OPENCODE_DRIVER,
     providerInstanceId: modelSelection.instanceId,
     providerSessionId: input.providerSessionId,
     appThreadId: input.threadId,
     ownerNodeId: null,
     nativeThreadRef: {
-      driver: CLAUDE_DRIVER,
+      driver: OPENCODE_DRIVER,
       nativeId: "native-thread",
       strength: "strong",
     },
@@ -241,7 +229,7 @@ function makeProviderThread(input: {
 function unimplemented(detail: string) {
   return Effect.fail(
     new ProviderAdapterProtocolError({
-      driver: CLAUDE_DRIVER,
+      driver: OPENCODE_DRIVER,
       detail,
     }),
   );
@@ -264,9 +252,9 @@ function makeProviderAdapter(
   } = {},
 ): ProviderAdapterV2Shape {
   return {
-    instanceId: ProviderInstanceId.make("claudeAgent"),
-    driver: CLAUDE_DRIVER,
-    getCapabilities: () => Effect.succeed(options.capabilities ?? SharedCapabilities),
+    instanceId: ProviderInstanceId.make("opencode"),
+    driver: OPENCODE_DRIVER,
+    getCapabilities: () => Effect.succeed(options.capabilities ?? TestCapabilities),
     planSelectionTransition: () => Effect.succeed({ type: "apply_on_next_turn" }),
     openSession: (input) =>
       Effect.gen(function* () {
@@ -309,14 +297,14 @@ function makeProviderAdapter(
         }
 
         return {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
-          driver: CLAUDE_DRIVER,
+          instanceId: ProviderInstanceId.make("opencode"),
+          driver: OPENCODE_DRIVER,
           providerSessionId: input.providerSessionId,
           providerSession: session,
           events: options.failEventStream
             ? Stream.fail(
                 new ProviderAdapterEventStreamError({
-                  driver: CLAUDE_DRIVER,
+                  driver: OPENCODE_DRIVER,
                   providerSessionId: input.providerSessionId,
                   cause: "process exited",
                 }),
@@ -523,7 +511,7 @@ function makePendingRuntimeRequestEvents(input: {
 }) {
   return Effect.gen(function* () {
     const requestId = yield* input.idAllocator.allocate.runtimeRequest({
-      driver: CLAUDE_DRIVER,
+      driver: OPENCODE_DRIVER,
       nativeRequestId: "pending-approval",
     });
     const nodeId = input.idAllocator.derive.approvalNode({ requestId });
@@ -549,7 +537,7 @@ function makePendingRuntimeRequestEvents(input: {
       nodeId,
       providerTurnId: null,
       nativeRequestRef: {
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         nativeId: "pending-approval",
         strength: "strong" as const,
       },
@@ -590,7 +578,7 @@ function makePendingRuntimeRequestEvents(input: {
         type: "node.updated" as const,
         threadId: input.threadId,
         nodeId,
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         occurredAt: input.now,
         payload: node,
       },
@@ -602,7 +590,7 @@ function makePendingRuntimeRequestEvents(input: {
         type: "runtime-request.updated" as const,
         threadId: input.threadId,
         nodeId,
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         occurredAt: input.now,
         payload: request,
       },
@@ -614,7 +602,7 @@ function makePendingRuntimeRequestEvents(input: {
         type: "turn-item.updated" as const,
         threadId: input.threadId,
         nodeId,
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         occurredAt: input.now,
         payload: turnItem,
       },
@@ -622,18 +610,18 @@ function makePendingRuntimeRequestEvents(input: {
     const providerEvents = [
       {
         type: "runtime_request.updated" as const,
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         threadId: input.threadId,
         runtimeRequest: request,
       },
       {
         type: "node.updated" as const,
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         node,
       },
       {
         type: "turn_item.updated" as const,
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         turnItem,
       },
     ] satisfies ReadonlyArray<ProviderAdapterV2Event>;
@@ -904,7 +892,7 @@ it.effect("ProviderSessionManagerV2 closes event subscriptions normally on serve
       assert.isDefined(adapterQueue);
       yield* Queue.offer(adapterQueue!, {
         type: "provider_session.updated",
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         providerSession: runtime.providerSession,
       });
       assert.isTrue(Option.isSome(yield* activeSubscription.events.pipe(Stream.runHead)));
@@ -945,16 +933,16 @@ it.effect("ProviderSessionManagerV2 drains subscribers when the provider stops",
       const adapterQueue = (yield* Ref.get(state)).eventQueues.get(String(providerSessionId));
       assert.isDefined(adapterQueue);
       const providerThreadId = idAllocator.derive.providerThread({
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         nativeThreadId: "provider-stop-thread",
       });
       const providerTurnId = idAllocator.derive.providerTurn({
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         nativeTurnId: "provider-stop-turn",
       });
       yield* Queue.offer(adapterQueue!, {
         type: "turn.terminal",
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         providerThreadId,
         providerTurnId,
         runOrdinal: 1,
@@ -964,7 +952,7 @@ it.effect("ProviderSessionManagerV2 drains subscribers when the provider stops",
       });
       yield* Queue.offer(adapterQueue!, {
         type: "provider_session.updated",
-        driver: CLAUDE_DRIVER,
+        driver: OPENCODE_DRIVER,
         providerSession: {
           ...runtime.providerSession,
           status: "stopped",
@@ -1386,7 +1374,7 @@ it.effect(
         const originalToken = original?.authorizationHeader.replace(/^Bearer\s+/, "");
         assert.isDefined(originalToken);
 
-        // Workspace-change handoff on a shared multi-thread session (claudeAgent):
+        // Workspace-change handoff on a shared multi-thread session (opencode):
         // the thread detaches while the provider process keeps running, and the
         // process's MCP client keeps using the credential it was started with.
         yield* manager.detach({ providerSessionId, threadId, detail: "Workspace changed." });
@@ -1838,7 +1826,7 @@ it.effect(
         const attemptId = idAllocator.derive.runAttempt({ runId, attemptOrdinal: 1 });
         const rootNodeId = idAllocator.derive.rootNode({ runId });
         const providerTurnId = idAllocator.derive.providerTurn({
-          driver: CLAUDE_DRIVER,
+          driver: OPENCODE_DRIVER,
           nativeTurnId: "native-turn-busy-during-check",
         });
 
@@ -1895,7 +1883,7 @@ it.effect(
         assert.isDefined(queue);
         yield* Queue.offer(queue!, {
           type: "turn.terminal",
-          driver: CLAUDE_DRIVER,
+          driver: OPENCODE_DRIVER,
           providerThreadId: providerThread.id,
           providerTurnId,
           runOrdinal: 1,
@@ -2057,7 +2045,7 @@ it.effect(
         const attemptId = idAllocator.derive.runAttempt({ runId, attemptOrdinal: 1 });
         const rootNodeId = idAllocator.derive.rootNode({ runId });
         const providerTurnId = idAllocator.derive.providerTurn({
-          driver: CLAUDE_DRIVER,
+          driver: OPENCODE_DRIVER,
           nativeTurnId: "native-turn",
         });
 
@@ -2100,7 +2088,7 @@ it.effect(
         assert.isDefined(queue);
         yield* Queue.offer(queue!, {
           type: "turn.terminal",
-          driver: CLAUDE_DRIVER,
+          driver: OPENCODE_DRIVER,
           providerThreadId: providerThread.id,
           providerTurnId,
           runOrdinal: 1,
@@ -2572,11 +2560,11 @@ it.effect(
         const firstRunId = idAllocator.derive.run({ threadId: firstThreadId, ordinal: 1 });
         const secondRunId = idAllocator.derive.run({ threadId: secondThreadId, ordinal: 1 });
         const firstProviderTurnId = idAllocator.derive.providerTurn({
-          driver: CLAUDE_DRIVER,
+          driver: OPENCODE_DRIVER,
           nativeTurnId: "native-turn-a",
         });
         const secondProviderTurnId = idAllocator.derive.providerTurn({
-          driver: CLAUDE_DRIVER,
+          driver: OPENCODE_DRIVER,
           nativeTurnId: "native-turn-b",
         });
 
@@ -2647,7 +2635,7 @@ it.effect(
         assert.isDefined(queue);
         yield* Queue.offer(queue!, {
           type: "turn.terminal",
-          driver: CLAUDE_DRIVER,
+          driver: OPENCODE_DRIVER,
           providerThreadId: firstProviderThread.id,
           providerTurnId: firstProviderTurnId,
           runOrdinal: 1,
@@ -2661,7 +2649,7 @@ it.effect(
 
         yield* Queue.offer(queue!, {
           type: "turn.terminal",
-          driver: CLAUDE_DRIVER,
+          driver: OPENCODE_DRIVER,
           providerThreadId: secondProviderThread.id,
           providerTurnId: secondProviderTurnId,
           runOrdinal: 1,
@@ -2728,7 +2716,7 @@ it.effect(
               id: yield* idAllocator.allocate.event({ threadId: firstThreadId }),
               type: "provider-thread.updated",
               threadId: firstThreadId,
-              driver: CLAUDE_DRIVER,
+              driver: OPENCODE_DRIVER,
               occurredAt: now,
               payload: firstProviderThread,
             },
@@ -2737,11 +2725,11 @@ it.effect(
               type: "provider-turn.updated",
               threadId: firstThreadId,
               runId: firstRunId,
-              driver: CLAUDE_DRIVER,
+              driver: OPENCODE_DRIVER,
               occurredAt: now,
               payload: {
                 id: idAllocator.derive.providerTurn({
-                  driver: CLAUDE_DRIVER,
+                  driver: OPENCODE_DRIVER,
                   nativeTurnId: "native-turn-shared-runtime-a",
                 }),
                 providerThreadId: firstProviderThread.id,
@@ -2798,7 +2786,7 @@ it.effect(
         assert.isDefined(queue);
         yield* Queue.offer(queue!, {
           type: "provider_session.updated",
-          driver: CLAUDE_DRIVER,
+          driver: OPENCODE_DRIVER,
           providerSession: firstRuntime.providerSession,
         });
         const received = yield* Effect.all([

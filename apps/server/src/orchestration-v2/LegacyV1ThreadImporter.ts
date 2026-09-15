@@ -138,7 +138,7 @@ function modelSelectionFor(row: LegacyThreadRow) {
       ? Option.none()
       : decodeModelSelection(parseJson(row.model_selection_json));
   return Option.getOrElse(decoded, () => ({
-    instanceId: ProviderInstanceId.make("claudeAgent"),
+    instanceId: ProviderInstanceId.make("pi"),
     model: DEFAULT_MODEL,
   }));
 }

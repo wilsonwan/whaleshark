@@ -4,7 +4,6 @@ import type { OrchestrationV2DomainEvent, ProviderReplayTranscript } from "@t3to
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 
-import { ClaudeOrchestratorReplayHarness } from "../Adapters/ClaudeAdapterV2.testkit.ts";
 import { AcpRegistryOrchestratorReplayHarness } from "../Adapters/AcpRegistryAdapterV2.testkit.ts";
 import { OpenCodeOrchestratorReplayHarness } from "../Adapters/OpenCodeAdapterV2.testkit.ts";
 import { layer as idAllocatorLayer } from "../IdAllocator.ts";
@@ -138,11 +137,6 @@ function runFixtureProviderWithRegisteredHarness(input: {
   readonly enableLegacyTokenStreaming?: boolean;
 }) {
   switch (input.driver.driver) {
-    case "claudeAgent":
-      return runFixtureProvider({
-        ...input,
-        harness: ClaudeOrchestratorReplayHarness,
-      }).pipe(Effect.mapError(normalizeTestError), Effect.scoped);
     case "acpRegistry":
       return runFixtureProvider({
         ...input,

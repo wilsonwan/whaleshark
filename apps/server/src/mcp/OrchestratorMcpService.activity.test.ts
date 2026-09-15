@@ -32,10 +32,10 @@ const cancelledRunId = RunId.make("run-mcp-cancelled");
 const childRunId = RunId.make("run-mcp-child");
 const taskId = NodeId.make("node-mcp-task-1");
 const now = DateTime.makeUnsafe("2026-08-04T12:00:00.000Z");
-const claudeDriver = ProviderDriverKind.make("claudeAgent");
+const claudeDriver = ProviderDriverKind.make("pi");
 // Distinct from driver kind so a regression that re-derives from driver fails.
 const customClaudeInstanceId = ProviderInstanceId.make("claude-custom-workspace");
-const parentInstanceId = ProviderInstanceId.make("claudeAgent");
+const parentInstanceId = ProviderInstanceId.make("pi");
 
 const makeScope = (): McpInvocationContext.McpInvocationScope => ({
   environmentId,

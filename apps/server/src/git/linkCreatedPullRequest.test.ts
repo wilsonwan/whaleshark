@@ -53,7 +53,7 @@ const thread: OrchestrationThreadShell = {
   id: THREAD_ID,
   projectId: PROJECT_ID,
   title: "Thread",
-  modelSelection: { instanceId: ProviderInstanceId.make("claudeAgent"), model: "gpt-5" },
+  modelSelection: { instanceId: ProviderInstanceId.make("pi"), model: "gpt-5" },
   runtimeMode: "full-access",
   interactionMode: "default",
   branch: null,

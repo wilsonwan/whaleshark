@@ -411,7 +411,7 @@ export const resolvePackageManagedProviderMaintenance = Effect.fn(
   if (npmPrefix) {
     // npm 12 blocks install scripts by default (empty allow-scripts allowlist)
     // and still exits 0, so a package whose postinstall finishes the install
-    // (claude copies its native binary over a placeholder stub) is left broken
+    // (the CLI copies its native binary over a placeholder stub) is left broken
     // while the update reports success. Allow this one package's scripts.
     // Older npm warns about the unknown config and continues.
     return makeProviderMaintenanceCapabilities({

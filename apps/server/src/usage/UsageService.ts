@@ -38,9 +38,10 @@ import * as Schema from "effect/Schema";
 import * as Semaphore from "effect/Semaphore";
 import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 
+import { HostProcessEnvironment } from "@t3tools/shared/hostProcess";
 import { ServerConfig } from "../config.ts";
+import { expandHomePath } from "../pathExpansion.ts";
 import * as ServerSettings from "../serverSettings.ts";
-import { resolveClaudeHomePath } from "../provider/Drivers/ClaudeHome.ts";
 import { UsageAggregator } from "./usageAggregation.ts";
 import { createOverrideRateTable, parseRateTable, type RateTable } from "./usagePricing.ts";
 import {
@@ -216,19 +217,6 @@ export const make = Effect.gen(function* () {
     Effect.withSpan("UsageService.refreshRates"),
   );
 
-  /**
-   * Claude's config dir is the home itself when overridden, but a default
-   * install nests transcripts under `~/.claude/projects`. Probe both.
-   */
-  const resolveClaudeTranscriptDir = (homePath: string) =>
-    Effect.gen(function* () {
-      const nested = path.join(homePath, ".claude", "projects");
-      const nestedExists = yield* fileSystem
-        .exists(nested)
-        .pipe(Effect.catchCause(() => Effect.succeed(false)));
-      return nestedExists ? nested : path.join(homePath, "projects");
-    });
-
   // A settings failure must not silently discard custom rates or transcript homes.
   const readSettings = settingsService.getSettings.pipe(
     Effect.catchCause(
@@ -241,14 +229,24 @@ export const make = Effect.gen(function* () {
     ),
   );
 
+  /**
+   * Claude Code's config directory: the CLI's own `CLAUDE_CONFIG_DIR` when it
+   * is set, otherwise the default `~/.claude` install. The removed Claude
+   * provider's per-instance `homePath` override went with the provider.
+   */
+  const hostEnvironment = yield* HostProcessEnvironment;
+  const resolveClaudeConfigDir = (): string => {
+    const configured = hostEnvironment.CLAUDE_CONFIG_DIR?.trim() ?? "";
+    return configured.length > 0
+      ? (path.resolve(expandHomePath(configured)) as string)
+      : path.join(NodeOS.homedir(), ".claude");
+  };
+
   /** Resolves the transcript directory for each provider. */
   const resolveTranscriptDirs = Effect.fn("UsageService.resolveTranscriptDirs")(function* (
-    settings: ServerSettingsValue,
+    _settings: ServerSettingsValue,
   ) {
-    const claudeHome = yield* resolveClaudeHomePath(settings.providers.claudeAgent);
-    const claudeDir = yield* resolveClaudeTranscriptDir(claudeHome);
-
-    return [{ provider: "claude" as const, dir: claudeDir }];
+    return [{ provider: "claude" as const, dir: path.join(resolveClaudeConfigDir(), "projects") }];
   });
 
   /**
@@ -299,7 +297,7 @@ export const make = Effect.gen(function* () {
   ): Effect.Effect<readonly UsageRecord[]> =>
     Effect.gen(function* () {
       const cached = fileCache.get(filePath);
-      // Provider is part of the identity: if both providers were ever pointed
+      // Provider is part of the identity: if a provider was ever pointed
       // at one directory, a hit parsed by the other parser must not be reused.
       if (
         cached &&

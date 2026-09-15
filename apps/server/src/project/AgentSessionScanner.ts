@@ -17,8 +17,6 @@ import * as NodeOS from "node:os";
 
 import {
   AgentSessionScanError,
-  ClaudeSettings,
-  ProviderDriverKind,
   ProviderInstanceId,
   resolveProviderInstanceEnabled,
   type AgentSessionImportSource,
@@ -129,7 +127,13 @@ const TranscriptRecord = Schema.Struct({
   ),
 });
 
-const decodeClaudeSettings = Schema.decodeUnknownOption(ClaudeSettings);
+/**
+ * Legacy per-driver `homePath` blob. The transcripts this scanner reads belong
+ * to the Claude Code CLI's own store, so the home is read from the instance
+ * config directly rather than from a provider settings schema.
+ */
+const ConfigHomePath = Schema.Struct({ homePath: Schema.optionalKey(Schema.String) });
+const decodeConfigHomePath = Schema.decodeUnknownOption(ConfigHomePath);
 const decodeTranscriptRecord = Schema.decodeUnknownOption(Schema.fromJsonString(TranscriptRecord));
 const decodeTranscriptValue = Schema.decodeUnknownOption(TranscriptRecord);
 const selectTranscriptPath = createTranscriptJsonSelector(TranscriptRecord);
@@ -850,18 +854,9 @@ export const make = Effect.gen(function* () {
           instanceId: ProviderInstanceId.make(instanceId),
           config,
         }));
-      if (!Object.hasOwn(settings.providerInstances, source)) {
-        const legacyInstance = {
-          instanceId: ProviderInstanceId.make(source),
-          config: {
-            driver: ProviderDriverKind.make(source),
-            config: settings.providers[source],
-          },
-        };
-        if (resolveProviderInstanceEnabled(legacyInstance.config)) {
-          instances.push(legacyInstance);
-        }
-      }
+      // Builds that shipped the Claude provider also hydrated a legacy
+      // `providers.claudeAgent` blob into the instance map. That settings key is
+      // gone with the provider, so candidates come from `providerInstances` alone.
 
       // A shared home contains one copy of each session. Prefer the built-in
       // instance as its owner, then keep configured order for custom accounts.
@@ -878,9 +873,13 @@ export const make = Effect.gen(function* () {
           instance.environment?.findLast((variable) => variable.name === homeVariable)?.value ??
           hostEnvironment[homeVariable];
 
-        const config = decodeClaudeSettings(instance.config ?? {});
-        if (Option.isNone(config)) continue;
-        const homePath = resolveClaudeConfigDir(config.value.homePath, environmentHome);
+        const homePath = resolveClaudeConfigDir(
+          decodeConfigHomePath(instance.config ?? {}).pipe(
+            Option.flatMap((config) => Option.fromUndefinedOr(config.homePath)),
+            Option.getOrElse(() => ""),
+          ),
+          environmentHome,
+        );
 
         const homeKey = `${source}\0${yield* directoryIdentity(homePath)}`;
         if (seenHomes.has(homeKey)) continue;

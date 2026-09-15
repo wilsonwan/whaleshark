@@ -8,7 +8,7 @@ import {
 } from "./modelOrdering";
 
 const CLAUDE_WORK_ID = ProviderInstanceId.make("claude_work");
-const CLAUDE_ID = ProviderInstanceId.make("claudeAgent");
+const CLAUDE_ID = ProviderInstanceId.make("pi");
 
 describe("model ordering", () => {
   it("groups favorites first while preserving provider model order inside each group", () => {

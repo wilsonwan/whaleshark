@@ -20,7 +20,6 @@ import {
 } from "./providerStatusCache.ts";
 
 const emptyCapabilities = createModelCapabilities({ optionDescriptors: [] });
-const CLAUDE_AGENT_DRIVER = ProviderDriverKind.make("claudeAgent");
 const PI_DRIVER = ProviderDriverKind.make("pi");
 const OPENCODE_DRIVER = ProviderDriverKind.make("opencode");
 
@@ -80,7 +79,6 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const tempDir = yield* fs.makeTempDirectoryScoped({ prefix: "t3-provider-cache-" });
-      const claudeProvider = makeProvider(CLAUDE_AGENT_DRIVER);
       const piProvider = makeProvider(PI_DRIVER, {
         status: "warning",
         auth: { status: "unknown" },
@@ -88,10 +86,6 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
       const openCodeProvider = makeProvider(OPENCODE_DRIVER, {
         status: "warning",
         auth: { status: "unknown", type: "opencode" },
-      });
-      const claudePath = yield* resolveProviderStatusCachePath({
-        cacheDir: tempDir,
-        instanceId: defaultInstanceIdForDriver(ProviderDriverKind.make("claudeAgent")),
       });
       const piPath = yield* resolveProviderStatusCachePath({
         cacheDir: tempDir,
@@ -103,10 +97,6 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
       });
 
       yield* writeProviderStatusCache({
-        filePath: claudePath,
-        provider: claudeProvider,
-      });
-      yield* writeProviderStatusCache({
         filePath: piPath,
         provider: piProvider,
       });
@@ -115,14 +105,13 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
         provider: openCodeProvider,
       });
 
-      assert.deepStrictEqual(yield* readProviderStatusCache(claudePath), claudeProvider);
       assert.deepStrictEqual(yield* readProviderStatusCache(piPath), piProvider);
       assert.deepStrictEqual(yield* readProviderStatusCache(openCodePath), openCodeProvider);
     }),
   );
 
   it("hydrates cached provider status while preserving current settings-derived models", () => {
-    const cachedClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
+    const cachedClaude = makeProvider(PI_DRIVER, {
       checkedAt: "2026-04-10T12:00:00.000Z",
       models: [
         {
@@ -142,7 +131,7 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
         },
       ],
     });
-    const fallbackClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
+    const fallbackClaude = makeProvider(PI_DRIVER, {
       models: [
         {
           slug: "claude-sonnet-5",
@@ -189,7 +178,7 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
       isCustom: false,
       capabilities: emptyCapabilities,
     } as const;
-    const cachedClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
+    const cachedClaude = makeProvider(PI_DRIVER, {
       models: [
         builtIn,
         {
@@ -200,7 +189,7 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
         },
       ],
     });
-    const fallbackClaude = makeProvider(CLAUDE_AGENT_DRIVER, { models: [builtIn] });
+    const fallbackClaude = makeProvider(PI_DRIVER, { models: [builtIn] });
 
     assert.deepStrictEqual(
       hydrateCachedProvider({
@@ -212,11 +201,11 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
   });
 
   it("ignores stale cached enabled state when the provider is now disabled", () => {
-    const cachedClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
+    const cachedClaude = makeProvider(PI_DRIVER, {
       checkedAt: "2026-04-10T12:00:00.000Z",
       message: "Cached ready status",
     });
-    const disabledFallback = makeProvider(CLAUDE_AGENT_DRIVER, {
+    const disabledFallback = makeProvider(PI_DRIVER, {
       enabled: false,
       installed: false,
       version: null,
@@ -235,7 +224,7 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
   });
 
   it("rejects cached snapshots that are not correlated to the fallback instance", () => {
-    const fallbackClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
+    const fallbackClaude = makeProvider(PI_DRIVER, {
       models: [
         {
           slug: "claude-sonnet-5",
@@ -264,7 +253,7 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
       slashCommands: [],
       skills: [],
     } as unknown as ServerProvider;
-    const mismatchedCachedClaude = makeProvider(CLAUDE_AGENT_DRIVER, {
+    const mismatchedCachedClaude = makeProvider(PI_DRIVER, {
       instanceId: ProviderInstanceId.make("claude_personal"),
     });
 

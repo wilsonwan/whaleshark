@@ -24,29 +24,29 @@ afterEach(() => {
 
 describe("model option memory state", () => {
   it("records and looks up options per instance and model", () => {
-    rememberModelOptions("claudeAgent", "claude-fable-5-1", [...XHIGH]);
-    rememberModelOptions("claudeAgent", "claude-haiku-4-5", [...HIGH]);
-    expect(rememberedModelOptions("claudeAgent", "claude-fable-5-1")).toEqual(XHIGH);
-    expect(rememberedModelOptions("claudeAgent", "claude-haiku-4-5")).toEqual(HIGH);
-    expect(rememberedModelOptions("pi", "claude-fable-5-1")).toBeUndefined();
+    rememberModelOptions("pi", "claude-fable-5-1", [...XHIGH]);
+    rememberModelOptions("pi", "claude-haiku-4-5", [...HIGH]);
+    expect(rememberedModelOptions("pi", "claude-fable-5-1")).toEqual(XHIGH);
+    expect(rememberedModelOptions("pi", "claude-haiku-4-5")).toEqual(HIGH);
+    expect(rememberedModelOptions("opencode", "claude-fable-5-1")).toBeUndefined();
   });
 
   it("ignores empty option sets when recording", () => {
-    rememberModelOptions("claudeAgent", "claude-haiku-4-5", []);
-    expect(rememberedModelOptions("claudeAgent", "claude-haiku-4-5")).toBeUndefined();
+    rememberModelOptions("pi", "claude-haiku-4-5", []);
+    expect(rememberedModelOptions("pi", "claude-haiku-4-5")).toBeUndefined();
   });
 });
 
 describe("withRememberedModelOptions", () => {
   it("restores the remembered options over descriptor defaults", () => {
-    rememberModelOptions("claudeAgent", "claude-fable-5-1", [...XHIGH]);
+    rememberModelOptions("pi", "claude-fable-5-1", [...XHIGH]);
     expect(
       withRememberedModelOptions({
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         model: "claude-fable-5-1",
         options: [{ id: "reasoningEffort", value: "low" }],
       }),
-    ).toEqual({ instanceId: "claudeAgent", model: "claude-fable-5-1", options: XHIGH });
+    ).toEqual({ instanceId: "pi", model: "claude-fable-5-1", options: XHIGH });
   });
 
   it("keeps incoming selections that already match memory", () => {

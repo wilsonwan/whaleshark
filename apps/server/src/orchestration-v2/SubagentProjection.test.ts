@@ -27,7 +27,7 @@ import { emptyProjection } from "./ProjectionStore.ts";
 
 const parentThreadId = ThreadId.make("thread:subagent-snoozed-parent");
 const childThreadId = ThreadId.make("thread:subagent-awake-child");
-const parentProviderInstanceId = ProviderInstanceId.make("claudeAgent");
+const parentProviderInstanceId = ProviderInstanceId.make("pi");
 const childProviderInstanceId = ProviderInstanceId.make("claude");
 const parentModelSelection = {
   instanceId: parentProviderInstanceId,

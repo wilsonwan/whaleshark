@@ -55,7 +55,7 @@ const PROVIDER_ACCENT_SWATCHES = [
 /**
  * Normalize a user-provided label into a slug suffix for the instance id.
  * The full id is formed by prefixing the driver slug. For example, label "Work" on
- * driver "claudeAgent" becomes `claudeAgent_work`. Output is trimmed to 48 chars so the
+ * driver "pi" becomes `pi_work`. Output is trimmed to 48 chars so the
  * final composed id stays under the 64-char slug cap enforced by
  * `ProviderInstanceId` in `@t3tools/contracts`.
  */

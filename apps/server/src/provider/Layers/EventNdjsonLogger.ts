@@ -192,7 +192,7 @@ function providerLogPath(directory: string, prefix: string, threadSegment: strin
   return NodePath.join(directory, `${prefix}${threadSegment}.log`);
 }
 
-export function shouldPersistProviderEvent(stream: EventNdjsonStream, event: unknown): boolean {
+function shouldPersistProviderEvent(stream: EventNdjsonStream, event: unknown): boolean {
   if (stream === "orchestration" || typeof event !== "object" || event === null) {
     return true;
   }
@@ -216,11 +216,7 @@ export function shouldPersistProviderEvent(stream: EventNdjsonStream, event: unk
         ? decodedPayload
         : envelope;
     const method = Reflect.get(nativeEvent, "method");
-    if (
-      typeof method === "string" &&
-      (transientNativeMethods.has(method) ||
-        method.startsWith("claude/stream_event/content_block_delta/"))
-    ) {
+    if (typeof method === "string" && transientNativeMethods.has(method)) {
       return false;
     }
 
@@ -339,7 +335,7 @@ function summarizeProviderEvent(event: unknown): unknown {
 }
 
 /** Bounds traversal before adapters copy payloads or the logger encodes them. */
-export function boundProviderEventForLogging(event: unknown): unknown {
+function boundProviderEventForLogging(event: unknown): unknown {
   let remainingCharacters = MAX_RECORD_CHARACTERS;
   let remainingFields = MAX_RECORD_FIELDS;
   const ancestors = new WeakSet<object>();

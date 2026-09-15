@@ -42,7 +42,7 @@ import * as Statement from "effect/unstable/sql/Statement";
 
 import { LIVE_STREAM_MAX_ITEMS, LiveStreamBufferError } from "../orchestration/LiveStreamBudget.ts";
 import { SqlitePersistenceMemory } from "../persistence/Layers/Sqlite.ts";
-import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import { CommandReceiptStoreV2, layer as commandReceiptStoreLayer } from "./CommandReceiptStore.ts";
 import { EffectOutboxV2, layer as effectOutboxLayer } from "./EffectOutbox.ts";
 import {
@@ -84,8 +84,8 @@ const TestLayer = Layer.mergeAll(
   projectionMaintenanceProvided,
 );
 
-const providerInstanceId = ProviderInstanceId.make("claudeAgent");
-const providerDriver = ProviderDriverKind.make("claudeAgent");
+const providerInstanceId = ProviderInstanceId.make("opencode");
+const providerDriver = ProviderDriverKind.make("opencode");
 const modelSelection = {
   instanceId: providerInstanceId,
   model: "gpt-5.4",
@@ -639,7 +639,7 @@ it.layer(TestLayer)("orchestration V2 foundation persistence", (it) => {
         status: "ready" as const,
         cwd: "/workspace/first",
         model: modelSelection.model,
-        capabilities: ClaudeProviderCapabilitiesV2,
+        capabilities: TestProviderCapabilitiesV2,
         createdAt: now,
         updatedAt: now,
         lastError: null,
@@ -2299,19 +2299,19 @@ it.layer(TestLayer)("orchestration V2 foundation persistence", (it) => {
               id: providerThreadId,
               appThreadId: threadId,
               ownerNodeId: null,
-              driver: "claudeAgent",
+              driver: "opencode",
               providerInstanceId,
               providerSessionId: sessionId,
               status: "active",
               nativeThreadRef: {
-                driver: "claudeAgent",
+                driver: "opencode",
                 nativeId: "saved-native-thread",
                 strength: "strong",
               },
             },
           ],
           providerSessions: [
-            { id: sessionId, driver: "claudeAgent", providerInstanceId, status: "running" },
+            { id: sessionId, driver: "opencode", providerInstanceId, status: "running" },
           ],
           providerTurns: [{ providerThreadId, runAttemptId: attemptId, status: "running" }],
         } as unknown as OrchestrationV2ThreadProjection;

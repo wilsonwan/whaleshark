@@ -66,7 +66,7 @@ function timelineProjection(itemCount: number): OrchestrationV2ThreadProjection 
       id: THREAD_ID,
       projectId: "project-stream-test",
       title: "Thread stream test",
-      providerInstanceId: "claudeAgent",
+      providerInstanceId: "pi",
       modelSelection: null,
       runtimeMode: "full-access",
       interactionMode: "default",

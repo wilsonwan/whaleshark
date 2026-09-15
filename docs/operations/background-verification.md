@@ -26,7 +26,7 @@ and check that the acknowledgement survives and runs remain completed. This is
 a clean-restart persistence check, not proof of crash recovery during delivery.
 
 Use `--scenario idle|active|native|nested`, `--model`, `--provider`, and `--timeout`
-in seconds to narrow a run. The default provider is `claudeAgent` and the default
+in seconds to narrow a run. The default provider is `pi` and the default
 model is `claude-sonnet-4-6`. The native scenario specifically requests Claude's
 background Bash tool; do not treat it as generic provider conformance. Active
 delivery expects a provider supporting active steering. Missing authentication,

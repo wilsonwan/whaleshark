@@ -69,7 +69,7 @@ import {
   ProjectServiceLayerLive,
 } from "./runtimeLayer.ts";
 import { shellStreamItemFromThreadShell } from "./ShellStream.ts";
-import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import { ThreadManagementService } from "./ThreadManagementService.ts";
 import {
   ThreadCommandExecutor,
@@ -81,10 +81,10 @@ const ServerConfigLayer = ServerConfig.layerTest(process.cwd(), {
 });
 
 const modelSelection = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
+  instanceId: ProviderInstanceId.make("opencode"),
   model: "gpt-5.4",
 } satisfies ModelSelection;
-const alternateInstanceId = ProviderInstanceId.make("claude_alternate");
+const alternateInstanceId = ProviderInstanceId.make("opencode_alternate");
 
 const VcsDriverRegistryTestLayer = VcsDriverRegistry.layer.pipe(
   Layer.provide(VcsProcess.layer),
@@ -103,11 +103,11 @@ const ProjectServiceTestLayer = Layer.mock(ProjectService.ProjectService)({
   getById: () => Effect.succeed(Option.none()),
 });
 
-const driver = ProviderDriverKind.make("claudeAgent");
+const driver = ProviderDriverKind.make("opencode");
 const orchestrationAdapter = {
   instanceId: modelSelection.instanceId,
   driver,
-  getCapabilities: () => Effect.succeed(ClaudeProviderCapabilitiesV2),
+  getCapabilities: () => Effect.succeed(TestProviderCapabilitiesV2),
   planSelectionTransition: () => Effect.succeed({ type: "apply_on_next_turn" }),
   openSession: () => Effect.die("sessions are not used by lifecycle tests"),
 } as ProviderAdapterV2Shape;
@@ -116,9 +116,9 @@ const providerInstance = {
   driverKind: driver,
   continuationIdentity: {
     driverKind: driver,
-    continuationKey: "claude:test",
+    continuationKey: "opencode:test",
   },
-  displayName: "Claude test",
+  displayName: "OpenCode test",
   enabled: true,
   snapshot: {} as ProviderInstance["snapshot"],
   orchestrationAdapter,
@@ -129,9 +129,9 @@ const alternateProviderInstance = {
   instanceId: alternateInstanceId,
   continuationIdentity: {
     driverKind: driver,
-    continuationKey: "claude:test:alternate",
+    continuationKey: "opencode:test:alternate",
   },
-  displayName: "Claude alternate test",
+  displayName: "OpenCode alternate test",
   orchestrationAdapter: {
     ...orchestrationAdapter,
     instanceId: alternateInstanceId,
@@ -380,7 +380,7 @@ it.layer(TestLayer)("OrchestrationV2LayerLive", (it) => {
       assert.equal(result.sequence, 1);
       assert.equal(projection.thread.id, threadId);
       assert.equal(projection.thread.projectId, projectId);
-      assert.equal(projection.thread.providerInstanceId, "claudeAgent");
+      assert.equal(projection.thread.providerInstanceId, "opencode");
       assert.deepEqual(projection.runs, []);
     }),
   );
@@ -572,7 +572,7 @@ it.layer(TestLayer)("OrchestrationV2LayerLive", (it) => {
         status: "running" as const,
         cwd: process.cwd(),
         model: modelSelection.model,
-        capabilities: ClaudeProviderCapabilitiesV2,
+        capabilities: TestProviderCapabilitiesV2,
         createdAt: now,
         updatedAt: now,
         lastError: null,
@@ -1183,7 +1183,7 @@ it.layer(LegacyImportTestLayer)("OrchestrationV2 legacy import", (it) => {
           ${projectId},
           'Legacy project',
           '/tmp/runtime-layer-legacy-project',
-          '{"instanceId":"claudeAgent","model":"gpt-5.4"}',
+          '{"instanceId":"opencode","model":"gpt-5.4"}',
           '[]',
           '2026-01-01T00:00:00.000Z',
           '2026-01-04T00:00:00.000Z',
@@ -1212,7 +1212,7 @@ it.layer(LegacyImportTestLayer)("OrchestrationV2 legacy import", (it) => {
             ${metadataThreadId},
             ${projectId},
             'Legacy metadata title',
-            '{"instanceId":"claudeAgent","model":"gpt-5.4"}',
+            '{"instanceId":"opencode","model":"gpt-5.4"}',
             'full-access',
             'default',
             'main',
@@ -1229,7 +1229,7 @@ it.layer(LegacyImportTestLayer)("OrchestrationV2 legacy import", (it) => {
             ${failureThreadId},
             ${projectId},
             'Legacy failure title',
-            '{"instanceId":"claudeAgent","model":"gpt-5.4"}',
+            '{"instanceId":"opencode","model":"gpt-5.4"}',
             'full-access',
             'default',
             'main',

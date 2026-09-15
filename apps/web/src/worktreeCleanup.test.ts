@@ -14,7 +14,7 @@ function makeThread(overrides: Partial<Thread> = {}): Thread {
     projectId: ProjectId.make("project-1"),
     title: "Thread",
     modelSelection: {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "claude-opus-4-6",
     },
     runtimeMode: DEFAULT_RUNTIME_MODE,
