@@ -3,7 +3,6 @@
 
 import * as NodeFSP from "node:fs/promises";
 import * as NodeCrypto from "node:crypto";
-import * as NodeModule from "node:module";
 
 import {
   createPackageWithOptions,
@@ -165,22 +164,6 @@ const getDefaultArch = Effect.fn("getDefaultArch")(function* (platform: typeof B
 
   return yield* getDefaultBuildArch(config);
 });
-
-export class KeyringNativePackageMissingError extends Schema.TaggedError<KeyringNativePackageMissingError>()(
-  "KeyringNativePackageMissingError",
-  {
-    packageName: Schema.String,
-    binaryFileName: Schema.String,
-    packageEntryPath: Schema.String,
-    platform: BuildPlatform,
-    arch: BuildArch,
-    cause: Schema.Defect(),
-  },
-) {
-  override get message(): string {
-    return `Keyring native package is missing: ${this.packageName}`;
-  }
-}
 
 export class UnsupportedHostBuildPlatformError extends Schema.TaggedError<UnsupportedHostBuildPlatformError>()(
   "UnsupportedHostBuildPlatformError",
@@ -994,68 +977,6 @@ export function resolveFffNativeDependencies(
     ["gnu", "musl"].map((libc) => [`@ff-labs/fff-bin-linux-${arch}-${libc}`, version]),
   );
 }
-
-export interface NativeArtifact {
-  readonly packageName: string;
-  readonly binaryFileName: string;
-}
-
-export function resolveKeyringNativeArtifacts(
-  platform: typeof BuildPlatform.Type,
-  arch: typeof BuildArch.Type,
-): readonly NativeArtifact[] {
-  if (platform === "win") {
-    return [
-      {
-        packageName: `@napi-rs/keyring-win32-${arch}-msvc`,
-        binaryFileName: `keyring.win32-${arch}-msvc.node`,
-      },
-    ];
-  }
-
-  return [
-    {
-      packageName: `@napi-rs/keyring-linux-${arch}-gnu`,
-      binaryFileName: `keyring.linux-${arch}-gnu.node`,
-    },
-  ];
-}
-
-/**
- * pnpm keeps the platform package under `@napi-rs/keyring`, electron-builder
- * only retains collected top-level dependencies, and the generated loader
- * checks for a sibling `keyring.<platform>.node` before falling back to the
- * package. Staging the binary beside `index.js` lets that first branch win.
- */
-const stageKeyringNativeBinaries = Effect.fn("stageKeyringNativeBinaries")(function* (
-  stageAppDir: string,
-  platform: typeof BuildPlatform.Type,
-  arch: typeof BuildArch.Type,
-) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const packageEntryPath = yield* fs.realPath(
-    path.join(stageAppDir, "node_modules", "@napi-rs", "keyring", "index.js"),
-  );
-  const packageDir = path.dirname(packageEntryPath);
-  const packageRequire = NodeModule.createRequire(packageEntryPath);
-
-  for (const artifact of resolveKeyringNativeArtifacts(platform, arch)) {
-    const sourcePath = yield* Effect.try({
-      try: () => packageRequire.resolve(`${artifact.packageName}/${artifact.binaryFileName}`),
-      catch: (cause) =>
-        new KeyringNativePackageMissingError({
-          packageName: artifact.packageName,
-          binaryFileName: artifact.binaryFileName,
-          packageEntryPath,
-          platform,
-          arch,
-          cause,
-        }),
-    });
-    yield* fs.copyFile(sourcePath, path.join(packageDir, artifact.binaryFileName));
-  }
-});
 
 export function createStageWorkspaceConfig(input: {
   readonly platform: typeof BuildPlatform.Type;
@@ -3108,8 +3029,6 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
     }),
     { label: "vp install --prod", verbose: options.verbose },
   );
-  yield* stageKeyringNativeBinaries(stageAppDir, options.platform, options.arch);
-
   // WSL is Windows-only, so only the Windows artifact carries the server
   // sidecar (which embeds the Linux node-pty prebuild); other platforms
   // ignore the prebuild input.

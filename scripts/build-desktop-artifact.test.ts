@@ -620,7 +620,6 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
 
   it("unpacks native binaries while keeping their JavaScript and metadata archived", () => {
     for (const file of [
-      "node_modules/@napi-rs/keyring/keyring.win32-x64-msvc.node",
       "node_modules/@ff-labs/fff-bin-win32-x64/fff_c.dll",
       "node_modules/node-pty/prebuilds/win32-x64/conpty/OpenConsole.exe",
       "node_modules/native/addon.so",
@@ -630,16 +629,6 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
       assert.isTrue(
         NodePath.matchesGlob(file, WINDOWS_NATIVE_ASAR_UNPACK_GLOB),
         `${file} must be available as a real file`,
-      );
-    }
-
-    for (const file of [
-      "node_modules/@napi-rs/keyring/index.js",
-      "node_modules/@napi-rs/keyring/keytar.js",
-    ]) {
-      assert.isFalse(
-        NodePath.matchesGlob(file, WINDOWS_NATIVE_ASAR_UNPACK_GLOB),
-        `${file} should remain inside the archive`,
       );
     }
   });
