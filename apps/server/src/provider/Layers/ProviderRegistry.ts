@@ -3,13 +3,13 @@
  * single materialized list.
  *
  * Historically this Layer composed per-kind Live Layers
- * (`ClaudeProviderLive`, …) that each exposed a
+ * (provider instances) that each exposed a
  * `ServerProviderShape`. Those Lives were deleted during the driver /
  * instance refactor — every driver now carries its `snapshot: ServerProviderShape`
  * bundled onto the `ProviderInstance` the registry produces.
  *
  * Each configured instance (including multi-instance setups like
- * `claude_personal` + `claude_work`) contributes one `ProviderSnapshotSource`,
+ * `provider_personal` + `provider_work`) contributes one `ProviderSnapshotSource`,
  * keyed by `instanceId`. Instances whose driver is unavailable or whose
  * config failed to decode are merged from `instanceRegistry.listUnavailable`
  * as shadow snapshots so the UI can render their exact unavailable reason.
@@ -368,7 +368,7 @@ export const ProviderRegistryLive = Layer.effect(
     const persistProvider = (provider: ServerProvider) =>
       Effect.gen(function* () {
         // Persist every instance — the file name is the instance id, so
-        // multi-instance setups (e.g. `claude_personal`, `claude_work`) each
+        // provider instances each
         // get their own cache. We resolve the path fresh so snapshots
         // produced by newly-added instances post-boot still land on disk
         // without the aggregator holding a stale `cachePathByInstance`

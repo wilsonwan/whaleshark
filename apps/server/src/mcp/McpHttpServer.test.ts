@@ -30,7 +30,7 @@ const invocation = {
   environmentId,
   threadId,
   providerSessionId: "provider-session-mcp-test",
-  providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+  providerInstanceId: ProviderInstanceId.make("pi"),
   capabilities: new Set(["preview"] as const),
   issuedAt: 1,
 };

@@ -22,7 +22,7 @@ import * as Option from "effect/Option";
 import * as Ref from "effect/Ref";
 import * as Stream from "effect/Stream";
 
-import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import { ProjectionStoreV2 } from "./ProjectionStore.ts";
 import type { ProviderAdapterV2SessionRuntime } from "./ProviderAdapter.ts";
 import { ProviderSessionManagerV2 } from "./ProviderSessionManager.ts";
@@ -31,8 +31,8 @@ import {
   ProviderTurnControlServiceV2,
 } from "./ProviderTurnControlService.ts";
 
-const driver = ProviderDriverKind.make("claudeAgent");
-const providerInstanceId = ProviderInstanceId.make("claudeAgent");
+const driver = ProviderDriverKind.make("opencode");
+const providerInstanceId = ProviderInstanceId.make("opencode");
 const modelSelection = {
   instanceId: providerInstanceId,
   model: "gpt-5.4",
@@ -175,7 +175,7 @@ it.effect(
         status: "running" as const,
         cwd: "/workspace",
         model: modelSelection.model,
-        capabilities: ClaudeProviderCapabilitiesV2,
+        capabilities: TestProviderCapabilitiesV2,
         createdAt: now,
         updatedAt: now,
         lastError: null,

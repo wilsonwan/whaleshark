@@ -9,14 +9,14 @@ import {
 
 describe("model picker item keys", () => {
   it("keeps model and legacy section keys distinct for colliding instance names", () => {
-    const modelKey = modelPickerModelKey(ProviderInstanceId.make("legacy-models"), "claudeAgent");
-    const sectionKey = modelPickerLegacySectionKey(ProviderInstanceId.make("claudeAgent"));
+    const modelKey = modelPickerModelKey(ProviderInstanceId.make("legacy-models"), "pi");
+    const sectionKey = modelPickerLegacySectionKey(ProviderInstanceId.make("pi"));
 
     expect(modelKey).not.toBe(sectionKey);
     expect(parseModelPickerLegacySectionKey(modelKey)).toBeNull();
     expect(parseModelPickerModelKey(modelKey)).toEqual({
       instanceId: "legacy-models",
-      slug: "claudeAgent",
+      slug: "pi",
     });
   });
 

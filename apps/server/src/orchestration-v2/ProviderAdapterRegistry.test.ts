@@ -27,7 +27,7 @@ import {
   ProviderAdapterRegistryV2,
 } from "./ProviderAdapterRegistry.ts";
 
-const driver = ProviderDriverKind.make("claudeAgent");
+const driver = ProviderDriverKind.make("pi");
 const personalId = ProviderInstanceId.make("claude_personal");
 const workId = ProviderInstanceId.make("claude_work");
 

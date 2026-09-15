@@ -34,7 +34,6 @@ import {
   type TerminalSessionStatus,
   type TerminalSummary,
   type TerminalWriteInput,
-  ClaudeSettings,
   ProviderInstanceId,
 } from "@t3tools/contracts";
 import { makeKeyedCoalescingWorker } from "@t3tools/shared/KeyedCoalescingWorker";
@@ -61,7 +60,6 @@ import * as SynchronizedRef from "effect/SynchronizedRef";
 
 import * as ServerConfig from "../config.ts";
 import { mergeProviderInstanceEnvironment } from "../provider/ProviderInstanceEnvironment.ts";
-import { makeClaudeEnvironment } from "../provider/Drivers/ClaudeHome.ts";
 import { deriveProviderInstanceConfigMap } from "../provider/Layers/ProviderInstanceRegistryHydration.ts";
 import * as ServerSettings from "../serverSettings.ts";
 import {
@@ -103,7 +101,6 @@ const DEFAULT_OPEN_ROWS = 30;
 const TERMINAL_ENV_BLOCKLIST = new Set(["PORT", "ELECTRON_RENDERER_PORT", "ELECTRON_RUN_AS_NODE"]);
 const nowIso = Effect.map(DateTime.now, DateTime.formatIso);
 const MAX_TERMINAL_LABEL_LENGTH = 128;
-const decodeClaudeSettings = Schema.decodeUnknownOption(ClaudeSettings);
 
 class TerminalSubprocessCheckError extends Schema.TaggedError<TerminalSubprocessCheckError>()(
   "TerminalSubprocessCheckError",
@@ -1372,15 +1369,7 @@ export const resolveProviderInstanceTerminalEnvironment = Effect.fn(
     return yield* new TerminalProviderInstanceNotFoundError({ providerInstanceId });
   }
 
-  let resolved = mergeProviderInstanceEnvironment(instance.environment, input.env ?? {});
-  if (instance.driver === "claudeAgent") {
-    const config = decodeClaudeSettings(instance.config ?? {});
-    if (Option.isSome(config)) {
-      resolved = yield* makeClaudeEnvironment(config.value, resolved).pipe(
-        Effect.provideService(Path.Path, input.path),
-      );
-    }
-  }
+  const resolved = mergeProviderInstanceEnvironment(instance.environment, input.env ?? {});
 
   return Object.fromEntries(
     Object.entries(resolved).filter((entry): entry is [string, string] => entry[1] !== undefined),

@@ -20,7 +20,7 @@ import { SqlitePersistenceMemory } from "../persistence/Layers/Sqlite.ts";
 import { ProjectionProjectRepository } from "../persistence/Services/ProjectionProjects.ts";
 import * as ServerSettings from "../serverSettings.ts";
 import * as TextGeneration from "../textGeneration/TextGeneration.ts";
-import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import * as EffectOutbox from "./EffectOutbox.ts";
 import type { ProviderAdapterV2Shape } from "./ProviderAdapter.ts";
 import * as ProviderAdapterRegistry from "./ProviderAdapterRegistry.ts";
@@ -31,14 +31,14 @@ import { makeOrchestratorV2ReplayLayerWithRegistry } from "./testkit/ProviderRep
 
 const projectId = ProjectId.make("project:title-regeneration");
 const modelSelection = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
-  model: "claude-sonnet-4-6",
+  instanceId: ProviderInstanceId.make("opencode"),
+  model: "gpt-5.4",
 } as const;
 
 const adapter = {
   instanceId: modelSelection.instanceId,
-  driver: ProviderDriverKind.make("claudeAgent"),
-  getCapabilities: () => Effect.succeed(ClaudeProviderCapabilitiesV2),
+  driver: ProviderDriverKind.make("opencode"),
+  getCapabilities: () => Effect.succeed(TestProviderCapabilitiesV2),
   planSelectionTransition: () => Effect.succeed({ type: "apply_on_next_turn" as const }),
   openSession: () => Effect.die("provider execution is disabled in title regeneration tests"),
 } as ProviderAdapterV2Shape;

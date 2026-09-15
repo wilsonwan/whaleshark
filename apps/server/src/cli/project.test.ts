@@ -188,7 +188,7 @@ const seedNativeThreads = Effect.fn("ProjectCliTest.seedNativeThreads")(function
 ) {
   const layer = yield* makeThreadPersistenceLayer(baseDir);
   const createdAt = DateTime.makeUnsafe("2026-09-04T12:00:00.000Z");
-  const providerInstanceId = ProviderInstanceId.make("claudeAgent");
+  const providerInstanceId = ProviderInstanceId.make("pi");
   yield* Effect.gen(function* () {
     const eventSink = yield* EventSinkV2;
     yield* eventSink.write({

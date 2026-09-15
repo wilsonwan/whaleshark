@@ -210,7 +210,7 @@ function makeThread(overrides: Partial<Thread> = {}): Thread {
     projectId,
     title: "Thread",
     modelSelection: {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5.4",
     },
     runtimeMode: "full-access",
@@ -240,8 +240,8 @@ const completedTurn = {
 
 const readySession = {
   status: "completed" as const,
-  providerName: "claudeAgent",
-  providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+  providerName: "pi",
+  providerInstanceId: ProviderInstanceId.make("pi"),
   activeRunId: null,
   lastError: null,
   updatedAt: "2026-03-29T00:00:10.000Z",
@@ -327,7 +327,7 @@ describe("resolveEffectiveInteractionMode", () => {
 
 describe("resolveThreadMetadataUpdateForNextTurn", () => {
   const modelSelection = {
-    instanceId: ProviderInstanceId.make("claudeAgent"),
+    instanceId: ProviderInstanceId.make("pi"),
     model: "gpt-5.4",
   };
 
@@ -442,7 +442,7 @@ describe("buildExpiredTerminalContextToastCopy", () => {
 describe("getStartedThreadModelChangeBlockReason", () => {
   const providers = [
     {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("opencode"),
     },
     {
       instanceId: ProviderInstanceId.make("pi"),
@@ -1444,11 +1444,11 @@ describe("resolveComposerProviderSelection", () => {
   }
 
   it.each([
-    ["claudeAgent", "claude_work"],
+    ["pi", "claude_work"],
     ["ollama", "local_models"],
   ])("keeps a %s thread selectable through its custom instance", (driver, instanceId) => {
     const selectedEntry = entry(driver, instanceId);
-    const entries = [entry(driver === "claudeAgent" ? "ollama" : "claudeAgent"), selectedEntry];
+    const entries = [entry("pi"), selectedEntry];
     const thread = threadForInstance(selectedEntry.instanceId);
     const lockedProvider = deriveLockedProvider({
       thread,
@@ -1470,7 +1470,7 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it("keeps the session driver authoritative over instance and draft selections", () => {
-    const selected = entry("claudeAgent", "claude_work");
+    const selected = entry("pi", "pi_work");
     const sessionEntry = entry("ollama", "local_models");
     const thread = threadForInstance(selected.instanceId);
 
@@ -1495,7 +1495,7 @@ describe("resolveComposerProviderSelection", () => {
     "does not move a thread to another driver when its instance is %s",
     (state) => {
       const selected = entry("opencode", "opencode_work", { enabled: false });
-      const other = entry("claudeAgent");
+      const other = entry("pi");
       const entries = state === "missing" ? [other] : [other, selected];
       const thread = threadForInstance(selected.instanceId);
       const lockedProvider = deriveLockedProvider({
@@ -1518,8 +1518,8 @@ describe("resolveComposerProviderSelection", () => {
   );
 
   it("leaves a new draft free to select a different driver", () => {
-    const original = entry("claudeAgent", "claude_work");
-    const selected = entry("claudeAgent", "claude_work");
+    const original = entry("pi", "claude_work");
+    const selected = entry("pi", "claude_work");
     expect(
       deriveLockedProvider({
         thread: makeThread({
@@ -1533,10 +1533,10 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it("uses the custom instance's capability instead of the default instance", () => {
-    const defaultEntry = entry("claudeAgent", "claudeAgent", {
+    const defaultEntry = entry("pi", "pi", {
       showInteractionModeToggle: true,
     });
-    const customEntry = entry("claudeAgent", "claude_work", {
+    const customEntry = entry("pi", "claude_work", {
       showInteractionModeToggle: false,
     });
     const selection = resolveComposerProviderSelection({
@@ -1557,11 +1557,11 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it("uses the fallback provider's plan capability after the draft's instance is disabled", () => {
-    const disabledEntry = entry("claudeAgent", "claude_work", {
+    const disabledEntry = entry("pi", "pi_work", {
       enabled: false,
       showInteractionModeToggle: false,
     });
-    const fallbackEntry = entry("claudeAgent");
+    const fallbackEntry = entry("pi");
     const selection = resolveComposerProviderSelection({
       entries: [disabledEntry, fallbackEntry],
       candidateInstanceIds: [disabledEntry.instanceId],
@@ -1580,13 +1580,13 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it("keeps a signed-out selection instead of silently switching providers", () => {
-    const signedOutEntry = entry("claudeAgent", "claude_work", {
+    const signedOutEntry = entry("pi", "pi_work", {
       status: "error",
       auth: { status: "unauthenticated" },
       models: [],
     });
     const selection = resolveComposerProviderSelection({
-      entries: [entry("claudeAgent"), signedOutEntry],
+      entries: [entry("pi"), signedOutEntry],
       candidateInstanceIds: [signedOutEntry.instanceId],
       lockedProvider: null,
       lockedInstanceId: null,
@@ -1600,11 +1600,11 @@ describe("resolveComposerProviderSelection", () => {
   // instance of that driver instead of stranding the thread.
   it("continues a locked thread on another instance of the same driver once its own profile is gone", () => {
     const missingInstanceId = ProviderInstanceId.make("claude_work");
-    const fallbackEntry = entry("claudeAgent");
+    const fallbackEntry = entry("pi");
     const selection = resolveComposerProviderSelection({
       entries: [fallbackEntry],
       candidateInstanceIds: [missingInstanceId],
-      lockedProvider: ProviderDriverKind.make("claudeAgent"),
+      lockedProvider: ProviderDriverKind.make("pi"),
       lockedInstanceId: missingInstanceId,
     });
 
@@ -1614,7 +1614,7 @@ describe("resolveComposerProviderSelection", () => {
 
   it("does not treat the empty draft placeholder as a provider setup target", () => {
     const selection = resolveComposerProviderSelection({
-      entries: [entry("claudeAgent", "claudeAgent", { enabled: false })],
+      entries: [entry("pi", "pi", { enabled: false })],
       candidateInstanceIds: [NO_PROVIDER_MODEL_SELECTION.instanceId],
       lockedProvider: null,
       lockedInstanceId: null,
@@ -1625,17 +1625,17 @@ describe("resolveComposerProviderSelection", () => {
   });
 
   it("keeps the session's continuation group when another instance was selected", () => {
-    const sessionEntry = entry("claudeAgent", "claude_work", {
+    const sessionEntry = entry("pi", "claude_work", {
       enabled: false,
       continuation: { groupKey: "work-profile" },
     });
-    const anotherEntry = entry("claudeAgent", "claude_personal", {
+    const anotherEntry = entry("pi", "claude_personal", {
       continuation: { groupKey: "personal-profile" },
     });
     const selection = resolveComposerProviderSelection({
       entries: [sessionEntry, anotherEntry],
       candidateInstanceIds: [anotherEntry.instanceId, sessionEntry.instanceId],
-      lockedProvider: ProviderDriverKind.make("claudeAgent"),
+      lockedProvider: ProviderDriverKind.make("pi"),
       lockedInstanceId: sessionEntry.instanceId,
     });
 
@@ -1859,9 +1859,9 @@ describe("threadShellHasStarted", () => {
         latestRun: null,
         latestUserMessageAt: null,
         runtime: {
-          providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+          providerInstanceId: ProviderInstanceId.make("pi"),
           status: "starting",
-          providerName: "claudeAgent",
+          providerName: "pi",
           activeRunId: null,
           lastError: null,
           updatedAt: now,

@@ -89,8 +89,8 @@ describe("deriveProviderModelsForDisplay", () => {
   });
 
   it("shows a redacted provider email in the editor header status line", () => {
-    const instanceId = ProviderInstanceId.make("claudeAgent");
-    const driver = ProviderDriverKind.make("claudeAgent");
+    const instanceId = ProviderInstanceId.make("pi");
+    const driver = ProviderDriverKind.make("pi");
     const liveProvider: ServerProvider = {
       instanceId,
       driver,
@@ -108,7 +108,7 @@ describe("deriveProviderModelsForDisplay", () => {
     const markup = renderToStaticMarkup(
       createElement(ProviderInstanceCard, {
         instanceId,
-        instance: { driver },
+        instance: { driver, enabled: true },
         driverOption: undefined,
         liveProvider,
         mode: "editor",
@@ -129,7 +129,7 @@ describe("deriveProviderModelsForDisplay", () => {
   });
   it("surfaces a failed probe message in both the list row and the editor", () => {
     const instanceId = ProviderInstanceId.make("claude_work");
-    const driver = ProviderDriverKind.make("claudeAgent");
+    const driver = ProviderDriverKind.make("pi");
     const message =
       "Claude app-server provider probe failed: Cannot create Claude shadow home entry 'auth.json' because '/home/me/.claude-t3/work/auth.json' already exists and is not a symlink.";
     const liveProvider: ServerProvider = {
@@ -148,7 +148,7 @@ describe("deriveProviderModelsForDisplay", () => {
     };
     const props = {
       instanceId,
-      instance: { driver },
+      instance: { driver, enabled: true },
       driverOption: undefined,
       liveProvider,
       onUpdate: () => undefined,

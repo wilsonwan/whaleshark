@@ -64,7 +64,7 @@ describe("mobile file tree helpers", () => {
       },
       {
         kind: "file",
-        path: ".repos/alchemy-effect/examples/aws-lambda/src/JobNotifications.ts",
+        path: "packages/shared/src/examples/aws-lambda/src/JobNotifications.ts",
       },
       { kind: "directory", path: "apps/web/src/components/chat" },
       { kind: "file", path: "apps/web/src/components/chat/ChatHeader.test.ts" },

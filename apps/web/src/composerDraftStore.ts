@@ -234,7 +234,7 @@ const PersistedComposerThreadDraftState = Schema.Struct({
   reviewComments: Schema.optionalKey(Schema.Array(ReviewCommentContextSchema)),
   // Keyed by `ProviderInstanceId` (open branded slug) so custom provider
   // instances (e.g. `claude_personal`) round-trip alongside the built-in
-  // `claudeAgent` / `opencode` / ... entries. Every prior `ProviderDriverKind`
+  // `pi` / `opencode` / ... entries. Every prior `ProviderDriverKind`
   // literal satisfies the `ProviderInstanceId` slug pattern, so existing
   // persisted drafts decode unchanged.
   //
@@ -383,7 +383,7 @@ export interface ComposerThreadDraftState {
    * Per-instance model selection. Keyed by `ProviderInstanceId` (open
    * branded slug) so the default instance of a driver and a user-authored
    * custom instance (e.g. `claude_personal`) each persist their own selected
-   * model. Every historical `ProviderDriverKind` literal (`claudeAgent` /
+   * model. Every historical `ProviderDriverKind` literal (`pi` /
    * `opencode`) also satisfies the `ProviderInstanceId` slug pattern, so
    * legacy kind-keyed drafts round-trip unchanged.
    */
@@ -1024,7 +1024,7 @@ function coerceProviderOptionSelections(
 function normalizeProviderModelOptions(value: unknown): ProviderOptionSelectionsByProvider | null {
   const candidate = value && typeof value === "object" ? (value as Record<string, unknown>) : null;
   const result: ProviderOptionSelectionsByProvider = {};
-  for (const providerKey of ["claudeAgent", "opencode"]) {
+  for (const providerKey of ["pi", "opencode"]) {
     const selections = coerceProviderOptionSelections(candidate?.[providerKey]);
     if (selections) {
       result[providerKey] = selections;
@@ -1157,7 +1157,7 @@ function legacyToModelSelectionByProvider(
 ): Partial<Record<ProviderInstanceId, ModelSelection>> {
   const result: Partial<Record<ProviderInstanceId, ModelSelection>> = {};
   if (modelOptions) {
-    for (const provider of ["claudeAgent", "opencode"] as const) {
+    for (const provider of ["pi", "opencode"] as const) {
       const options = modelOptions[provider];
       if (options && options.length > 0) {
         const driverKind = ProviderDriverKind.make(provider);
@@ -3097,7 +3097,7 @@ const composerDraftStore = create<ComposerDraftStoreState>()(
             }
             const base = existing ?? createEmptyThreadDraft();
             const nextMap = { ...base.modelSelectionByProvider };
-            for (const provider of ["claudeAgent", "opencode"] as const) {
+            for (const provider of ["pi", "opencode"] as const) {
               if (!modelOptions || !(provider in modelOptions)) continue;
               const opts = modelOptions[provider];
               const driverKind = ProviderDriverKind.make(provider);

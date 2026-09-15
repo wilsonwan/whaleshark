@@ -51,15 +51,12 @@ describe("resolveThreadProviderInstance", () => {
     const environmentA = EnvironmentId.make("environment-a");
     const environmentB = EnvironmentId.make("environment-b");
     const serverConfigs = new Map<EnvironmentId, ServerConfig>([
-      [
-        environmentA,
-        makeConfig([{ instanceId: "claudeAgent", driver: "claudeAgent", accentColor: "#ff8800" }]),
-      ],
-      [environmentB, makeConfig([{ instanceId: "claudeAgent", driver: "claudeAgent" }])],
+      [environmentA, makeConfig([{ instanceId: "pi", driver: "pi", accentColor: "#ff8800" }])],
+      [environmentB, makeConfig([{ instanceId: "pi", driver: "pi" }])],
     ]);
 
-    const threadA = makeThread(environmentA, "claudeAgent");
-    const threadB = makeThread(environmentB, "claudeAgent");
+    const threadA = makeThread(environmentA, "pi");
+    const threadB = makeThread(environmentB, "pi");
 
     expect(resolveThreadProviderInstance(serverConfigs, threadA)?.accentColor).toBe("#ff8800");
     expect(resolveThreadProviderInstance(serverConfigs, threadB)?.accentColor).toBeUndefined();
@@ -71,20 +68,19 @@ describe("resolveThreadProviderInstance", () => {
       [
         environmentId,
         makeConfig([
-          { instanceId: "claudeAgent", driver: "claudeAgent", displayName: "Claude" },
-          { instanceId: "claude_personal", driver: "claudeAgent", displayName: "Claude" },
+          { instanceId: "pi", driver: "pi", displayName: "Pi" },
+          { instanceId: "pi_personal", driver: "pi", displayName: "Pi" },
         ]),
       ],
     ]);
 
     expect(
-      resolveThreadProviderInstance(serverConfigs, makeThread(environmentId, "claudeAgent"))
-        ?.displayName,
-    ).toBe("Claude");
+      resolveThreadProviderInstance(serverConfigs, makeThread(environmentId, "pi"))?.displayName,
+    ).toBe("Pi");
     expect(
-      resolveThreadProviderInstance(serverConfigs, makeThread(environmentId, "claude_personal"))
+      resolveThreadProviderInstance(serverConfigs, makeThread(environmentId, "pi_personal"))
         ?.displayName,
-    ).toBe("Claude Personal");
+    ).toBe("Pi Personal");
   });
 
   it("uses the current runtime owner after a provider handoff", () => {
@@ -93,27 +89,27 @@ describe("resolveThreadProviderInstance", () => {
       [
         environmentId,
         makeConfig([
-          { instanceId: "claudeAgent", driver: "claudeAgent" },
-          { instanceId: "claudeAgent", driver: "claudeAgent", displayName: "Claude" },
-          { instanceId: "claude_work", driver: "claudeAgent", displayName: "Claude" },
+          { instanceId: "pi", driver: "pi" },
+          { instanceId: "pi", driver: "pi", displayName: "Pi" },
+          { instanceId: "pi_work", driver: "pi", displayName: "Pi" },
         ]),
       ],
     ]);
     const thread = {
-      ...makeThread(environmentId, "claudeAgent"),
+      ...makeThread(environmentId, "pi"),
       runtime: {
         status: "running" as const,
         activeRunId: null,
-        providerInstanceId: ProviderInstanceId.make("claude_work"),
-        providerName: "Claude",
+        providerInstanceId: ProviderInstanceId.make("pi_work"),
+        providerName: "Pi",
         lastError: null,
         updatedAt: "2026-06-01T00:01:00.000Z",
       },
     };
 
     expect(resolveThreadProviderInstance(serverConfigs, thread)).toMatchObject({
-      driverKind: "claudeAgent",
-      displayName: "Claude Work",
+      driverKind: "pi",
+      displayName: "Pi Work",
       showBadge: true,
     });
   });
@@ -121,9 +117,9 @@ describe("resolveThreadProviderInstance", () => {
   it("hides the badge for a single instance with no accent color", () => {
     const environmentId = EnvironmentId.make("environment-a");
     const serverConfigs = new Map<EnvironmentId, ServerConfig>([
-      [environmentId, makeConfig([{ instanceId: "claudeAgent", driver: "claudeAgent" }])],
+      [environmentId, makeConfig([{ instanceId: "pi", driver: "pi" }])],
     ]);
-    const thread = makeThread(environmentId, "claudeAgent");
+    const thread = makeThread(environmentId, "pi");
 
     expect(resolveThreadProviderInstance(serverConfigs, thread)?.showBadge).toBe(false);
   });

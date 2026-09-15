@@ -24,7 +24,7 @@ import { CustomModelEditor } from "./CustomModelEditor";
  * UX is unchanged — only the owning component has moved.
  */
 const CUSTOM_MODEL_PLACEHOLDER_BY_KIND: Partial<Record<ProviderDriverKind, string>> = {
-  [ProviderDriverKind.make("claudeAgent")]: "claude-sonnet-5",
+  [ProviderDriverKind.make("pi")]: "claude-sonnet-5",
   [ProviderDriverKind.make("opencode")]: "openai/gpt-5",
   [ProviderDriverKind.make("pi")]: "anthropic/claude-sonnet-5",
 };

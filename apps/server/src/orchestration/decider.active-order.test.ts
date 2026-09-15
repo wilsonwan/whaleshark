@@ -30,7 +30,7 @@ function makeReadModel(overrides: Partial<OrchestrationThread> = {}): Orchestrat
         id: THREAD_ID,
         projectId: ProjectId.make("project-1"),
         title: "Thread",
-        modelSelection: { instanceId: ProviderInstanceId.make("claudeAgent"), model: "gpt-5.4" },
+        modelSelection: { instanceId: ProviderInstanceId.make("pi"), model: "gpt-5.4" },
         runtimeMode: "full-access",
         interactionMode: "default",
         pullRequests: [],
@@ -122,7 +122,7 @@ it.layer(NodeServices.layer)("active thread ordering", (it) => {
         session: {
           threadId: THREAD_ID,
           status: "running",
-          providerName: "claudeAgent",
+          providerName: "pi",
           runtimeMode: "full-access",
           activeTurnId: null,
           lastError: null,

@@ -75,7 +75,7 @@ describe("mobile slash commands", () => {
       hasThread: true,
       allowInteractionMode: true,
       selectedProviderStatus: {
-        driver: ProviderDriverKind.make("claudeAgent"),
+        driver: ProviderDriverKind.make("pi"),
         slashCommands: [],
       },
     });

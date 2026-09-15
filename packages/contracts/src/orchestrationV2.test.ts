@@ -339,9 +339,9 @@ describe("orchestration V2 contracts", () => {
         id: "run-1",
         threadId: "thread-1",
         ordinal: 1,
-        providerInstanceId: "claudeAgent",
+        providerInstanceId: "pi",
         modelSelection: {
-          instanceId: "claudeAgent",
+          instanceId: "pi",
           model: "gpt-5.4",
         },
         providerThreadId: "provider-thread-1",
@@ -377,7 +377,7 @@ describe("orchestration V2 contracts", () => {
       task: "Inspect the API boundary.",
       title: "API inspection",
       modelSelection: {
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         model: "claude-sonnet-4-6",
       },
       runtimeMode: "approval-required",
@@ -476,7 +476,7 @@ describe("orchestration V2 contracts", () => {
 
   it("decodes provider-neutral replay transcripts", () => {
     const transcript = decodeProviderReplayTranscript({
-      provider: "claudeAgent",
+      provider: "pi",
       protocol: "claude-agent-sdk.query",
       version: "0.120.0",
       scenario: "simple",
@@ -514,7 +514,7 @@ describe("orchestration V2 contracts", () => {
       nodeId: "node-file-change-1",
       providerThreadId: "provider-thread-1",
       providerTurnId: "provider-turn-1",
-      nativeItemRef: { driver: "claudeAgent", nativeId: "item-file-change-1", strength: "strong" },
+      nativeItemRef: { driver: "pi", nativeId: "item-file-change-1", strength: "strong" },
       parentItemId: null,
       ordinal: 3,
       status: "completed",
@@ -535,7 +535,7 @@ describe("orchestration V2 contracts", () => {
       nodeId: "node-dynamic-1",
       providerThreadId: "provider-thread-1",
       providerTurnId: "provider-turn-1",
-      nativeItemRef: { driver: "claudeAgent", nativeId: "item-dynamic-1", strength: "strong" },
+      nativeItemRef: { driver: "pi", nativeId: "item-dynamic-1", strength: "strong" },
       parentItemId: null,
       ordinal: 4,
       status: "completed",
@@ -601,12 +601,12 @@ describe("orchestration V2 contracts", () => {
       parentNodeId: "node-root-1",
       origin: "provider_native",
       createdBy: "agent",
-      driver: "claudeAgent",
-      providerInstanceId: "claudeAgent",
+      driver: "pi",
+      providerInstanceId: "pi",
       providerThreadId: "provider-thread-subagent-1",
       childThreadId: null,
       nativeTaskRef: {
-        driver: "claudeAgent",
+        driver: "pi",
         nativeId: "native-task-1",
         strength: "strong",
       },
@@ -662,8 +662,8 @@ describe("orchestration V2 contracts", () => {
       parentNodeId: "node-root-1",
       origin: "app_owned",
       createdBy: "agent",
-      driver: "claudeAgent",
-      providerInstanceId: "claudeAgent",
+      driver: "pi",
+      providerInstanceId: "pi",
       providerThreadId: null,
       childThreadId: "thread-child-1",
       nativeTaskRef: null,
@@ -695,9 +695,9 @@ describe("orchestration V2 contracts", () => {
         id: "thread-1",
         projectId: "project-1",
         title: "Thread",
-        providerInstanceId: "claudeAgent",
+        providerInstanceId: "pi",
         modelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "claude-sonnet-4-6",
         },
         runtimeMode: "full-access",
@@ -735,7 +735,7 @@ describe("orchestration V2 contracts", () => {
           nodeId: "node-command-1",
           providerThreadId: "provider-thread-1",
           providerTurnId: "provider-turn-1",
-          nativeItemRef: { driver: "claudeAgent", nativeId: "item-command-1", strength: "strong" },
+          nativeItemRef: { driver: "pi", nativeId: "item-command-1", strength: "strong" },
           parentItemId: null,
           ordinal: 1,
           status: "completed",
@@ -763,7 +763,7 @@ describe("orchestration V2 contracts", () => {
             providerThreadId: "provider-thread-1",
             providerTurnId: "provider-turn-1",
             nativeItemRef: {
-              driver: "claudeAgent",
+              driver: "pi",
               nativeId: "item-command-1",
               strength: "strong",
             },
@@ -821,7 +821,7 @@ describe("orchestration V2 contracts", () => {
       ordinal: 5,
       status: "running",
       title: "Compacting context...",
-      driver: "claudeAgent",
+      driver: "pi",
       beforeTokenCount: 180000,
       startedAt: now,
       completedAt: null,
@@ -844,7 +844,7 @@ describe("orchestration V2 contracts", () => {
       fromProviderThreadIds: ["provider-thread-opencode-1"],
       toProviderThreadId: "provider-thread-claude-1",
       fromProviderInstanceIds: ["opencode"],
-      toProviderInstanceId: "claudeAgent",
+      toProviderInstanceId: "pi",
       strategy: "delta_since_target_last_seen",
       summary: "Opencode completed the setup work.",
       startedAt: now,
@@ -877,7 +877,7 @@ describe("orchestration V2 contracts", () => {
     if (handoff.type !== "handoff") {
       throw new Error("expected handoff");
     }
-    expect(handoff.toProviderInstanceId).toBe("claudeAgent");
+    expect(handoff.toProviderInstanceId).toBe("pi");
     expect(fork.type).toBe("fork");
   });
 
@@ -895,7 +895,7 @@ describe("orchestration V2 contracts", () => {
     const providerThread = decodeOrchestrationV2ProviderThreadJson({
       id: "provider-thread-1",
       driver: "claude",
-      providerInstanceId: "claudeAgent",
+      providerInstanceId: "pi",
       providerSessionId: "provider-session-1",
       appThreadId: "thread-1",
       ownerNodeId: null,
@@ -921,7 +921,7 @@ describe("orchestration V2 contracts", () => {
     const runtimeThread = decodeOrchestrationV2ProviderThread({
       id: "provider-thread-2",
       driver: "claude",
-      providerInstanceId: "claudeAgent",
+      providerInstanceId: "pi",
       providerSessionId: null,
       appThreadId: "thread-2",
       ownerNodeId: null,
@@ -947,9 +947,9 @@ describe("orchestration V2 contracts", () => {
       id: "thread-1",
       projectId: "project-1",
       title: "Thread",
-      providerInstanceId: "claudeAgent",
+      providerInstanceId: "pi",
       modelSelection: {
-        instanceId: ProviderInstanceId.make("claudeAgent"),
+        instanceId: ProviderInstanceId.make("pi"),
         model: "claude-sonnet",
       },
       runtimeMode: "full-access",

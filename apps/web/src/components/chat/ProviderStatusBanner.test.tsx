@@ -11,8 +11,8 @@ import {
 
 function warningProvider(): ServerProvider {
   return {
-    instanceId: ProviderInstanceId.make("claudeAgent"),
-    driver: ProviderDriverKind.make("claudeAgent"),
+    instanceId: ProviderInstanceId.make("pi"),
+    driver: ProviderDriverKind.make("pi"),
     displayName: "Claude",
     enabled: true,
     installed: true,
@@ -151,7 +151,7 @@ describe("getProviderStatusMessage", () => {
         message: "",
         setup: { canAuthenticate: true, canInstall: true },
       }),
-    ).toBe("Open provider setup to install Claude Agent on this environment.");
+    ).toBe("Open provider setup to install Pi on this environment.");
   });
 
   it("keeps CLI sign-in advice for a provider without integrated setup", () => {

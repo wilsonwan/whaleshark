@@ -8,8 +8,8 @@ It verifies that:
 3. The final recall prompt does not contain either marker, so the response must
    come from provider conversation state.
 
-`claude_transcript.ndjson` records the logical scenario using the provider's native
-session mechanism.
+The Claude transcript that recorded this scenario was removed with the Claude provider, so
+this fixture is unrecorded until it is re-recorded against a surviving provider.
 
 ## Conversation Graph
 

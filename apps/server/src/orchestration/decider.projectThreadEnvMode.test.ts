@@ -42,7 +42,7 @@ it.layer(NodeServices.layer)("decider project defaults", (it) => {
   it.effect("only treats metadata updates as explicit model defaults", () =>
     Effect.gen(function* () {
       const selection: ModelSelection = {
-        instanceId: ProviderInstanceId.make("claudeAgent"),
+        instanceId: ProviderInstanceId.make("pi"),
         model: "gpt-5.6-sol",
         options: [{ id: "reasoningEffort", value: "high" }],
       };

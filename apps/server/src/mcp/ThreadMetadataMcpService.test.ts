@@ -14,7 +14,7 @@ const scope: McpInvocationContext.McpInvocationScope = {
   environmentId: EnvironmentId.make("environment:metadata-test"),
   threadId,
   providerSessionId: "provider-session:metadata-test",
-  providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+  providerInstanceId: ProviderInstanceId.make("pi"),
   capabilities: new Set(["orchestration"]),
   issuedAt: 1,
 };

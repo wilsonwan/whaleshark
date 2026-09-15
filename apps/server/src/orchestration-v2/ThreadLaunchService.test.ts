@@ -43,7 +43,7 @@ import { makeProviderRegistryLayer } from "../provider/testUtils/providerRegistr
 import * as ServerSettings from "../serverSettings.ts";
 import * as ScheduledTasks from "../scheduledTasks/ScheduledTaskService.ts";
 import * as TextGeneration from "../textGeneration/TextGeneration.ts";
-import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import * as CheckpointStore from "../checkpointing/CheckpointStore.ts";
 import * as CommandReceiptStore from "./CommandReceiptStore.ts";
 import * as EffectOutbox from "./EffectOutbox.ts";
@@ -58,8 +58,8 @@ import { makeOrchestratorV2ReplayLayerWithRegistry } from "./testkit/ProviderRep
 const projectId = ProjectId.make("project:launch-test");
 const encodeThreadProjection = Schema.encodeEffect(OrchestrationV2ThreadProjectionJson);
 const modelSelection = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
-  model: "claude-sonnet-4-6",
+  instanceId: ProviderInstanceId.make("opencode"),
+  model: "gpt-5.4",
 } as const;
 const project = {
   id: projectId,
@@ -77,8 +77,8 @@ const project = {
 
 const adapter = {
   instanceId: modelSelection.instanceId,
-  driver: ProviderDriverKind.make("claudeAgent"),
-  getCapabilities: () => Effect.succeed(ClaudeProviderCapabilitiesV2),
+  driver: ProviderDriverKind.make("opencode"),
+  getCapabilities: () => Effect.succeed(TestProviderCapabilitiesV2),
   planSelectionTransition: () => Effect.succeed({ type: "apply_on_next_turn" as const }),
   openSession: () => Effect.die("provider execution is disabled in launch tests"),
 } as ProviderAdapterV2Shape;
@@ -899,8 +899,9 @@ it.effect("uses the available source control writer for generated worktree branc
       serverSettings: {
         providerInstances: {
           [writerInstanceId]: {
-            driver: ProviderDriverKind.make("claudeAgent"),
+            driver: ProviderDriverKind.make("opencode"),
             config: {},
+            enabled: true,
           },
         },
         sourceControlWriterModelSelection: writerModelSelection,
@@ -908,7 +909,7 @@ it.effect("uses the available source control writer for generated worktree branc
       providers: [
         {
           instanceId: writerInstanceId,
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("opencode"),
           enabled: true,
           installed: true,
           version: null,
@@ -1391,7 +1392,7 @@ it.effect("creates a strong provider-thread mapping for an imported native sessi
       }),
       importedNativeThread: {
         ref: {
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("opencode"),
           nativeId: "native-session-42",
           strength: "strong" as const,
         },

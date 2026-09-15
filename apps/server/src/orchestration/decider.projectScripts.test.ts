@@ -403,7 +403,7 @@ it.layer(NodeServices.layer)("decider project scripts", (it) => {
           projectId: asProjectId("project-1"),
           title: "Thread",
           modelSelection: {
-            instanceId: ProviderInstanceId.make("claudeAgent"),
+            instanceId: ProviderInstanceId.make("pi"),
             model: "gpt-5",
           },
           interactionMode: DEFAULT_PROVIDER_INTERACTION_MODE,
@@ -426,7 +426,7 @@ it.layer(NodeServices.layer)("decider project scripts", (it) => {
             text: "hello",
             attachments: [],
           },
-          modelSelection: createModelSelection(ProviderInstanceId.make("claudeAgent"), "gpt-5.3", [
+          modelSelection: createModelSelection(ProviderInstanceId.make("pi"), "gpt-5.3", [
             { id: "reasoningEffort", value: "high" },
             { id: "fastMode", value: true },
           ]),
@@ -450,7 +450,7 @@ it.layer(NodeServices.layer)("decider project scripts", (it) => {
       expect(turnStartEvent.payload).toMatchObject({
         threadId: ThreadId.make("thread-1"),
         messageId: asMessageId("message-user-1"),
-        modelSelection: createModelSelection(ProviderInstanceId.make("claudeAgent"), "gpt-5.3", [
+        modelSelection: createModelSelection(ProviderInstanceId.make("pi"), "gpt-5.3", [
           { id: "reasoningEffort", value: "high" },
           { id: "fastMode", value: true },
         ]),
@@ -500,7 +500,7 @@ it.layer(NodeServices.layer)("decider project scripts", (it) => {
           projectId: asProjectId("project-1"),
           title: "Thread",
           modelSelection: {
-            instanceId: ProviderInstanceId.make("claudeAgent"),
+            instanceId: ProviderInstanceId.make("pi"),
             model: "gpt-5",
           },
           interactionMode: DEFAULT_PROVIDER_INTERACTION_MODE,
@@ -578,7 +578,7 @@ it.layer(NodeServices.layer)("decider project scripts", (it) => {
           projectId: asProjectId("project-1"),
           title: "Thread",
           modelSelection: {
-            instanceId: ProviderInstanceId.make("claudeAgent"),
+            instanceId: ProviderInstanceId.make("pi"),
             model: "gpt-5",
           },
           interactionMode: DEFAULT_PROVIDER_INTERACTION_MODE,

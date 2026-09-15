@@ -1,5 +1,4 @@
 import {
-  ClaudeSettings,
   type ExecutionEnvironmentPlatformOs,
   type ServerProvider,
   type ServerSettings,
@@ -7,7 +6,12 @@ import {
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 
-const decodeClaudeSettings = Schema.decodeUnknownOption(ClaudeSettings);
+/**
+ * Per-instance `binaryPath` blob. Provider settings schemas live in the driver
+ * packages, so onboarding reads the field it needs directly.
+ */
+const ProviderBinaryPath = Schema.Struct({ binaryPath: Schema.optionalKey(Schema.String) });
+const decodeProviderBinaryPath = Schema.decodeUnknownOption(ProviderBinaryPath);
 const SAFE_SHELL_BINARY_PATTERN = /^[A-Za-z0-9_./:\\-]+$/;
 
 function quoteProviderBinary(
@@ -70,14 +74,14 @@ export function selectOnboardingProvidersByDriver(
 }
 
 /**
- * Official standalone installers. Neither needs Node or npm, and both land in
- * the paths the server's provider maintenance recognizes as native, so the
- * one-click updater in Settings keeps working after install.
+ * Install commands for the setup terminal, keyed on the environment's platform.
+ * Pi ships through npm; running its documented global install is what the
+ * server's provider maintenance then recognizes as the owner of the CLI.
  */
 const NATIVE_INSTALL_COMMANDS = {
-  claudeAgent: {
-    windows: "irm https://claude.ai/install.ps1 | iex",
-    posix: "curl -fsSL https://claude.ai/install.sh | bash",
+  pi: {
+    windows: "npm install -g @earendil-works/pi-coding-agent",
+    posix: "npm install -g @earendil-works/pi-coding-agent",
   },
 } as const;
 
@@ -103,12 +107,11 @@ export function resolveOnboardingProviderLoginCommand(
 ): string {
   const instance = settings.providerInstances[provider.instanceId];
 
-  if (provider.driver === "claudeAgent") {
-    const config = decodeClaudeSettings(
-      instance ? (instance.config ?? {}) : settings.providers.claudeAgent,
-    );
-    const binaryPath = Option.isSome(config) ? config.value.binaryPath : "claude";
-    return `${quoteProviderBinary(binaryPath, "claude", platform)} auth login`;
+  if (provider.driver === "opencode") {
+    const config = decodeProviderBinaryPath(instance?.config ?? {});
+    const configured = Option.isSome(config) ? (config.value.binaryPath ?? "") : "";
+    const binaryPath = configured.trim().length > 0 ? configured : "opencode";
+    return `${quoteProviderBinary(binaryPath, "opencode", platform)} auth login`;
   }
 
   return provider.driver;

@@ -375,7 +375,7 @@ describe("mergeEnvironmentSettings", () => {
       ...DEFAULT_SERVER_SETTINGS,
       providerInstances: {
         [ProviderInstanceId.make("claude_remote")]: {
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("pi"),
           enabled: true,
         },
       },

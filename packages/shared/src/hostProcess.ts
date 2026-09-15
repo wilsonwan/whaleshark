@@ -89,4 +89,4 @@ export const HostProcessUserId = Context.Reference<number | undefined>(
   },
 );
 
-export const isHostWindows = Effect.map(HostProcessPlatform, (platform) => platform === "win32");
+const isHostWindows = Effect.map(HostProcessPlatform, (platform) => platform === "win32");

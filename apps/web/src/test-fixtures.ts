@@ -27,7 +27,7 @@ export type ThreadFixtureOverrides = Partial<Thread> & {
 export function makeThreadProjectionFixture(): OrchestrationV2ThreadProjection {
   const now = DateTime.makeUnsafe(DEFAULT_TIMESTAMP);
   const id = ThreadId.make("thread-test");
-  const providerInstanceId = ProviderInstanceId.make("claudeAgent");
+  const providerInstanceId = ProviderInstanceId.make("pi");
   return {
     thread: {
       id,
@@ -80,7 +80,7 @@ export function makeThreadFixture(overrides: ThreadFixtureOverrides = {}): Threa
   const providerInstanceId =
     overrides.providerInstanceId ??
     overrides.modelSelection?.instanceId ??
-    ProviderInstanceId.make("claudeAgent");
+    ProviderInstanceId.make("pi");
   const modelSelection = overrides.modelSelection ?? {
     instanceId: providerInstanceId,
     model: "claude-opus-4-6",

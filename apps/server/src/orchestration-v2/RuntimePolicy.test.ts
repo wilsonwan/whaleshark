@@ -15,7 +15,7 @@ import * as ProjectionProjects from "../persistence/Services/ProjectionProjects.
 import { layerFromProjectRepository, RuntimePolicyV2 } from "./RuntimePolicy.ts";
 
 const projectId = ProjectId.make("project:runtime-policy");
-const providerInstanceId = ProviderInstanceId.make("claudeAgent");
+const providerInstanceId = ProviderInstanceId.make("pi");
 const modelSelection = {
   instanceId: providerInstanceId,
   model: "gpt-5.5",

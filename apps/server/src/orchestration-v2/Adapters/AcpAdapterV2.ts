@@ -1166,7 +1166,7 @@ export function acpPostSettleWakeShouldBuffer(
  * An app-owned wake (a delegated child finishing) is injected by the
  * orchestrator, not typed by the user. It reports on a sibling child and says
  * nothing about this session's own pending wake frames, so it must not discard
- * them the way a real user turn does. ClaudeAdapterV2 already leaves its buffer
+ * them the way a real user turn does. Buffered adapters already leave their buffer
  * alone on non-continuation turns; this keeps ACP consistent.
  */
 export function acpIsAppOwnedWakeTurn(message: {

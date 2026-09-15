@@ -7,12 +7,12 @@ import {
   type ServerProviderModel,
 } from "@t3tools/contracts";
 import {
-  applyClaudePromptEffortPrefix,
+  applyPromptEffortPrefix,
   buildProviderOptionSelectionsFromDescriptors,
   getProviderOptionCurrentLabel,
   getProviderOptionCurrentValue,
   getProviderOptionDescriptors,
-  isClaudeUltrathinkPrompt,
+  isUltrathinkPrompt,
   normalizeModelSlug,
 } from "@t3tools/shared/model";
 import { memo, useCallback } from "react";
@@ -177,11 +177,11 @@ function getSelectedTraits(
   const ultrathinkPromptControlled =
     allowPromptInjectedEffort &&
     (primarySelectDescriptor?.promptInjectedValues?.length ?? 0) > 0 &&
-    isClaudeUltrathinkPrompt(prompt);
+    isUltrathinkPrompt(prompt);
 
   // Check if "ultrathink" appears in the body text (not just our prefix)
   const ultrathinkInBodyText =
-    ultrathinkPromptControlled && isClaudeUltrathinkPrompt(prompt.replace(/^Ultrathink:\s*/i, ""));
+    ultrathinkPromptControlled && isUltrathinkPrompt(prompt.replace(/^Ultrathink:\s*/i, ""));
   const effort =
     (ultrathinkPromptControlled
       ? "ultrathink"
@@ -346,7 +346,7 @@ export const TraitsMenuContent = memo(function TraitsMenuContentImpl({
       const nextPrompt =
         prompt.trim().length === 0
           ? ULTRATHINK_PROMPT_PREFIX
-          : applyClaudePromptEffortPrefix(prompt, "ultrathink");
+          : applyPromptEffortPrefix(prompt, "ultrathink");
       onPromptChange(nextPrompt);
       return;
     }
@@ -579,11 +579,7 @@ export const TraitsPicker = memo(function TraitsPicker({
         size={size}
         className={cn(
           "fill-current opacity-80",
-          size === "xs"
-            ? "text-current"
-            : provider === "claudeAgent"
-              ? "text-[#d97757]"
-              : "text-foreground",
+          size === "xs" ? "text-current" : "text-foreground",
         )}
       />
       <span className="sr-only">Fast mode on</span>

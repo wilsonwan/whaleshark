@@ -18,6 +18,7 @@ import * as Scheduler from "effect/Scheduler";
 import * as TestClock from "effect/testing/TestClock";
 import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 
+import { HostProcessEnvironment } from "@t3tools/shared/hostProcess";
 import * as ServerConfig from "../config.ts";
 import * as ServerSettings from "../serverSettings.ts";
 import * as UsageService from "./UsageService.ts";
@@ -34,6 +35,13 @@ function claudeLine(id: number, outputTokens: number, model = "claude-fable-5"):
       usage: { input_tokens: 10, output_tokens: outputTokens },
     },
   })}\n`;
+}
+
+function claudeTranscript(options: {
+  readonly outputTokens: number;
+  readonly model?: string;
+}): string {
+  return claudeLine(1, options.outputTokens, options.model);
 }
 
 const WINDOW: UsageSummaryInput = {
@@ -54,11 +62,7 @@ const setup = Effect.gen(function* () {
   return {
     home,
     transcript: NodePath.join(transcriptDir, "session.jsonl"),
-    settings: {
-      providers: {
-        claudeAgent: { homePath: NodePath.join(home, "claude") },
-      },
-    },
+    settings: {},
   };
 });
 
@@ -71,6 +75,11 @@ const serviceLayers = (input: {
   readonly ratesDocument?: unknown;
 }) =>
   ServerConfig.layerTest(process.cwd(), { prefix: input.prefix }).pipe(
+    Layer.provideMerge(
+      Layer.succeed(HostProcessEnvironment, {
+        CLAUDE_CONFIG_DIR: NodePath.join(input.home, "claude"),
+      }),
+    ),
     Layer.provideMerge(NodeServices.layer),
     Layer.provideMerge(ServerSettings.layerTest(input.settings)),
     Layer.provideMerge(
@@ -96,7 +105,12 @@ describe("UsageService", () => {
   it.live("reprices unchanged transcripts when custom prices are added, edited, or removed", () =>
     Effect.gen(function* () {
       const { transcript, settings, home } = yield* setup;
-      yield* Effect.promise(() => NodeFSP.writeFile(transcript, claudeLine(1, 5, "example-model")));
+      yield* Effect.promise(() =>
+        NodeFSP.writeFile(
+          transcript,
+          claudeTranscript({ outputTokens: 5, model: "example-model" }),
+        ),
+      );
 
       yield* Effect.gen(function* () {
         const settingsService = yield* ServerSettings.ServerSettingsService;
@@ -139,7 +153,9 @@ describe("UsageService", () => {
   it.live("counts appended usage on a rescan of a grown transcript", () =>
     Effect.gen(function* () {
       const { transcript, settings, home } = yield* setup;
-      yield* Effect.promise(() => NodeFSP.writeFile(transcript, claudeLine(1, 5)));
+      yield* Effect.promise(() =>
+        NodeFSP.writeFile(transcript, claudeTranscript({ outputTokens: 5 })),
+      );
 
       const service = yield* UsageService.make.pipe(
         Effect.provide(serviceLayers({ prefix: "usage-service-grow-test", home, settings })),
@@ -148,6 +164,7 @@ describe("UsageService", () => {
       const first = yield* service.readSummary(WINDOW);
       assert.strictEqual(totalOutputTokens(first), 5);
 
+      // A resumed parse must keep attributing the appended line to the same model.
       yield* Effect.promise(() => NodeFSP.appendFile(transcript, claudeLine(2, 7)));
       const second = yield* service.readSummary(WINDOW);
       assert.strictEqual(totalOutputTokens(second), 12);
@@ -157,7 +174,12 @@ describe("UsageService", () => {
   it.live("does not share an in-flight scan after custom prices change", () =>
     Effect.gen(function* () {
       const { transcript, settings, home } = yield* setup;
-      yield* Effect.promise(() => NodeFSP.writeFile(transcript, claudeLine(1, 5, "example-model")));
+      yield* Effect.promise(() =>
+        NodeFSP.writeFile(
+          transcript,
+          claudeTranscript({ outputTokens: 5, model: "example-model" }),
+        ),
+      );
 
       yield* Effect.gen(function* () {
         const settingsService = yield* ServerSettings.ServerSettingsService;
@@ -172,8 +194,8 @@ describe("UsageService", () => {
             exists: (path) =>
               fileSystem.exists(path).pipe(
                 Effect.tap(() => {
-                  if (path !== NodePath.join(home, "claude", ".claude", "projects"))
-                    return Effect.void;
+                  // The scan probes the Claude projects directory once per pass.
+                  if (path !== NodePath.join(home, "claude", "projects")) return Effect.void;
                   homeProbes += 1;
                   return Deferred.succeed(
                     homeProbes === 1 ? firstScanStarted : secondScanStarted,
@@ -216,7 +238,9 @@ describe("UsageService", () => {
   it.live("shares one scan between concurrent identical requests", () =>
     Effect.gen(function* () {
       const { transcript, settings, home } = yield* setup;
-      yield* Effect.promise(() => NodeFSP.writeFile(transcript, claudeLine(1, 5)));
+      yield* Effect.promise(() =>
+        NodeFSP.writeFile(transcript, claudeTranscript({ outputTokens: 5 })),
+      );
 
       let ratesFetches = 0;
       const service = yield* UsageService.make.pipe(
@@ -248,7 +272,9 @@ describe("UsageService", () => {
   it.live("refetches a rate table inside its TTL only when the client asks", () =>
     Effect.gen(function* () {
       const { transcript, settings, home } = yield* setup;
-      yield* Effect.promise(() => NodeFSP.writeFile(transcript, claudeLine(1, 5)));
+      yield* Effect.promise(() =>
+        NodeFSP.writeFile(transcript, claudeTranscript({ outputTokens: 5 })),
+      );
 
       let ratesFetches = 0;
       const service = yield* UsageService.make.pipe(

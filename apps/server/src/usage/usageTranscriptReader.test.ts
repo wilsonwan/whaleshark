@@ -35,7 +35,7 @@ function claudeLine(id: number, outputTokens: number): string {
 
 describe("readTranscriptRecords resume", () => {
   it("parses only appended lines when resuming a grown file", async () => {
-    const path = NodePath.join(dir, "claude.jsonl");
+    const path = NodePath.join(dir, "rollout.jsonl");
     await NodeFSP.writeFile(path, claudeLine(1, 5) + claudeLine(2, 7));
     const first = await readTranscriptRecords(path, "claude");
     assert.isNotNull(first);
@@ -56,7 +56,7 @@ describe("readTranscriptRecords resume", () => {
   });
 
   it("defers an unterminated trailing line to tailRecords, then consumes it once terminated", async () => {
-    const path = NodePath.join(dir, "claude.jsonl");
+    const path = NodePath.join(dir, "rollout.jsonl");
     const unterminated = claudeLine(2, 7).trimEnd();
     await NodeFSP.writeFile(path, claudeLine(1, 5) + unterminated);
     const first = await readTranscriptRecords(path, "claude");
@@ -79,7 +79,7 @@ describe("readTranscriptRecords resume", () => {
   });
 
   it("re-parses from the start when the guard bytes no longer match", async () => {
-    const path = NodePath.join(dir, "claude.jsonl");
+    const path = NodePath.join(dir, "rollout.jsonl");
     await NodeFSP.writeFile(path, claudeLine(1, 5));
     const first = await readTranscriptRecords(path, "claude");
     assert.isNotNull(first);
@@ -96,7 +96,7 @@ describe("readTranscriptRecords resume", () => {
   });
 
   it("re-parses from the start when the file shrank below the resume point", async () => {
-    const path = NodePath.join(dir, "claude.jsonl");
+    const path = NodePath.join(dir, "rollout.jsonl");
     await NodeFSP.writeFile(path, claudeLine(1, 5) + claudeLine(2, 7));
     const first = await readTranscriptRecords(path, "claude");
     assert.isNotNull(first);
@@ -114,17 +114,17 @@ describe("readTranscriptRecords resume", () => {
   it("parses a line larger than one stream chunk", async () => {
     // Tool-heavy transcripts carry multi-megabyte single lines; they arrive
     // split across many chunks and must reassemble into one record.
-    const path = NodePath.join(dir, "claude.jsonl");
+    const path = NodePath.join(dir, "rollout.jsonl");
     const bigLine = `${JSON.stringify({
       type: "assistant",
-      timestamp: "2026-08-01T10:00:00Z",
+      timestamp: "2026-08-01T10:00:04Z",
       requestId: "req_big",
       sessionId: "session-1",
-      padding: "x".repeat(512 * 1024),
       message: {
         id: "msg_big",
         model: "claude-fable-5",
-        usage: { input_tokens: 10, output_tokens: 42 },
+        usage: { input_tokens: 100, output_tokens: 42 },
+        content: "x".repeat(512 * 1024),
       },
     })}\n`;
     await NodeFSP.writeFile(path, bigLine + claudeLine(2, 7));

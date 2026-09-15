@@ -37,7 +37,7 @@ describe("orchestrator replay fixture contract", () => {
             { type: "queue_message", text: "queued run" },
           ],
         },
-        driver: ProviderDriverKind.make("claudeAgent"),
+        driver: ProviderDriverKind.make("pi"),
         modelSelection: CLAUDE_MODEL_SELECTION,
       });
       const queuedCommand = materialized.commands.find(
@@ -64,7 +64,7 @@ describe("orchestrator replay fixture contract", () => {
               { type: "queue_message", text: "queued run 2" },
             ],
           },
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("pi"),
           modelSelection: CLAUDE_MODEL_SELECTION,
         });
         const queueCommands = materialized.commands.filter(
@@ -149,7 +149,7 @@ describe("orchestrator replay fixture contract", () => {
                 },
               ],
             },
-            driver: ProviderDriverKind.make("claudeAgent"),
+            driver: ProviderDriverKind.make("pi"),
             modelSelection: CLAUDE_MODEL_SELECTION,
           });
 
@@ -193,7 +193,7 @@ describe("orchestrator replay fixture contract", () => {
             { type: "queue_message", text: "replacement queued run" },
           ],
         },
-        driver: ProviderDriverKind.make("claudeAgent"),
+        driver: ProviderDriverKind.make("pi"),
         modelSelection: CLAUDE_MODEL_SELECTION,
       });
       const replacementQueueDispatchIndex = materialized.steps.findIndex(
@@ -221,7 +221,7 @@ describe("orchestrator replay fixture contract", () => {
         fixtureInput: {
           steps: [{ type: "await_run_status", targetRunIndex: 1, status: "running" }],
         },
-        driver: ProviderDriverKind.make("claudeAgent"),
+        driver: ProviderDriverKind.make("pi"),
         modelSelection: CLAUDE_MODEL_SELECTION,
       });
       const threadId = materialized.projectionThreadIds[0];
@@ -252,7 +252,7 @@ describe("orchestrator replay fixture contract", () => {
         const materialized = yield* materializeFixtureInput({
           scenario: `run-index-after-${steeringType}`,
           fixtureInput,
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("pi"),
           modelSelection: CLAUDE_MODEL_SELECTION,
         });
         const secondRunCommand = materialized.commands.find(
@@ -388,9 +388,7 @@ describe("orchestrator replay fixture contract", () => {
   it.effect("keeps Claude fixture transcripts at the claude agent-sdk boundary", () =>
     Effect.gen(function* () {
       for (const fixture of ORCHESTRATOR_REPLAY_FIXTURES) {
-        for (const provider of fixture.providers.filter(
-          (entry) => entry.driver === "claudeAgent",
-        )) {
+        for (const provider of fixture.providers.filter((entry) => entry.driver === "pi")) {
           const transcript = yield* readTranscript(provider.transcriptFile);
           const first = transcript.entries[0];
           const last = transcript.entries.at(-1);

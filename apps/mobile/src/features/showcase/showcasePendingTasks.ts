@@ -28,7 +28,7 @@ export const SHOWCASE_PENDING_TASK_DEFINITIONS = [
 ] as const;
 
 const FALLBACK_MODEL_SELECTION = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
+  instanceId: ProviderInstanceId.make("pi"),
   model: "claude-fable-5-1",
 } as const;
 
