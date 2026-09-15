@@ -12,10 +12,10 @@ import {
 } from "./triagePrompt.ts";
 
 it("stays byte-identical to .github/triage/PLAYBOOK.md", () => {
-  // Old releases fetch the repo copy from `main` and follow it when it differs
-  // from their bundled playbook. The two must say the same thing at HEAD, or a
-  // playbook edit silently changes behavior only for old (or only for new)
-  // installs. Edit both files together.
+  // Checkouts that trail `main` fetch the repo copy and follow it when it
+  // differs from their bundled playbook. The two must say the same thing at
+  // HEAD, or a playbook edit silently changes behavior only for some checkouts.
+  // Edit both files together.
   const canonicalPath = NodePath.join(
     import.meta.dirname,
     "../../../../.github/triage/PLAYBOOK.md",
@@ -42,7 +42,6 @@ it("context file carries every path the playbook depends on", () => {
   const context = buildTriageContext({
     generatedAt: "2026-08-13T00:00:00.000Z",
     version: "0.0.33",
-    releaseTag: "v0.0.33",
     os: "linux x64 (7.0.0)",
     nodeVersion: "v24.0.0",
     launchedAs: "npx t3 triage",
@@ -67,5 +66,6 @@ it("context file carries every path the playbook depends on", () => {
   assert.include(context, "/home/u/.t3/userdata/secrets");
   assert.include(context, "/home/u/.t3/source");
   assert.include(context, "npx t3 triage");
-  assert.include(context, "v0.0.33");
+  assert.include(context, "0.0.33");
+  assert.notInclude(context, "Release tag");
 });

@@ -1,10 +1,13 @@
 # Brand icons
 
-The three Icon Composer projects are the source of truth for full application icons:
+The two Icon Composer projects are the source of truth for full application icons:
 
 - `dev/app-icon.icon`
-- `nightly/app-icon.icon`
 - `prod/app-icon.icon`
+
+This fork publishes nothing, so these sets exist for local builds and development
+runs. `dev` is used by development web exports and `prod` is used by local
+production builds; neither is a distribution channel.
 
 Each project uses `text.svg` for the T3 mark and `background.svg` when the background is a vector layer. Additional layers use semantic names that describe their role and placement.
 

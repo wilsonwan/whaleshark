@@ -1,60 +1,47 @@
-# Server updates
+# Server updates and the service launcher
 
-A [stable launcher](../../apps/server/src/serviceLauncher.ts) owns the runtime
-selected by systemd or launchd. It is the only runtime writer of durable service
-state. Server children request updates over inherited IPC; they never rewrite
-their service definition or select their own replacement. Local service commands
-may replace the launcher and state while the service is stopped. Foreground CLI
-processes do not self-update.
+This fork has no release channel, so a server never replaces itself. The
+[launcher](../../apps/server/src/serviceLauncher.ts) is written by
+`node apps/server/dist/bin.mjs service install` from the checkout that ran it and starts the entry recorded in service
+state (`<T3 home>/runtime/service-state.json`): the built or source CLI of that
+checkout. It never downloads a package, never swaps runtimes, and owns no
+rollback. When the child dies, the launcher exits and systemd's or launchd's
+restart policy applies; installing again from another checkout is the only way to
+move the service.
 
-Exact-version installs keep restarts independent of npm cache eviction or a moving
-release tag. Installation and preflight happen in staging before publishing an
-immutable runtime. Preflight checks the launcher protocol because a target that
-needs new rollback guarantees cannot safely run under an older launcher. Upgrading
-that launcher requires a local service update.
+## Launch protocol
 
-## Commit boundary
+- The launcher injects `T3_SERVICE_LAUNCHER_CONTEXT` (launcher protocol plus the
+  recorded child version). The server refuses to start when it cannot decode that
+  context, when the launcher started a different version, or when a context
+  exists without the launcher's IPC channel. A foreground server has no context
+  and is unmanaged, which is what keeps a terminal run from claiming service
+  mode.
+- `node apps/server/dist/bin.mjs service status` calls the install current only when the rendered unit, the
+  installed launcher, the recorded entry, and the recorded version all match the
+  CLI asking. A moved or deleted entry makes the service not current, and
+  `node apps/server/dist/bin.mjs service install` is the repair.
+- Install stops the running service before rewriting the launcher, state, and
+  unit, then starts it again, so a partial rewrite cannot leave a unit pointing at
+  an entry that is gone. A failed rewrite restarts the previous service.
+- The launcher writes `<T3 home>/runtime/.service-stopping` synchronously when it
+  receives SIGTERM or SIGINT, before it signals the child, so a child can tell an
+  explicit stop from a crash. `KillMode=mixed` and launchd's single-process
+  signal behavior both deliver that signal to the launcher first.
 
-The launcher durably records the pending update before acknowledging it, then
-stops the old child and starts the target as a trial. Service-state writes use
-same-directory replacement with file and directory fsync. Invalid state stops
-startup rather than guessing which runtime to boot.
+## Platform prerequisites
 
-The trial must finish migrations, acquire dependencies, bind HTTP, and park every
-long-running root at the activation gate before reporting `prepared`. The launcher
-then commits the target version durably and replies `committed`. Only then may the
-child release its gates, accept commands, and publish ready. Keep fallible startup
-acquisitions before this boundary. A listener alone does not prove the runtime is
-ready to commit.
+Linux prerequisites (a reachable systemd user manager, lingering enabled) are
+checked before any file is written, because a rewritten unit combined with a
+manager that cannot run it is worse than a stale one. macOS launch agents cannot
+start before the user logs in; installing over SSH while nobody is logged in can
+fail at the final start step and is documented as such.
 
-A failed or timed-out trial returns to the old version. After commit, the target
-is authoritative and the service manager's ordinary restart policy applies.
+## Desktop app packaging
 
-## Database rollback
-
-After the old child exits, the launcher snapshots SQLite's main file, WAL, and
-shared-memory file. This makes trial migrations reversible without down
-migrations. The snapshot is made once per update and survives launcher restarts;
-replacing it during a retry could capture changes from the failed trial.
-
-Rollback stops the trial before restoring. A durable restore marker makes an
-interrupted restore finish before either version boots. Keep the snapshot until
-commit, or until both restoration and the terminal rollback state are durable.
-Attachments and other files outside SQLite are outside this rollback boundary.
-
-## Client acknowledgement
-
-An accepted update is still pending. Clients correlate the launcher's update ID
-with the ready event after reconnecting, then check the outcome and target version.
-A reconnect alone cannot distinguish successful replacement from rollback. Older
-servers without an update ID retain version-only correlation.
-
-Desktop updates have a separate two-phase handoff because installing the app stops
-its bundled backend. Preparation returns a token while the connection is alive;
-the client commits that token only after receiving it. Otherwise backend shutdown
-could lose the only successful RPC result. The client must then observe the
-prepared version after reconnecting. If installation fails, desktop restarts the
-stopped backends and replays the failure for the same token.
+Desktop artifacts are rebuilt from the checkout and relaunched manually. There
+is no desktop update feed or client-side installer handoff; the bundled backend
+therefore always comes from the artifact's source checkout.
 
 ## Recovering interrupted threads
 
@@ -66,7 +53,7 @@ Ordinary queued work, finished runs, and background-only work do not qualify.
 Recovery retires effects tied to the lost process and records continuation intent
 in the durable outbox. That intent survives another restart before provider startup.
 Continuation effects wait for activation; a slow provider must not delay the server's
-readiness or the launcher's commit boundary. Graceful shutdown captures intent before
+readiness. Graceful shutdown captures intent before
 closing providers, then reconciles after ingestion has stopped so a late completion
 cannot be overwritten by a stale cancellation.
 

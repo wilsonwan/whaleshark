@@ -189,9 +189,6 @@ describe("t3 pair", () => {
       }),
       Effect.provideService(ServiceLauncherClient.ServiceLauncherHostProcess, {
         connected: false,
-        send: () => false,
-        on: () => undefined,
-        off: () => undefined,
       }),
     ),
   );
@@ -229,7 +226,7 @@ describe("t3 pair", () => {
         typeof error === "object" && error !== null && "cause" in error ? error.cause : error,
       );
       assert.include(rendered, "No running T3 Code server found.");
-      assert.include(rendered, "npx t3 serve");
+      assert.include(rendered, "node apps/server/src/bin.ts serve");
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 

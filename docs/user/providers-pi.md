@@ -52,6 +52,18 @@ installs Pi's example `subagent` extension, T3 Code also shows its task progress
 UI. Pi runs those children without a session, so they cannot be opened or resumed as T3 Code
 threads.
 
+## Remote Hosts
+
+Pi runs on the machine hosting your threads, so a remote host needs a T3 Code server there. This
+fork has no release channel, and the SSH remote runner still resolves the published `t3` package
+(`t3@latest` / `t3@nightly`) to launch a remote server. Since this fork publishes no such package,
+start the server on that host yourself from a source checkout or a local build, or supply the remote
+runner with an alternative. Until the remote CLI package source is replaced, do not expect an
+SSH-launched server to install T3 Code for you.
+
+Everything else in this page applies unchanged on that host: installation, login, models, native
+sessions, skills, and extensions all come from the Pi CLI installed there.
+
 ## Troubleshooting
 
 - If Pi is unavailable, confirm that the configured binary runs on the server machine, then refresh

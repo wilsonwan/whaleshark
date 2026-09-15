@@ -17,13 +17,13 @@ For a command-line host, replace `<private-ip>` with the host's LAN or tailnet
 address:
 
 ```bash
-npx t3 serve --host <private-ip>
+node apps/server/src/bin.ts serve --host <private-ip>
 ```
 
 If a server is already running, generate a fresh link without restarting it:
 
 ```bash
-npx t3 pair
+node apps/server/src/bin.ts pair
 ```
 
 Scan the QR code on your phone or paste the pairing URL into a browser. Connection
@@ -60,13 +60,13 @@ HTTPS** in **Settings → Connections**. Turn it off there to remove that route.
 To start a command-line server with Tailscale HTTPS:
 
 ```bash
-npx t3 serve --tailscale-serve
+node apps/server/src/bin.ts serve --tailscale-serve
 ```
 
 For an already-running server:
 
 ```bash
-npx t3 pair --tailscale
+node apps/server/src/bin.ts pair --tailscale
 ```
 
 The pairing link uses an address such as `https://machine.tailnet.ts.net/`.
@@ -78,7 +78,8 @@ tailscale serve --https=443 off
 ```
 
 If that port is already in use, choose another with
-`--tailscale-serve-port`. See `npx t3 pair --help` for other pairing options.
+`--tailscale-serve-port`. See `node apps/server/src/bin.ts pair --help` for
+other pairing options.
 
 ### Open the web app from another device
 
@@ -117,7 +118,7 @@ running is left alone.
 On the host, **Settings → Connections** lets authorized administrators create
 pairing links and revoke client sessions. Revoking an unused link prevents new
 pairings; revoke a device's session to remove its existing access. Command-line
-management is available through `npx t3 auth --help`.
+management is available through `node apps/server/src/bin.ts auth --help`.
 
 A session with an open connection stays listed after its access credential
 expires.
@@ -127,9 +128,9 @@ screenshots, logs, or bug reports.
 
 ## Troubleshooting
 
-Run `t3 service status` on the host to inspect the background service and read
-its log. If the environment disappears when SSH closes, see
-[background-service troubleshooting](./background-service.md#troubleshooting).
+Run `node apps/server/src/bin.ts service status` from the checkout on the host
+to inspect the background service and read its log. If the environment
+disappears when SSH closes, see [background-service troubleshooting](./background-service.md#troubleshooting).
 
 If a connection still fails, check the date and time on both devices. For server
 version warnings, follow [Updating T3 Code](./updating.md).

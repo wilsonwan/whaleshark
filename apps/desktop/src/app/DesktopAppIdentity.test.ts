@@ -59,7 +59,6 @@ const makeElectronAppLayer = (calls: ElectronAppCalls) =>
     setAsDefaultProtocolClient: () => Effect.succeed(true),
     setDesktopName: () => Effect.void,
     appendCommandLineSwitch: () => Effect.void,
-    onBeforeQuitForUpdate: () => Effect.void,
     removeCommandLineSwitch: () => Effect.void,
     on: () => Effect.void,
   } satisfies ElectronApp.ElectronApp["Service"]);

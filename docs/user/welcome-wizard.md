@@ -13,9 +13,12 @@ browser.
 You can add more computers before continuing:
 
 - **Add a computer** connects directly to a server on your network or tailnet.
-  Start the server with `npx t3 serve`, then run `npx t3 pair --tailscale` and
-  paste the pairing link. You can also run `npx t3 serve --host <address>` and
-  use `npx t3 pair` when the server is already reachable on your network.
+  From the repository root, start the source checkout with
+  `node apps/server/src/bin.ts serve --tailscale-serve`, then run
+  `node apps/server/src/bin.ts pair --tailscale` and paste the pairing link.
+  For a directly reachable network address, use
+  `node apps/server/src/bin.ts serve --host <address>` and
+  `node apps/server/src/bin.ts pair` instead.
 
 Saved computers are selected by default. Uncheck any you do not want to set up;
 this does not disconnect them.

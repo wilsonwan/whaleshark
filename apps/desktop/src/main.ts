@@ -29,7 +29,6 @@ import * as ElectronProtocol from "./electron/ElectronProtocol.ts";
 import * as ElectronSafeStorage from "./electron/ElectronSafeStorage.ts";
 import * as ElectronShell from "./electron/ElectronShell.ts";
 import * as ElectronTheme from "./electron/ElectronTheme.ts";
-import * as ElectronUpdater from "./electron/ElectronUpdater.ts";
 import * as ElectronWindow from "./electron/ElectronWindow.ts";
 import * as DesktopApp from "./app/DesktopApp.ts";
 import * as DesktopAppActivation from "./app/DesktopAppActivation.ts";
@@ -57,7 +56,6 @@ import * as DesktopSshEnvironment from "./ssh/DesktopSshEnvironment.ts";
 import * as DesktopSshPasswordPrompts from "./ssh/DesktopSshPasswordPrompts.ts";
 import * as DesktopState from "./app/DesktopState.ts";
 import * as DesktopTelemetryPublisher from "./telemetry/DesktopTelemetryPublisher.ts";
-import * as DesktopUpdates from "./updates/DesktopUpdates.ts";
 import * as BrowserImport from "./preview/BrowserImport/BrowserImport.ts";
 import * as LinuxBrowserSecret from "./preview/BrowserImport/LinuxBrowserSecret.ts";
 import * as BrowserSession from "./preview/BrowserSession.ts";
@@ -86,7 +84,6 @@ const desktopEnvironmentLayer = Layer.unwrap(
 
 const resolveDesktopSshCliRunner = (
   environment: DesktopEnvironment.DesktopEnvironment["Service"],
-  settings: DesktopAppSettings.DesktopSettings,
 ): RemoteT3RunnerOptions => {
   const devRemoteEntryPath = Option.getOrUndefined(environment.devRemoteT3ServerEntryPath);
   if (environment.isDevelopment && devRemoteEntryPath !== undefined) {
@@ -98,7 +95,9 @@ const resolveDesktopSshCliRunner = (
   return {
     packageSpec: resolveRemoteT3CliPackageSpec({
       appVersion: environment.appVersion,
-      updateChannel: settings.updateChannel,
+      // The source-based fork has no release channels. Keep the published CLI
+      // fallback explicit until the Pi/remote runner gains a source checkout.
+      updateChannel: "latest",
       isDevelopment: environment.isDevelopment,
     }),
     nodeEngineRange: serverPackageJson.engines.node,
@@ -108,11 +107,8 @@ const resolveDesktopSshCliRunner = (
 const desktopSshEnvironmentLayer = Layer.unwrap(
   Effect.gen(function* () {
     const environment = yield* DesktopEnvironment.DesktopEnvironment;
-    const settings = yield* DesktopAppSettings.DesktopAppSettings;
     return DesktopSshEnvironment.layer({
-      resolveCliRunner: settings.get.pipe(
-        Effect.map((currentSettings) => resolveDesktopSshCliRunner(environment, currentSettings)),
-      ),
+      resolveCliRunner: Effect.succeed(resolveDesktopSshCliRunner(environment)),
     });
   }),
 );
@@ -126,7 +122,6 @@ const electronLayer = Layer.mergeAll(
   ElectronSafeStorage.layer,
   ElectronShell.layer,
   ElectronTheme.layer,
-  ElectronUpdater.layer,
   ElectronWindow.layer,
   DesktopIpc.layer(Electron.ipcMain),
 );
@@ -205,7 +200,6 @@ const desktopApplicationLayer = Layer.mergeAll(
   desktopSshLayer,
 ).pipe(
   Layer.provideMerge(desktopSnapShotLayer),
-  Layer.provideMerge(DesktopUpdates.layer),
   Layer.provideMerge(desktopWslBackendLayer),
   Layer.provideMerge(desktopLocalEnvironmentAuthLayer),
 );

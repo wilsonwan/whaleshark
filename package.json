@@ -11,7 +11,6 @@
     "dev:desktop": "node scripts/dev-runner.ts dev:desktop",
     "start": "vp run --filter t3 start",
     "start:desktop": "vp run --filter @t3tools/desktop start",
-    "start:mock-update-server": "node scripts/mock-update-server.ts",
     "icons:export": "node scripts/export-brand-icons.ts",
     "icons:check": "node scripts/export-brand-icons.ts --check",
     "licenses:sync": "node scripts/sync-third-party-license-notices.ts",
@@ -36,7 +35,6 @@
     "dist:desktop:win": "node scripts/build-desktop-artifact.ts --platform win --target nsis",
     "dist:desktop:win:arm64": "node scripts/build-desktop-artifact.ts --platform win --target nsis --arch arm64",
     "dist:desktop:win:x64": "node scripts/build-desktop-artifact.ts --platform win --target nsis --arch x64",
-    "release:smoke": "node scripts/release-smoke.ts",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/dist apps/*/dist-electron packages/*/dist .vite-plus apps/*/.vite-plus packages/*/.vite-plus"
   },
   "devDependencies": {

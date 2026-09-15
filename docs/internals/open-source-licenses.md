@@ -3,7 +3,7 @@
 License notices are generated independently for the client that ships them:
 
 - The web build emits `third-party-licenses.json` beside `index.html`. The Settings page loads that
-  static file, so the same artifact works in the standalone web build, the client bundled with `npx t3`, and
+  static file, so the same artifact works in the standalone web build, the source-run web app, and
   desktop.
 
 Neither path depends on the connected environment or an RPC.

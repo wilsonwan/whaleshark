@@ -108,9 +108,6 @@ jobs:
       - name: Install browser secret helper build libraries
         run: sudo apt-get update && sudo apt-get install -y libsecret-1-dev pkg-config
 
-      - name: Test nightly release checks
-        run: node --test .github/scripts/check-nightly-release.test.cjs
-
       - name: Test
         run: vp run --parallel --concurrency-limit 4 --filter '!t3' --filter '!@t3tools/monorepo' test
 
@@ -212,26 +209,3 @@ jobs:
           for crate in resource-monitor kde-snap-shot hyprland-snap-shot; do
             cargo test --locked --manifest-path "native/$crate/Cargo.toml"
           done
-  release_smoke:
-    name: Release Smoke
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          sparse-checkout: |
-            /*
-          sparse-checkout-cone-mode: false
-
-      - name: Setup Vite+
-        uses: voidzero-dev/setup-vp@v1
-        with:
-          node-version-file: package.json
-          cache: true
-          run-install: |
-            args:
-              - --filter=@t3tools/scripts...
-
-      - name: Exercise release-only workflow steps
-        run: node scripts/release-smoke.ts

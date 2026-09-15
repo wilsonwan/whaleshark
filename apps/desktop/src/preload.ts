@@ -194,23 +194,6 @@ contextBridge.exposeInMainWorld("desktopBridge", {
     };
   },
 
-  getUpdateState: () => ipcRenderer.invoke(IpcChannels.UPDATE_GET_STATE_CHANNEL),
-  setUpdateChannel: (channel) =>
-    ipcRenderer.invoke(IpcChannels.UPDATE_SET_CHANNEL_CHANNEL, channel),
-  checkForUpdate: () => ipcRenderer.invoke(IpcChannels.UPDATE_CHECK_CHANNEL),
-  downloadUpdate: () => ipcRenderer.invoke(IpcChannels.UPDATE_DOWNLOAD_CHANNEL),
-  installUpdate: () => ipcRenderer.invoke(IpcChannels.UPDATE_INSTALL_CHANNEL),
-  onUpdateState: (listener) => {
-    const wrappedListener = (_event: Electron.IpcRendererEvent, state: unknown) => {
-      if (typeof state !== "object" || state === null) return;
-      listener(state as Parameters<typeof listener>[0]);
-    };
-
-    ipcRenderer.on(IpcChannels.UPDATE_STATE_CHANNEL, wrappedListener);
-    return () => {
-      ipcRenderer.removeListener(IpcChannels.UPDATE_STATE_CHANNEL, wrappedListener);
-    };
-  },
   appActivation: {
     setReady: (ready) =>
       ipcRenderer.invoke(IpcChannels.DESKTOP_APP_ACTIVATION_READY_CHANNEL, ready),

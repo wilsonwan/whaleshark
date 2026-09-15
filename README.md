@@ -12,6 +12,11 @@ We wanted something performant, remote-ready, and truly open. If we ever go the 
 
 ## Installation
 
+This fork publishes nothing: there is no release channel, no published package,
+and no packaged installer. You run it from a checkout of this repository, and you
+update it by pulling, rebuilding, and restarting. See
+[Install T3 Code](./docs/user/install.md).
+
 > [!WARNING]
 > T3 Code currently supports Codex, Claude, OpenCode, and Pi, plus agents from the ACP Registry. Install and authenticate at least one provider before use:
 >
@@ -21,43 +26,31 @@ We wanted something performant, remote-ready, and truly open. If we ever go the 
 > - Pi: install [Pi](https://pi.dev) and run `pi` once to finish its login or API-key setup.
 > - ACP Registry: add an agent from the [ACP Registry](./docs/user/providers-acp.md) under **Settings → Providers**.
 
-### Try it out (install-free)
+### Run from source
 
-The easiest way to test T3 Code is to run the server in your terminal (requires Node.js 22.16+, 23.11+, or 24.10+):
+Clone this repository and run the server and web app (requires Node.js 22.16+,
+23.11+, or 24.10+ and [vp](#install-vp)):
 
 ```bash
-npx t3@latest
+vp i
+vp run dev
 ```
 
-This will launch T3 Code's backend on your machine as well as the local web app to control your agents.
-
-Tip: Use `npx t3@latest --help` for the full CLI reference.
+This launches T3 Code's backend on your machine as well as the local web app to
+control your agents. Tip: Use `vp run dev --help` for the full CLI reference.
 
 ### Desktop app
 
-Install the latest version of the desktop app from [GitHub Releases](https://github.com/pingdotgg/t3code/releases), or from your favorite package registry:
+Build the desktop app from the same checkout:
 
-#### Windows (`winget`)
+| Platform | Command                     |
+| -------- | --------------------------- |
+| Linux    | `vp run dist:desktop:linux` |
+| Windows  | `vp run dist:desktop:win`   |
 
-```bash
-winget install T3Tools.T3Code
-```
-
-#### Arch Linux (AUR)
-
-Stable:
-
-```bash
-yay -S t3code-bin
-```
-
-Nightly:
-
-```bash
-yay -S t3code-nightly-bin
-```
-
-The AUR packaging is maintained in this repository under [`packaging/aur`](./packaging/aur).
+Local builds are unsigned; see
+[Development](./docs/operations/development.md#desktop-artifacts) for
+prerequisites.
 
 ## Some notes
 
@@ -75,7 +68,7 @@ Full docs live in [docs/](./docs). There's no docs site yet.
 - [Project settings](./docs/user/project-settings.md)
 - [Appearance preferences](./docs/user/appearance.md)
 - [Remote access from a phone or another machine](./docs/user/remote-access.md)
-- [Keeping app and server in sync](./docs/user/updating.md)
+- [Updating T3 Code](./docs/user/updating.md)
 - [Source control integrations](./docs/user/source-control.md)
 - [Run T3 Code as a background service](./docs/user/background-service.md)
 

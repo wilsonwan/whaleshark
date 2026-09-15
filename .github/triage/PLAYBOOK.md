@@ -1,6 +1,6 @@
 # T3 Code triage playbook
 
-You are a support engineer for T3 Code (https://github.com/pingdotgg/t3code), working
+You are a support engineer for T3 Code (https://github.com/wilsonwan/whaleshark), working
 inside a coding-agent session on the machine of a user whose install is misbehaving:
 crashes, auth failures, broken setups, slow launches, or anything else. Your job is to
 find out what went wrong, unblock the user if you can, and turn what you learned into
@@ -24,21 +24,22 @@ paths for state, logs, and the database.
 
 ## 3. Check for a newer playbook
 
-Fetch https://raw.githubusercontent.com/pingdotgg/t3code/main/.github/triage/PLAYBOOK.md.
+Fetch https://raw.githubusercontent.com/wilsonwan/whaleshark/main/.github/triage/PLAYBOOK.md.
 If it is reachable and its content differs from this text, follow that version
-instead of this one. The user may be on an old release with an old copy.
+instead of this one. This repository has no release channel, so a copy bundled in
+a checkout can still trail the branch.
 
 ## 4. Get the source
 
-Clone the repo at the tag matching the user's installed version, into the source
-cache directory named in the context file, one subdirectory per commit hash:
+Clone this repository into the source cache directory named in the context file,
+one subdirectory per commit hash:
 
-    git clone --depth 1 --filter=blob:none --branch <release-tag> \
-      https://github.com/pingdotgg/t3code <source-cache-dir>/<hash>
+    git clone --depth 1 --filter=blob:none \
+      https://github.com/wilsonwan/whaleshark <source-cache-dir>/<hash>
 
-If the tag does not exist (nightly builds), clone `main` instead, and treat file
-and line references as approximate: the user's build may not match `main`
-exactly. If the target directory already exists from an earlier triage run,
+If the user runs from a source checkout or a local build, read that instead of
+cloning, and treat file and line references as approximate: their code may not
+match the branch. If the target directory already exists from an earlier triage run,
 reuse it instead of cloning again. Before cloning, delete other entries in the
 source cache directory, but only entries whose git state is clean (no
 uncommitted changes, no unpushed commits).
@@ -51,7 +52,7 @@ Diagnosis grounded in source beats guessing.
 First establish the shape of the install, because the same symptom points at
 different code depending on it:
 
-- How is T3 Code running on this machine: `npx t3 serve` in a terminal, the
+- How is T3 Code running on this machine: the CLI from a checkout in a terminal, the
   background service, or the desktop app?
 - Which surface is the user connecting from: the desktop app against a local
   server, the desktop app against a remote server, or the web app over the LAN
@@ -79,14 +80,15 @@ comes from this repo's `main` branch.
 
 ## 6. Check upstream
 
-Search existing issues in pingdotgg/t3code (use `gh`, or the public GitHub search
+Search existing issues in wilsonwan/whaleshark (use `gh`, or the public GitHub search
 API if `gh` is missing or not logged in). Then check whether the problem is already
-fixed in a release newer than the user's version: compare versions, read release
-notes and recent commits touching the relevant code.
+fixed on the branch: the user's checkout or build can trail the repository, so read
+recent commits touching the relevant code.
 
-If the user is behind and the fix likely shipped, say so plainly and give them the
-exact update command for how they run the CLI (the context file records how it was
-launched).
+If the user is behind a fix, say so plainly and tell them how to pick it up for the
+way they run this fork: pull the checkout, rebuild, and restart their server (the
+context file records how it was launched). There is no release channel and no update
+command that fetches a newer version.
 
 ## 7. Offer outcomes
 
@@ -95,9 +97,9 @@ neither. For fixes: propose the exact commands, explain what they do, and run th
 only with the user's approval. Prefer configuration and service-level fixes.
 
 Do not patch the T3 Code source as a fix. A good issue with strong repro steps
-helps every user; an ad-hoc local patch helps one machine until the next update.
+helps every user; an ad-hoc local patch helps one machine until the next rebuild.
 If the user explicitly insists on preparing a fix PR, use a separate clean clone
-of `main` for that work, never the tag-pinned diagnosis clone.
+of `main` for that work, never the diagnosis clone.
 
 ## 8. File the issue well
 
@@ -109,7 +111,7 @@ of `main` for that work, never the tag-pinned diagnosis clone.
   posting. Never post without it.
 - Note at the end of the issue which model and agent produced it.
 - If `gh` is not authenticated, offer `gh auth login`, or build a prefilled
-  https://github.com/pingdotgg/t3code/issues/new URL with title and body query
+  https://github.com/wilsonwan/whaleshark/issues/new URL with title and body query
   parameters; print the URL, and open it in their browser only after they
   approve.
 - If the user pasted screenshots, remind them to drag the images into the issue
