@@ -4,11 +4,8 @@ import {
   OrchestrationLayerLive,
 } from "../orchestration/runtimeLayer.ts";
 import { ProjectionProjectRepositoryLive } from "../persistence/Layers/ProjectionProjects.ts";
-import { layer as providerSessionRuntimeLayer } from "../persistence/ProviderSessionRuntime.ts";
 import * as TextGeneration from "../textGeneration/TextGeneration.ts";
 import { ProviderAuthServiceLive } from "../provider/Layers/ProviderAuthService.ts";
-import { layer as agentSessionImporterLayer } from "../project/AgentSessionImporter.ts";
-import * as AgentSessionScanner from "../project/AgentSessionScanner.ts";
 import { layer as projectServiceLayer } from "../project/ProjectService.ts";
 import { layer as projectSetupScriptRunnerLayer } from "../project/ProjectSetupScriptRunner.ts";
 import { layer as checkpointCaptureServiceLayer } from "./CheckpointCaptureService.ts";
@@ -25,7 +22,6 @@ import {
 import { layerFromStores as eventSinkLayer } from "./EventSink.ts";
 import { layerFromOrchestrationEventStore as eventStoreLayer } from "./EventStore.ts";
 import { layer as idAllocatorLayer } from "./IdAllocator.ts";
-import { layer as legacyV1ThreadImporterLayer } from "./LegacyV1ThreadImporter.ts";
 import { layer as orchestratorLayer } from "./Orchestrator.ts";
 import { layer as projectionStoreLayer } from "./ProjectionStore.ts";
 import { layer as projectionMaintenanceLayer } from "./ProjectionMaintenance.ts";
@@ -43,7 +39,7 @@ import { layer as runExecutionServiceLayer } from "./RunExecutionService.ts";
 import { layer as runFinalizationServiceLayer } from "./RunFinalizationService.ts";
 import { layerFromProjectRepository as runtimePolicyLayerFromProjectRepository } from "./RuntimePolicy.ts";
 import { layer as runtimeRequestServiceLayer } from "./RuntimeRequestService.ts";
-import { layerWithLegacyImporter as threadManagementServiceLayer } from "./ThreadManagementService.ts";
+import { layer as threadManagementServiceLayer } from "./ThreadManagementService.ts";
 import { layer as threadLaunchServiceLayer } from "./ThreadLaunchService.ts";
 import { layer as threadLifecycleServiceLayer } from "./ThreadLifecycleService.ts";
 import { layer as threadForkServiceLayer } from "./ThreadForkService.ts";
@@ -73,10 +69,6 @@ const storesLayer = Layer.mergeAll(
 export const OrchestrationV2EventSinkLayerLive = eventSinkLayer.pipe(Layer.provide(storesLayer));
 const eventSinkProvided = OrchestrationV2EventSinkLayerLive;
 const projectionMaintenanceProvided = projectionMaintenanceLayer.pipe(Layer.provide(storesLayer));
-const legacyV1ThreadImporterProvided = legacyV1ThreadImporterLayer.pipe(
-  Layer.provide(Layer.mergeAll(eventSinkProvided, eventStoreProvided)),
-);
-
 export const ProjectServiceLayerLive = projectServiceLayer.pipe(
   Layer.provide(
     Layer.mergeAll(
@@ -85,7 +77,6 @@ export const ProjectServiceLayerLive = projectServiceLayer.pipe(
       projectionStoreLayer,
       eventSinkProvided,
       idAllocatorLayer,
-      legacyV1ThreadImporterProvided,
     ),
   ),
 );
@@ -203,21 +194,8 @@ const orchestratorProvided = orchestratorLayer.pipe(
   ),
 );
 
-const agentSessionImporterProvided = agentSessionImporterLayer.pipe(
-  Layer.provide(
-    Layer.mergeAll(
-      AgentSessionScanner.layer,
-      ProjectServiceLayerLive,
-      orchestratorProvided,
-      eventSinkProvided,
-      idAllocatorLayer,
-      providerSessionRuntimeLayer,
-    ),
-  ),
-);
-
 const threadManagementProvided = threadManagementServiceLayer.pipe(
-  Layer.provide(Layer.merge(orchestratorProvided, legacyV1ThreadImporterProvided)),
+  Layer.provide(orchestratorProvided),
 );
 export const ProjectSetupScriptRunnerLayerLive = projectSetupScriptRunnerLayer.pipe(
   Layer.provide(ProjectServiceLayerLive),
@@ -286,7 +264,6 @@ export const OrchestrationV2LayerLive = Layer.mergeAll(
   providerAuthServiceProvided,
   providerRuntimeRecoveryProvided,
   projectionMaintenanceProvided,
-  legacyV1ThreadImporterProvided,
 );
 
 export const OrchestrationV2ProductionLayerLive = Layer.mergeAll(
@@ -296,5 +273,4 @@ export const OrchestrationV2ProductionLayerLive = Layer.mergeAll(
   threadLifecycleProvided,
   scheduledTaskProvided,
   providerContinuationWorkerProvided,
-  agentSessionImporterProvided,
 ).pipe(Layer.provideMerge(OrchestrationLayerLive));

@@ -19,16 +19,19 @@ layer("ProjectionThreadMessageRepository", (it) => {
       assert.isNull(yield* repository.getLatestUserMessageAt({ threadId }));
 
       yield* repository.upsert({
-        messageId: MessageId.make("import:claude:latest-user-message:000000"),
+        messageId: MessageId.make("latest-user-message-initial"),
         threadId,
         turnId: null,
         role: "user",
-        text: "Imported prompt",
+        text: "Initial prompt",
         isStreaming: false,
         createdAt: "2026-02-28T19:05:06.000Z",
         updatedAt: "2026-02-28T19:05:06.000Z",
       });
-      assert.isNull(yield* repository.getLatestUserMessageAt({ threadId }));
+      assert.strictEqual(
+        yield* repository.getLatestUserMessageAt({ threadId }),
+        "2026-02-28T19:05:06.000Z",
+      );
 
       const messages = [
         { role: "user", createdAt: "2026-02-28T19:05:02.000Z" },
@@ -60,7 +63,7 @@ layer("ProjectionThreadMessageRepository", (it) => {
 
       assert.strictEqual(
         yield* repository.getLatestUserMessageAt({ threadId }),
-        "2026-02-28T19:05:02.000Z",
+        "2026-02-28T19:05:06.000Z",
       );
       yield* repository.deleteByThreadId({ threadId });
       assert.isNull(yield* repository.getLatestUserMessageAt({ threadId }));
