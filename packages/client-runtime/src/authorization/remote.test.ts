@@ -13,7 +13,6 @@ import {
   issueRemoteWebSocketTicket,
   RemoteEnvironmentAuthInvalidJsonError,
   RemoteEnvironmentAuthTimeoutError,
-  resolveRemoteWebSocketConnectionUrl,
 } from "./remote.ts";
 import { fetchRemoteEnvironmentDescriptor } from "../environment/descriptor.ts";
 import { remoteHttpClientLayer } from "../rpc/http.ts";
@@ -388,39 +387,6 @@ describe("remote environment authorization", () => {
       expect(error).toBeInstanceOf(RemoteEnvironmentAuthInvalidJsonError);
       expect(error.message).toBe(
         "Remote environment endpoint returned an invalid response from https://remote.example.com/oauth/token.",
-      );
-    }),
-  );
-
-  it.effect("mints a websocket url that targets the rpc route with a short-lived ticket", () =>
-    Effect.gen(function* () {
-      const fetch = recordedFetch(
-        Response.json(
-          {
-            ticket: "ws-ticket",
-            expiresAt: "2026-05-01T12:05:00.000Z",
-          },
-          { status: 200 },
-        ),
-      );
-
-      const url = yield* resolveRemoteWebSocketConnectionUrl({
-        wsBaseUrl: "wss://remote.example.com/",
-        httpBaseUrl: "https://remote.example.com/",
-        bearerToken: "bearer-token",
-        clientMetadata: {
-          surface: "mobile",
-          appVersion: "1.2.3",
-          deviceType: "mobile",
-          os: "Android",
-          osMajorVersion: 15,
-          deviceModel: "Pixel 9",
-        },
-        connectionMethod: "direct",
-      }).pipe(provideRemoteHttp(fetch.fetchFn));
-
-      expect(url).toBe(
-        "wss://remote.example.com/ws?wsTicket=ws-ticket&clientSurface=mobile&clientAppVersion=1.2.3&clientDeviceType=phone&clientOs=Android&clientOsMajorVersion=15&clientDeviceModel=Pixel+9&connectionMethod=direct",
       );
     }),
   );

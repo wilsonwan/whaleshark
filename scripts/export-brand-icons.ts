@@ -44,7 +44,6 @@ const decodeIconComposerVersion = Schema.decodeUnknownEffect(
 type IconPlatform = "iOS";
 
 interface VariantOutputs {
-  readonly ios: string;
   readonly universal: string;
   readonly appleTouch: string;
   readonly favicon16: string;
@@ -206,7 +205,6 @@ const ICON_VARIANTS = [
     label: "development",
     source: BRAND_ASSET_PATHS.developmentIconComposerProject,
     outputs: {
-      ios: BRAND_ASSET_PATHS.developmentIosIconPng,
       universal: BRAND_ASSET_PATHS.developmentUniversalIconPng,
       appleTouch: BRAND_ASSET_PATHS.developmentWebAppleTouchIconPng,
       favicon16: BRAND_ASSET_PATHS.developmentWebFavicon16Png,
@@ -219,7 +217,6 @@ const ICON_VARIANTS = [
     label: "preview",
     source: BRAND_ASSET_PATHS.nightlyIconComposerProject,
     outputs: {
-      ios: BRAND_ASSET_PATHS.nightlyIosIconPng,
       universal: BRAND_ASSET_PATHS.nightlyLinuxIconPng,
       appleTouch: BRAND_ASSET_PATHS.nightlyWebAppleTouchIconPng,
       favicon16: BRAND_ASSET_PATHS.nightlyWebFavicon16Png,
@@ -232,7 +229,6 @@ const ICON_VARIANTS = [
     label: "production",
     source: BRAND_ASSET_PATHS.productionIconComposerProject,
     outputs: {
-      ios: BRAND_ASSET_PATHS.productionIosIconPng,
       universal: BRAND_ASSET_PATHS.productionLinuxIconPng,
       appleTouch: BRAND_ASSET_PATHS.productionWebAppleTouchIconPng,
       favicon16: BRAND_ASSET_PATHS.productionWebFavicon16Png,
@@ -585,7 +581,6 @@ const renderVariant = Effect.fn("iconExport.renderVariant")(function* (
   });
 
   return new Map<string, Buffer>([
-    [variant.outputs.ios, ios],
     [variant.outputs.universal, ios],
     [variant.outputs.appleTouch, yield* render("iOS", 180)],
     [variant.outputs.favicon16, yield* render("iOS", 16)],

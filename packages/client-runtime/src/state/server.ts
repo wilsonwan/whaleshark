@@ -617,9 +617,9 @@ export function createServerEnvironmentAtoms<R, E>(
       environmentId: EnvironmentId,
     ) => Atom.Atom<ServerConfig | null>;
     /**
-     * Whether this surface renders themes the environment publishes. Mobile
-     * keeps its own appearance settings, so it neither asks for the stream nor
-     * receives the payload.
+     * Whether this surface renders themes the environment publishes. A surface
+     * with its own appearance settings neither asks for the stream nor receives
+     * the payload.
      */
     readonly environmentThemes?: boolean;
     /** Whether this surface renders quota from configured usage-limit sources. */

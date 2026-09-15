@@ -20,7 +20,7 @@ import {
 /**
  * RPC commands for pending chat attachment uploads. Mirrors
  * `createAssetEnvironmentAtoms`: each client instantiates it with its own
- * connection runtime (`attachmentEnvironment` in web and mobile).
+ * connection runtime (`attachmentEnvironment` in web and desktop).
  */
 export function createAttachmentEnvironmentAtoms<R, E>(
   runtime: Atom.AtomRuntime<EnvironmentRegistry | R, E>,
@@ -46,7 +46,7 @@ export function createAttachmentEnvironmentAtoms<R, E>(
  * a failed RPC is not guaranteed to be a decoded error class instance, only a
  * tagged value.
  */
-export function isAssetAttachmentNotFoundFailure(error: unknown): boolean {
+function isAssetAttachmentNotFoundFailure(error: unknown): boolean {
   return (
     typeof error === "object" &&
     error !== null &&
@@ -143,7 +143,7 @@ export type AttachmentUploadCycleResult =
 /**
  * The platform-neutral upload cycle: mint a signed upload URL, resolve it
  * against the environment's HTTP base, and hand the bytes to a
- * platform-specific transport (XHR on web, `expo-file-system` on mobile).
+ * platform-specific transport supplied by the active client.
  *
  * The cycle never deletes the minted pending upload on failure: callers keep
  * the returned `attachmentId` and decide between retry and release. The one

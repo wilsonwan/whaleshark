@@ -68,8 +68,7 @@ describe("splitFilePathPosition", () => {
 });
 
 describe("parseMarkdownFileLink", () => {
-  // Both clients consume this table, so a path the web app recognizes is one
-  // the mobile app recognizes too.
+  // Web and desktop consume this table, so file-link parsing stays consistent.
   it.each([
     ["/Users/julius/project/AGENTS.md", "/Users/julius/project/AGENTS.md"],
     ["/home/me/notes.md", "/home/me/notes.md"],
@@ -84,7 +83,7 @@ describe("parseMarkdownFileLink", () => {
     ["file:///Users/julius/project/file%2520name.md", "/Users/julius/project/file%20name.md"],
     ["file://server/share/workspace-image.svg", "\\\\server\\share\\workspace-image.svg"],
     ["file://localhost/home/me/notes.md", "/home/me/notes.md"],
-    ["apps/mobile/src/index.ts:10", "apps/mobile/src/index.ts"],
+    ["apps/web/src/index.ts:10", "apps/web/src/index.ts"],
     ["docs/My%20Folder/checklist.xml", "docs/My Folder/checklist.xml"],
     ["Updated%20cutover%20checklist.md", "Updated cutover checklist.md"],
     ["./scripts/deploy", "./scripts/deploy"],

@@ -43,7 +43,6 @@ source alone does not explain. Most code changes do not need an internal documen
 - [Assistant citations](./internals/assistant-citations.md)
 - [Terminal runtime](./internals/terminal-runtime.md)
 - [Devices](./internals/devices.md)
-- [Voice input](./internals/voice-input.md)
 
 ### Runbooks
 

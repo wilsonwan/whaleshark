@@ -116,7 +116,7 @@ function isStaleRequestFailure(
   return staleRequestFailureDetails[kind].some((fragment) => detail.includes(fragment));
 }
 
-/** Reduces request state once for web, desktop, and mobile. Layout stays with each client. */
+/** Reduces request state once for web and desktop. Layout stays with each client. */
 export function derivePendingRequests(activities: ReadonlyArray<OrchestrationThreadActivity>) {
   const approvals = new Map<ApprovalRequestId, PendingApproval>();
   const userInputs = new Map<ApprovalRequestId, PendingUserInput>();

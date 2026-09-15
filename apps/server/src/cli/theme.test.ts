@@ -417,9 +417,9 @@ describe("t3 theme", () => {
     }),
   );
 
-  // Web and desktop cannot resolve the mobile default, and mobile does not
-  // follow this setting, so naming it would be a silent no-op.
-  it.effect("rejects the mobile default theme id", () =>
+  // Web and desktop cannot resolve the legacy default, so naming it would be
+  // a silent no-op.
+  it.effect("rejects the legacy default theme id", () =>
     Effect.gen(function* () {
       const baseDir = makeBaseDir();
       const failure = yield* runCli(["theme", "set", "t3-code", "--base-dir", baseDir]).pipe(

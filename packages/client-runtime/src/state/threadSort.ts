@@ -106,7 +106,7 @@ export function getThreadSortTimestamp(
  * un-settle, or a settled thread waking on activity). The list stays static
  * between lifecycle transitions, but an un-settled thread surfaces at the
  * top instead of sinking back to its creation-order slot. Shared by web and
- * mobile so both render the same order. Malformed timestamps sink to 0.
+ * desktop so both render the same order. Malformed timestamps sink to 0.
  */
 export function activeThreadAnchorTimestampMs(thread: {
   readonly createdAt: string;
@@ -160,7 +160,7 @@ export function getLatestThreadForProject<
 // ── Pinned reorder: fractional index keys ──────────────────────────────
 // Pinned threads carry an optional pinOrderKey (a base-26 string). The
 // pinned block sorts keyed threads by plain string comparison, so a drag
-// (web) or Move up/down (mobile) writes ONE key to ONE thread on that
+// (web) or Move up/down (desktop) writes ONE key to ONE thread on that
 // thread's own server — neighbors, possibly living on other servers, are
 // never touched, and every client connected to the same servers converges
 // on the same order.
@@ -358,7 +358,7 @@ export function sortActiveThreadsByOrderKey<
 }
 
 /**
- * planPinnedReorder specialized for mobile's Move up / Move down menu
+ * planPinnedReorder specialized for the Move up / Move down menu
  * actions: swap the moved thread with its displayed neighbor. Null when the
  * move falls off either end of the list. Same single-write-per-move
  * semantics as a web drag.

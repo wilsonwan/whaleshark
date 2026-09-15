@@ -45,7 +45,7 @@ interface SettlementThreadShell extends QueuedThreadShell {
  * messages with no latestTurn at all), not pending work. Without this bound
  * such threads would be permanently unsettleable.
  */
-export const QUEUED_TURN_START_GRACE_MS = 2 * 60 * 1_000;
+const QUEUED_TURN_START_GRACE_MS = 2 * 60 * 1_000;
 const DAY_MS = 24 * 60 * 60 * 1_000;
 
 /**
@@ -314,7 +314,7 @@ export function resolveSnoozePresets(now: Date): ReadonlyArray<SnoozePreset> {
 /**
  * Compact "wakes in" label for snoozed rows: "2h", "18h", "3d". Minutes
  * round up so a snooze never reads "0m" while still hidden. Shared by web
- * and mobile so the same wake time never reads differently per client.
+ * and desktop so the same wake time never reads differently per client.
  */
 export function snoozeWakeLabel(snoozedUntil: string, options: { readonly now: string }): string {
   const wakeMs = Date.parse(snoozedUntil);

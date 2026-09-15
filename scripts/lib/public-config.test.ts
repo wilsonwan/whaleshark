@@ -4,7 +4,7 @@ import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 
-import { loadRepoEnv, resolvePublicConfig } from "./public-config.ts";
+import { loadRepoEnv } from "./public-config.ts";
 
 const temporaryDirectories: string[] = [];
 
@@ -15,76 +15,18 @@ afterEach(() => {
 });
 
 describe("loadRepoEnv", () => {
-  it("does not project mobile tracing configuration for an unconfigured clone", () => {
-    const env = loadRepoEnv({ baseEnv: {}, repoRoot: makeTemporaryDirectory() });
-
-    expect(env.T3CODE_MOBILE_OTLP_TRACES_URL).toBeUndefined();
-    expect(env.T3CODE_MOBILE_OTLP_TRACES_DATASET).toBeUndefined();
-    expect(env.T3CODE_MOBILE_OTLP_TRACES_TOKEN).toBeUndefined();
-    expect(env.EXPO_PUBLIC_OTLP_TRACES_URL).toBeUndefined();
-    expect(env.EXPO_PUBLIC_OTLP_TRACES_DATASET).toBeUndefined();
-    expect(env.EXPO_PUBLIC_OTLP_TRACES_TOKEN).toBeUndefined();
-  });
-
   it("applies process, root local, and root precedence in that order", () => {
     const repoRoot = makeTemporaryDirectory();
-    NodeFS.writeFileSync(
-      NodePath.join(repoRoot, ".env"),
-      "T3CODE_MOBILE_OTLP_TRACES_URL=https://root.example.test/v1/traces\n",
-    );
-    NodeFS.writeFileSync(
-      NodePath.join(repoRoot, ".env.local"),
-      "T3CODE_MOBILE_OTLP_TRACES_URL=https://local.example.test/v1/traces\n",
-    );
+    NodeFS.writeFileSync(NodePath.join(repoRoot, ".env"), "T3CODE_TEST_VALUE=root\n");
+    NodeFS.writeFileSync(NodePath.join(repoRoot, ".env.local"), "T3CODE_TEST_VALUE=local\n");
 
-    expect(loadRepoEnv({ baseEnv: {}, repoRoot }).T3CODE_MOBILE_OTLP_TRACES_URL).toBe(
-      "https://local.example.test/v1/traces",
-    );
+    expect(loadRepoEnv({ baseEnv: {}, repoRoot }).T3CODE_TEST_VALUE).toBe("local");
     expect(
       loadRepoEnv({
-        baseEnv: {
-          T3CODE_MOBILE_OTLP_TRACES_URL: "https://ci.example.test/v1/traces",
-        },
+        baseEnv: { T3CODE_TEST_VALUE: "ci" },
         repoRoot,
       }),
-    ).toMatchObject({
-      T3CODE_MOBILE_OTLP_TRACES_URL: "https://ci.example.test/v1/traces",
-      EXPO_PUBLIC_OTLP_TRACES_URL: "https://ci.example.test/v1/traces",
-    });
-  });
-
-  it("accepts framework aliases as root overrides", () => {
-    expect(
-      resolvePublicConfig({
-        EXPO_PUBLIC_OTLP_TRACES_URL: "https://api.axiom.co/v1/traces",
-        EXPO_PUBLIC_OTLP_TRACES_DATASET: "mobile-traces",
-        EXPO_PUBLIC_OTLP_TRACES_TOKEN: "mobile-token",
-      }),
-    ).toEqual({
-      mobileOtlpTracesUrl: "https://api.axiom.co/v1/traces",
-      mobileOtlpTracesDataset: "mobile-traces",
-      mobileOtlpTracesToken: "mobile-token",
-    });
-  });
-
-  it("projects canonical mobile tracing values to Expo public aliases", () => {
-    expect(
-      loadRepoEnv({
-        baseEnv: {
-          T3CODE_MOBILE_OTLP_TRACES_URL: "https://api.axiom.co/v1/traces",
-          T3CODE_MOBILE_OTLP_TRACES_DATASET: "mobile-traces",
-          T3CODE_MOBILE_OTLP_TRACES_TOKEN: "mobile-token",
-        },
-        repoRoot: makeTemporaryDirectory(),
-      }),
-    ).toMatchObject({
-      T3CODE_MOBILE_OTLP_TRACES_URL: "https://api.axiom.co/v1/traces",
-      T3CODE_MOBILE_OTLP_TRACES_DATASET: "mobile-traces",
-      T3CODE_MOBILE_OTLP_TRACES_TOKEN: "mobile-token",
-      EXPO_PUBLIC_OTLP_TRACES_URL: "https://api.axiom.co/v1/traces",
-      EXPO_PUBLIC_OTLP_TRACES_DATASET: "mobile-traces",
-      EXPO_PUBLIC_OTLP_TRACES_TOKEN: "mobile-token",
-    });
+    ).toMatchObject({ T3CODE_TEST_VALUE: "ci" });
   });
 });
 
