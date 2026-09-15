@@ -201,7 +201,7 @@ describe("collectLimitSources", () => {
     ]);
   }
 
-  it.each(["opencode", "claudeAgent"])(
+  it.each(["opencode", "pi"])(
     "prefers native %s limits by email without changing provider rows or source snapshots",
     (kind) => {
       const driver = ProviderDriverKind.make(kind);
@@ -232,7 +232,7 @@ describe("collectLimitSources", () => {
   it("keeps other providers, other emails, and unidentified accounts with the same plan", () => {
     const accounts = [
       account,
-      { ...account, id: "other-provider", driver: ProviderDriverKind.make("claudeAgent") },
+      { ...account, id: "other-provider", driver: ProviderDriverKind.make("pi") },
       { ...account, id: "other-email", email: "other@example.com" },
       { ...account, id: "unknown-email", email: undefined },
     ];
@@ -332,7 +332,7 @@ describe("pools", () => {
     windowDurationMins: 7 * 24 * 60,
     resetsAt: "2026-09-06T12:00:00.000Z",
   } as const;
-  const claude = ProviderDriverKind.make("claudeAgent");
+  const claude = ProviderDriverKind.make("pi");
   const source = {
     id: UsageLimitSourceId.make("hub"),
     kind: "cliproxy" as const,
@@ -719,7 +719,7 @@ describe("pools", () => {
     ]);
     const pools = collectLimitPools(collectLimitAccounts(input), now);
     expect(pools.map((pool) => [pool.driver, pool.accounts.length])).toEqual([
-      ["claudeAgent", 2],
+      ["pi", 2],
       ["opencode", 1],
     ]);
     const [session, week] = pools[0]!.windows;
@@ -806,7 +806,7 @@ describe("pooled account columns", () => {
   } as const;
   const account = (key: string, windows: LimitAccount["limits"]["windows"]): LimitAccount => ({
     key,
-    driver: ProviderDriverKind.make("claudeAgent"),
+    driver: ProviderDriverKind.make("pi"),
     displayName: key,
     email: undefined,
     plan: undefined,
@@ -889,7 +889,7 @@ describe("pooled account columns", () => {
 
 describe("collectLimitNotices", () => {
   const checkedAt = "2026-09-03T11:00:00.000Z";
-  const claude = ProviderDriverKind.make("claudeAgent");
+  const claude = ProviderDriverKind.make("pi");
   const laptop = { entry: { target: { label: "Laptop" } } };
   const hub = {
     id: UsageLimitSourceId.make("hub"),

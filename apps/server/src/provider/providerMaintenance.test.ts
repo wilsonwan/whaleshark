@@ -322,7 +322,7 @@ it.layer(NodeServices.layer)("providerMaintenance", (it) => {
         "C:\\Users\\Theo\\.claude\\packages\\standalone\\releases\\2.1.0-x86_64\\bin\\claude.exe";
       const capabilities = yield* resolvePackageManagedProviderMaintenance(
         {
-          provider: driver("claudeAgent"),
+          provider: driver("pi"),
           npmPackageName: "@anthropic-ai/claude-code",
           nativeUpdate: {
             args: ["update"],
@@ -341,7 +341,7 @@ it.layer(NodeServices.layer)("providerMaintenance", (it) => {
       expect(capabilities.update).toMatchObject({
         executable: visiblePath,
         args: ["update"],
-        lockKey: "claudeAgent-native",
+        lockKey: "pi-native",
       });
     }),
   );

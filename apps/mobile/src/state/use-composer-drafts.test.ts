@@ -1324,7 +1324,7 @@ describe("mobile composer drafts", () => {
             text: "",
             attachments: [],
             modelSelection: {
-              instanceId: "claudeAgent",
+              instanceId: "pi",
               model: "gpt-5.4",
               options: [{ id: "reasoningEffort", value: "xhigh" }],
             },
@@ -1347,7 +1347,7 @@ describe("mobile composer drafts", () => {
       text: "",
       attachments: [],
       modelSelection: {
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         model: "gpt-5.4",
         options: [{ id: "reasoningEffort", value: "xhigh" }],
       },
@@ -1406,7 +1406,7 @@ describe("mobile composer drafts", () => {
           "new-task:environment-1:project-1": {
             ...receiptDraft,
             modelSelection: {
-              instanceId: "claudeAgent",
+              instanceId: "pi",
               model: "gpt-5.4",
             },
           },
@@ -1560,12 +1560,12 @@ describe("mobile composer drafts", () => {
         schemaVersion: 1,
         drafts: {},
         stickyModelSelection: {
-          instanceId: "claudeAgent",
+          instanceId: "pi",
           model: "gpt-5.6-sol",
         },
       }).stickyModelSelection,
     ).toEqual({
-      instanceId: "claudeAgent",
+      instanceId: "pi",
       model: "gpt-5.6-sol",
     });
   });
@@ -1616,7 +1616,7 @@ describe("mobile composer drafts", () => {
         "environment-1:thread-1": DRAFT,
       },
       stickyModelSelection: {
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         model: "gpt-5.6-sol",
       },
     });
@@ -1646,7 +1646,7 @@ describe("mobile composer drafts", () => {
         },
       },
       stickyModelSelection: {
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         model: "gpt-5.6-sol",
       },
     });
@@ -1660,7 +1660,7 @@ describe("mobile composer drafts", () => {
         "environment-1:thread-1": DRAFT,
       },
       stickyModelSelection: {
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         model: "gpt-5.6-sol",
       },
     });
@@ -1688,7 +1688,7 @@ describe("mobile composer drafts", () => {
       attachments: [],
     });
     expect(written.stickyModelSelection).toEqual({
-      instanceId: "claudeAgent",
+      instanceId: "pi",
       model: "gpt-5.6-sol",
     });
   });
@@ -1770,7 +1770,7 @@ describe("mobile composer drafts", () => {
       "environment-2:thread-2": { text: "keep", attachments: [] },
     });
     setStickyComposerModelSelection({
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5.6-sol",
     });
     await vi.advanceTimersByTimeAsync(200);
@@ -1790,7 +1790,7 @@ describe("mobile composer drafts", () => {
         "environment-2:thread-2": { text: "keep", attachments: [] },
       },
       stickyModelSelection: {
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         model: "gpt-5.6-sol",
       },
     });
@@ -1803,7 +1803,7 @@ describe("mobile composer drafts", () => {
       attachments: [],
       importedShareIds: ["share-1"],
       modelSelection: {
-        instanceId: ProviderInstanceId.make("claudeAgent"),
+        instanceId: ProviderInstanceId.make("pi"),
         model: "gpt-5.4",
         options: [{ id: "reasoningEffort", value: "xhigh" }],
       },
@@ -1830,7 +1830,7 @@ describe("mobile composer drafts", () => {
       text: "send this",
       attachments: [],
       modelSelection: {
-        instanceId: ProviderInstanceId.make("claudeAgent"),
+        instanceId: ProviderInstanceId.make("pi"),
         model: "gpt-5.4",
       },
       workspaceSelection: {
@@ -1855,7 +1855,7 @@ describe("mobile composer drafts", () => {
       text: "send this",
       attachments: [],
       modelSelection: {
-        instanceId: ProviderInstanceId.make("claudeAgent"),
+        instanceId: ProviderInstanceId.make("pi"),
         model: "gpt-5.4",
         options: [{ id: "reasoningEffort", value: "xhigh" }],
       },
@@ -2092,7 +2092,7 @@ describe("mobile composer drafts", () => {
       schemaVersion: 1,
       drafts: { [draftKey]: merged },
       stickyModelSelection: {
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         model: "gpt-5.6-sol",
       },
     });
@@ -2103,7 +2103,7 @@ describe("mobile composer drafts", () => {
       schemaVersion: 1,
       drafts: { [draftKey]: snapshot },
       stickyModelSelection: {
-        instanceId: "claudeAgent",
+        instanceId: "pi",
         model: "gpt-5.6-sol",
       },
     });

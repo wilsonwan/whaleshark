@@ -12,8 +12,8 @@ import {
 } from "./providerSkills.ts";
 
 const provider = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
-  driver: ProviderDriverKind.make("claudeAgent"),
+  instanceId: ProviderInstanceId.make("pi"),
+  driver: ProviderDriverKind.make("pi"),
   enabled: true,
   installed: true,
   version: "1.0.0",

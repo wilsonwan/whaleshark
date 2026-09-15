@@ -33,7 +33,7 @@ const CONTEXT_WINDOW = selectDescriptor(
   "1m",
 );
 
-const CLAUDE = ProviderDriverKind.make("claudeAgent");
+const CLAUDE = ProviderDriverKind.make("pi");
 
 function display(descriptors: ReadonlyArray<ProviderOptionDescriptor>) {
   return buildTraitsTriggerDisplay({

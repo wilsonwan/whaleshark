@@ -126,13 +126,13 @@ vi.mock("../../state/entities", () => ({
 import { EnvironmentProviderSettings } from "./ProviderSettingsPanel";
 
 const environmentId = EnvironmentId.make("remote-device");
-const claudeId = ProviderInstanceId.make("claudeAgent");
+const claudeId = ProviderInstanceId.make("pi");
 const customId = ProviderInstanceId.make("claude_work");
 
 function provider(): ServerProvider {
   return {
     instanceId: claudeId,
-    driver: ProviderDriverKind.make("claudeAgent"),
+    driver: ProviderDriverKind.make("pi"),
     enabled: true,
     installed: true,
     version: "1.0.0",
@@ -247,7 +247,7 @@ describe("EnvironmentProviderSettings routing", () => {
 
     expect(commands.updateProvider).toHaveBeenCalledWith({
       environmentId,
-      input: { provider: ProviderDriverKind.make("claudeAgent"), instanceId: claudeId },
+      input: { provider: ProviderDriverKind.make("pi"), instanceId: claudeId },
     });
   });
 
@@ -255,7 +255,7 @@ describe("EnvironmentProviderSettings routing", () => {
     settingsState.value = {
       ...DEFAULT_UNIFIED_SETTINGS,
       providerInstances: {
-        [customId]: { driver: ProviderDriverKind.make("claudeAgent"), enabled: true },
+        [customId]: { driver: ProviderDriverKind.make("pi"), enabled: true },
       },
     };
     atoms.providers = [provider()];
@@ -300,7 +300,7 @@ describe("EnvironmentProviderSettings routing", () => {
       ...DEFAULT_UNIFIED_SETTINGS,
       providerInstances: {
         [customId]: {
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("pi"),
           enabled: true,
         },
       },
@@ -364,11 +364,11 @@ describe("EnvironmentProviderSettings routing", () => {
       ...DEFAULT_UNIFIED_SETTINGS,
       providerInstances: {
         [claudeId]: {
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("pi"),
           enabled: false,
         },
         [customId]: {
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("pi"),
           enabled: true,
         },
       },
@@ -429,7 +429,7 @@ describe("EnvironmentProviderSettings routing", () => {
       ...DEFAULT_UNIFIED_SETTINGS,
       providerInstances: {
         [customId]: {
-          driver: ProviderDriverKind.make("claudeAgent"),
+          driver: ProviderDriverKind.make("pi"),
           enabled: true,
           displayName: "Work",
         },
@@ -438,7 +438,7 @@ describe("EnvironmentProviderSettings routing", () => {
     const panel = renderPanel();
     const card = visitElements(panel, (element) => element.props.instanceId === customId);
     const next = {
-      driver: ProviderDriverKind.make("claudeAgent"),
+      driver: ProviderDriverKind.make("pi"),
       enabled: false,
       displayName: "Work",
     };

@@ -2,7 +2,7 @@ import { ProviderDriverKind } from "@t3tools/contracts";
 import { ClaudeAI, type Icon, OpenCodeIcon, PiAgentIcon } from "../Icons";
 
 export const PROVIDER_ICON_BY_PROVIDER: Partial<Record<ProviderDriverKind, Icon>> = {
-  [ProviderDriverKind.make("claudeAgent")]: ClaudeAI,
+  [ProviderDriverKind.make("pi")]: ClaudeAI,
   [ProviderDriverKind.make("opencode")]: OpenCodeIcon,
   [ProviderDriverKind.make("pi")]: PiAgentIcon,
 };

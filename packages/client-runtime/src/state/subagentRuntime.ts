@@ -184,8 +184,8 @@ function asUsage(value: unknown): SubagentUsage | undefined {
  * Provider-specific usage merge (#4779 semantics, verbatim):
  * - max-merge (cumulative frames): field-wise maximum, idempotent
  *   under duplicate or late frames. Cumulative totals never shrink.
- * - accumulate (Claude-style activation deltas): not needed at this layer —
- *   Claude's task_progress usage is itself cumulative per task, so the fold
+ * - accumulate (per-activation deltas): not needed at this layer —
+ *   a provider's task_progress usage is itself cumulative per task, so the fold
  *   also max-merges. The distinction matters when v2 sums activations.
  * Field-wise: a terminal payload carrying only totalTokens must not wipe a
  * known breakdown.
@@ -584,7 +584,7 @@ export function foldSubagentActivities(
         if (agent.activationCount === 0) agent.activationCount = 1;
         // Already-terminal: status and timestamps are frozen (first write
         // wins, duplicates must not slide them) but the completion still
-        // ENRICHES — Claude commonly emits terminal task.updated before
+        // ENRICHES — providers commonly emit terminal task.updated before
         // task.completed, and the completion carries the result summary and
         // final usage the update lacked (review finding: the early return
         // dropped both). Fill-if-missing keeps duplicate completions from

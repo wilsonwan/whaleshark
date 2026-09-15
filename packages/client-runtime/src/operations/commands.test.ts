@@ -291,7 +291,7 @@ describe("V2 environment commands", () => {
           attachments: [],
         },
         modelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "gpt-5.4",
         },
         runtimeMode: "full-access",
@@ -643,7 +643,7 @@ describe("V2 environment commands", () => {
         commandId: CommandId.make("same-provider"),
         threadId: v2ThreadId,
         modelSelection: {
-          instanceId: ProviderInstanceId.make("claudeAgent"),
+          instanceId: ProviderInstanceId.make("pi"),
           model: "another-model",
         },
       }).pipe(Effect.provideService(EnvironmentSupervisor.EnvironmentSupervisor, supervisor));
@@ -662,7 +662,7 @@ describe("V2 environment commands", () => {
           type: "thread.model-selection.set",
           commandId: "same-provider",
           threadId: v2ThreadId,
-          modelSelection: { instanceId: "claudeAgent", model: "another-model" },
+          modelSelection: { instanceId: "pi", model: "another-model" },
         },
         {
           type: "thread.model-selection.set",

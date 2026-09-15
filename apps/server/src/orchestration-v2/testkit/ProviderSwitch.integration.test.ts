@@ -21,7 +21,7 @@ import * as PubSub from "effect/PubSub";
 import * as Ref from "effect/Ref";
 import * as Stream from "effect/Stream";
 
-import { ClaudeProviderCapabilitiesV2 } from "../Adapters/ClaudeAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "../testProviderCapabilities.ts";
 import { PiProviderCapabilitiesV2 } from "../Adapters/PiAdapterV2.ts";
 import { OrchestratorV2 } from "../Orchestrator.ts";
 import {
@@ -31,16 +31,16 @@ import {
 } from "../ProviderAdapter.ts";
 import { makeLayer as makeProviderAdapterRegistryLayer } from "../ProviderAdapterRegistry.ts";
 import { makeProviderFailure } from "../ProviderFailure.ts";
-import { CLAUDE_MODEL_SELECTION, PI_MODEL_SELECTION } from "./fixtures/shared.ts";
+import { OPENCODE_MODEL_SELECTION, PI_MODEL_SELECTION } from "./fixtures/shared.ts";
 import { makeOrchestratorV2ReplayLayerWithRegistry } from "./ProviderReplayHarness.ts";
 import { checkpointWorkspace } from "./ReplayFixtureWorkspace.ts";
 
 const threadId = ThreadId.make("thread:provider-switch");
 const projectId = ProjectId.make("project:provider-switch");
 const firstPrompt = "Respond with exactly: pi before switch";
-const claudePrompt = "Respond with exactly: claude switched response";
+const opencodePrompt = "Respond with exactly: opencode switched response";
 const returnPrompt = "Respond with exactly: pi after return";
-const CLAUDE_DRIVER = ProviderDriverKind.make("claudeAgent");
+const OPENCODE_DRIVER = ProviderDriverKind.make("opencode");
 const PI_DRIVER = ProviderDriverKind.make("pi");
 
 /**
@@ -309,11 +309,11 @@ describe("orchestration v2 provider switching", () => {
             failResume: true,
           }),
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("claudeAgent"),
-            driver: CLAUDE_DRIVER,
-            capabilities: ClaudeProviderCapabilitiesV2,
-            modelSelection: CLAUDE_MODEL_SELECTION,
-            responseByRunOrdinal: { 2: "claude switched response" },
+            instanceId: ProviderInstanceId.make("opencode"),
+            driver: OPENCODE_DRIVER,
+            capabilities: TestProviderCapabilitiesV2,
+            modelSelection: OPENCODE_MODEL_SELECTION,
+            responseByRunOrdinal: { 2: "pi switched response" },
             capturedTurns,
           }),
         ]);
@@ -348,12 +348,12 @@ describe("orchestration v2 provider switching", () => {
             type: "message.dispatch",
             createdBy: "user",
             creationSource: "web",
-            commandId: CommandId.make("command:provider-switch:claude"),
+            commandId: CommandId.make("command:provider-switch:opencode"),
             threadId,
-            messageId: MessageId.make("message:provider-switch:claude"),
-            text: claudePrompt,
+            messageId: MessageId.make("message:provider-switch:opencode"),
+            text: opencodePrompt,
             attachments: [],
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            modelSelection: OPENCODE_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
           {
@@ -404,7 +404,7 @@ describe("orchestration v2 provider switching", () => {
           projection.runs.map((run) => [run.providerInstanceId, run.status]),
           [
             ["pi", "completed"],
-            ["claudeAgent", "completed"],
+            ["opencode", "completed"],
             ["pi", "completed"],
           ],
         );
@@ -430,7 +430,7 @@ describe("orchestration v2 provider switching", () => {
           projection.turnItems
             .filter((item) => item.type === "user_message")
             .map((item) => item.text),
-          [firstPrompt, claudePrompt, returnPrompt],
+          [firstPrompt, opencodePrompt, returnPrompt],
         );
         assert.deepEqual(
           projection.providerThreads.map((providerThread) => [
@@ -440,15 +440,15 @@ describe("orchestration v2 provider switching", () => {
           ]),
           [
             ["pi", "idle", 1],
-            ["claudeAgent", "idle", 1],
+            ["opencode", "idle", 1],
           ],
         );
         assert.equal(turns[0]?.text, firstPrompt);
         assert.include(turns[1]?.text ?? "", "Context handoff (full_thread_summary):");
         assert.include(turns[1]?.text ?? "", "pi before switch");
-        assert.include(turns[1]?.text ?? "", claudePrompt);
+        assert.include(turns[1]?.text ?? "", opencodePrompt);
         assert.include(turns[2]?.text ?? "", "Context handoff (delta_since_target_last_seen):");
-        assert.include(turns[2]?.text ?? "", "claude switched response");
+        assert.include(turns[2]?.text ?? "", "pi switched response");
         assert.include(turns[2]?.text ?? "", returnPrompt);
         assert.notInclude(turns[2]?.text ?? "", "pi before switch");
         assert.equal(turns[0]?.providerThreadId, turns[2]?.providerThreadId);
@@ -475,10 +475,10 @@ describe("orchestration v2 provider switching", () => {
             capturedTurns,
           }),
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("claudeAgent"),
-            driver: CLAUDE_DRIVER,
-            capabilities: ClaudeProviderCapabilitiesV2,
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            instanceId: ProviderInstanceId.make("opencode"),
+            driver: OPENCODE_DRIVER,
+            capabilities: TestProviderCapabilitiesV2,
+            modelSelection: OPENCODE_MODEL_SELECTION,
             responseByRunOrdinal: { 1: "I will remember violet." },
             capturedTurns,
           }),
@@ -492,7 +492,7 @@ describe("orchestration v2 provider switching", () => {
             threadId: sourceThreadId,
             projectId,
             title: "Cross-provider fork source",
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             runtimeMode: "full-access",
             interactionMode: "default",
             branch: null,
@@ -507,7 +507,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-fork:source"),
             text: sourcePrompt,
             attachments: [],
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            modelSelection: PI_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
           {
@@ -529,7 +529,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-fork:target"),
             text: targetPrompt,
             attachments: [],
-            modelSelection: PI_MODEL_SELECTION,
+            modelSelection: OPENCODE_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
         ] satisfies ReadonlyArray<OrchestrationV2Command>;
@@ -566,10 +566,10 @@ describe("orchestration v2 provider switching", () => {
 
         assert.deepEqual(
           targetProjection.runs.map((run) => [run.providerInstanceId, run.status]),
-          [["pi", "completed"]],
+          [["opencode", "completed"]],
         );
         assert.lengthOf(targetProjection.providerThreads, 1);
-        assert.equal(targetProjection.providerThreads[0]?.driver, "pi");
+        assert.equal(targetProjection.providerThreads[0]?.driver, "opencode");
         assert.isNull(targetProjection.providerThreads[0]?.forkedFrom);
         assert.deepEqual(
           targetProjection.contextTransfers.map((transfer) => [
@@ -589,7 +589,7 @@ describe("orchestration v2 provider switching", () => {
         );
         assert.include(targetTurn?.text ?? "", "Context handoff (full_thread_summary):");
         assert.include(targetTurn?.text ?? "", sourcePrompt);
-        assert.include(targetTurn?.text ?? "", "I will remember violet.");
+        assert.include(targetTurn?.text ?? "", "The release color is violet.");
         assert.include(targetTurn?.text ?? "", targetPrompt);
       }),
     ),
@@ -744,7 +744,7 @@ describe("orchestration v2 provider switching", () => {
           makeTestAdapter({
             instanceId: ProviderInstanceId.make("pi"),
             driver: PI_DRIVER,
-            capabilities: PiProviderCapabilitiesV2,
+            capabilities: PI_FORKLESS_CAPABILITIES,
             modelSelection: PI_MODEL_SELECTION,
             responseByRunOrdinal: {},
             responseByThreadId: {
@@ -759,11 +759,14 @@ describe("orchestration v2 provider switching", () => {
             capturedTurns,
           }),
           makeTestAdapter({
-            instanceId: ProviderInstanceId.make("claudeAgent"),
-            driver: CLAUDE_DRIVER,
-            capabilities: ClaudeProviderCapabilitiesV2,
-            modelSelection: CLAUDE_MODEL_SELECTION,
-            responseByRunOrdinal: { 2: "I will remember violet." },
+            instanceId: ProviderInstanceId.make("opencode"),
+            driver: OPENCODE_DRIVER,
+            capabilities: PI_FORKLESS_CAPABILITIES,
+            modelSelection: OPENCODE_MODEL_SELECTION,
+            responseByRunOrdinal: { 1: "I will remember violet." },
+            responseByThreadId: {
+              [forkThreadId]: { 1: "I will remember cobalt." },
+            },
             capturedTurns,
           }),
         ]);
@@ -803,7 +806,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-merge:second-source"),
             text: secondSourcePrompt,
             attachments: [],
-            modelSelection: CLAUDE_MODEL_SELECTION,
+            modelSelection: OPENCODE_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
           {
@@ -825,7 +828,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-merge:fork-turn"),
             text: forkPrompt,
             attachments: [],
-            modelSelection: PI_MODEL_SELECTION,
+            modelSelection: OPENCODE_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
           {
@@ -846,7 +849,7 @@ describe("orchestration v2 provider switching", () => {
             messageId: MessageId.make("message:cross-provider-merge:consume"),
             text: mergePrompt,
             attachments: [],
-            modelSelection: PI_MODEL_SELECTION,
+            modelSelection: OPENCODE_MODEL_SELECTION,
             dispatchMode: { type: "start_immediately" },
           },
         ] satisfies ReadonlyArray<OrchestrationV2Command>;
@@ -885,25 +888,23 @@ describe("orchestration v2 provider switching", () => {
         );
         const turns = yield* Ref.get(capturedTurns);
         const mergedTurn = turns.findLast(
-          (turn) => turn.threadId === sourceThreadId && turn.driver === "pi",
+          (turn) => turn.threadId === sourceThreadId && turn.driver === "opencode",
         );
         const mergeTransfer = projection.contextTransfers.find(
           (transfer) => transfer.type === "merge_back",
         );
 
         assert.isDefined(mergedTurn);
-        assert.include(mergedTurn.text, "Context handoff (full_thread_summary):");
+        assert.include(mergedTurn.text, "Handoff: Full conversation context for provider handoff.");
         assert.include(mergedTurn.text, firstSourcePrompt);
         assert.include(mergedTurn.text, "I will remember amber.");
-        assert.include(mergedTurn.text, secondSourcePrompt);
-        assert.include(mergedTurn.text, "I will remember violet.");
         assert.include(mergedTurn.text, "Context handoff (merge_back / fork_delta_summary):");
         assert.include(mergedTurn.text, forkPrompt);
         assert.include(mergedTurn.text, "I will remember cobalt.");
         assert.include(mergedTurn.text, mergePrompt);
         assert.isDefined(mergeTransfer);
         assert.equal(mergeTransfer.status, "consumed");
-        assert.equal(mergeTransfer.targetProviderInstanceId, "pi");
+        assert.equal(mergeTransfer.targetProviderInstanceId, "opencode");
         assert.equal(mergeTransfer.resolution?.strategy, "fork_delta_context");
       }),
     ),

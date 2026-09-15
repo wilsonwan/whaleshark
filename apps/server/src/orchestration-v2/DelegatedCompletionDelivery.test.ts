@@ -30,7 +30,7 @@ import { ProviderInstanceRegistry } from "../provider/Services/ProviderInstanceR
 import { ServerSettingsService } from "../serverSettings.ts";
 import * as VcsDriverRegistry from "../vcs/VcsDriverRegistry.ts";
 import * as VcsProcess from "../vcs/VcsProcess.ts";
-import { ClaudeProviderCapabilitiesV2 } from "./Adapters/ClaudeAdapterV2.ts";
+import { TestProviderCapabilitiesV2 } from "./testProviderCapabilities.ts";
 import { EventSinkV2 } from "./EventSink.ts";
 import { OrchestratorV2 } from "./Orchestrator.ts";
 import type { ProviderAdapterV2Shape } from "./ProviderAdapter.ts";
@@ -42,7 +42,7 @@ const ServerConfigLayer = ServerConfig.layerTest(process.cwd(), {
 });
 
 const modelSelection = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
+  instanceId: ProviderInstanceId.make("opencode"),
   model: "gpt-5.4",
 } satisfies ModelSelection;
 
@@ -56,11 +56,11 @@ const CheckpointStoreTestLayer = CheckpointStore.layer.pipe(
   Layer.provide(VcsDriverRegistryTestLayer),
 );
 
-const driver = ProviderDriverKind.make("claudeAgent");
+const driver = ProviderDriverKind.make("opencode");
 const orchestrationAdapter = {
   instanceId: modelSelection.instanceId,
   driver,
-  getCapabilities: () => Effect.succeed(ClaudeProviderCapabilitiesV2),
+  getCapabilities: () => Effect.succeed(TestProviderCapabilitiesV2),
   planSelectionTransition: () => Effect.succeed({ type: "apply_on_next_turn" }),
   openSession: () => Effect.die("sessions are not used by delegated completion tests"),
 } as ProviderAdapterV2Shape;
@@ -69,9 +69,9 @@ const providerInstance = {
   driverKind: driver,
   continuationIdentity: {
     driverKind: driver,
-    continuationKey: "claude:test",
+    continuationKey: "test-provider:test",
   },
-  displayName: "Claude test",
+  displayName: "Test provider",
   enabled: true,
   snapshot: {} as ProviderInstance["snapshot"],
   orchestrationAdapter,

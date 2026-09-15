@@ -88,7 +88,7 @@ const seedProject = Effect.fn("ProjectDeletionTest.seedProject")(function* (proj
 
 function nativeThreadCreated(projectId: ProjectId, threadId: ThreadId) {
   const createdAt = DateTime.makeUnsafe("2026-01-01T00:00:00.000Z");
-  const providerInstanceId = ProviderInstanceId.make("claudeAgent");
+  const providerInstanceId = ProviderInstanceId.make("pi");
   const payload: OrchestrationV2AppThread = {
     createdBy: "user",
     creationSource: "web",

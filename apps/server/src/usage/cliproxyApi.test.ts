@@ -93,8 +93,8 @@ describe("CLIProxyAPI built-in management API", () => {
       const api = yield* test.api;
       const result = yield* api.readAccounts(config);
       expect(result.map((account) => [account.driver, account.plan])).toEqual([
-        ["claudeAgent", "Claude Subscription"],
-        ["claudeAgent", "Claude Subscription"],
+        ["pi", "Claude Subscription"],
+        ["pi", "Claude Subscription"],
       ]);
       expect(
         result[0]?.usageLimits.windows.map((window) => [window.id, window.usedPercent]),

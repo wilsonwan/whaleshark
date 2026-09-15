@@ -388,7 +388,7 @@ describe("thread outbox", () => {
     const selectedMessage = {
       ...legacyMessage,
       modelSelection: {
-        instanceId: ProviderInstanceId.make("claudeAgent"),
+        instanceId: ProviderInstanceId.make("pi"),
         model: "gpt-5.4",
         options: [{ id: "reasoningEffort", value: "xhigh" }],
       },
@@ -414,7 +414,7 @@ describe("thread outbox", () => {
 
   it("compares model options as part of the queued settings change", () => {
     const base = {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5.4",
       options: [{ id: "reasoningEffort", value: "medium" }],
     } as const;
@@ -429,8 +429,8 @@ describe("thread outbox", () => {
   });
 
   it("normalizes queued plan mode against the queued provider, not the current thread", () => {
-    const claudeAgentSelection = {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+    const piSelection = {
+      instanceId: ProviderInstanceId.make("pi"),
       model: "gpt-5.6-sol",
     };
     const pi = {
@@ -439,7 +439,7 @@ describe("thread outbox", () => {
       options: [{ id: "native-option", value: "keep-this-choice" }],
     };
     const providers = [
-      { instanceId: claudeAgentSelection.instanceId, showInteractionModeToggle: true },
+      { instanceId: piSelection.instanceId, showInteractionModeToggle: true },
       { instanceId: pi.instanceId, showInteractionModeToggle: false },
     ];
     const message = {
@@ -453,7 +453,7 @@ describe("thread outbox", () => {
       resolveQueuedThreadSettings(
         message,
         {
-          modelSelection: claudeAgentSelection,
+          modelSelection: piSelection,
           runtimeMode: "approval-required",
           interactionMode: "plan",
         },
@@ -466,7 +466,7 @@ describe("thread outbox", () => {
     });
     expect(
       resolveQueuedThreadSettings(
-        { ...message, modelSelection: claudeAgentSelection },
+        { ...message, modelSelection: piSelection },
         {
           modelSelection: pi,
           runtimeMode: "approval-required",
@@ -1396,7 +1396,7 @@ describe("thread outbox", () => {
     const creationMessage = {
       ...base,
       modelSelection: {
-        instanceId: ProviderInstanceId.make("claudeAgent"),
+        instanceId: ProviderInstanceId.make("pi"),
         model: "gpt-5.4",
       },
       creation: {

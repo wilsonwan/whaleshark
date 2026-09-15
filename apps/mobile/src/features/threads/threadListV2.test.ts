@@ -136,7 +136,7 @@ describe("resolveThreadListV2Status", () => {
         status: "running",
         activeRunId: RunId.make("run-t"),
         providerName: "Claude",
-        providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+        providerInstanceId: ProviderInstanceId.make("pi"),
         lastError: null,
         updatedAt: NOW,
       },
@@ -154,7 +154,7 @@ describe("resolveThreadListV2Status", () => {
           runtime: {
             status: "idle",
             activeRunId: null,
-            providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+            providerInstanceId: ProviderInstanceId.make("pi"),
             providerName: "Claude",
             lastError: null,
             updatedAt: NOW,

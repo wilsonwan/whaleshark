@@ -16,7 +16,7 @@ const makeThread = (
   id: ThreadId.make("thread-1"),
   projectId: ProjectId.make("project-1"),
   title: "Thread",
-  modelSelection: { instanceId: ProviderInstanceId.make("claudeAgent"), model: "gpt-5" },
+  modelSelection: { instanceId: ProviderInstanceId.make("pi"), model: "gpt-5" },
   runtimeMode: "full-access",
   interactionMode: "default",
   pullRequests: [],
@@ -182,7 +182,7 @@ describe("resolveAutoSettlementAt", () => {
           session: {
             threadId: ThreadId.make("thread-1"),
             status: "running",
-            providerName: "claudeAgent",
+            providerName: "pi",
             runtimeMode: "full-access",
             activeTurnId: TurnId.make("turn-1"),
             lastError: null,

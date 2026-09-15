@@ -31,7 +31,6 @@ import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 
 import { ServerConfig } from "../config.ts";
 import * as ServerSettings from "../serverSettings.ts";
-import { hasValidClaudeManifestAdapters } from "./ClaudeModelManifest.ts";
 import bundledManifestJson from "./model-manifest.json" with { type: "json" };
 
 const MODEL_MANIFEST_URL =
@@ -110,9 +109,6 @@ const ModelManifestSchema = ModelManifestEnvelopeSchema.pipe(
   Schema.check(
     Schema.makeFilter(hasValidProviderCatalogReferences, {
       expected: "unique model slugs and existing model and profile references",
-    }),
-    Schema.makeFilter(hasValidClaudeManifestAdapters, {
-      expected: "valid Claude adapter metadata",
     }),
   ),
 );

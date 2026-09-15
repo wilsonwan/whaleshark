@@ -17,8 +17,8 @@ const decodeUpsertKeybindingResult = Schema.decodeUnknownSync(ServerUpsertKeybin
 const decodeAvailableEditors = Schema.decodeUnknownSync(ServerConfig.fields.availableEditors);
 
 const baseProviderSnapshot = {
-  instanceId: "claudeAgent",
-  driver: "claudeAgent",
+  instanceId: "pi",
+  driver: "pi",
   enabled: true,
   installed: true,
   version: "1.0.0",
@@ -31,8 +31,8 @@ const baseProviderSnapshot = {
 describe("ServerProvider", () => {
   it("defaults capability arrays when decoding provider snapshots", () => {
     const parsed = decodeServerProvider({
-      instanceId: "claudeAgent",
-      driver: "claudeAgent",
+      instanceId: "pi",
+      driver: "pi",
       enabled: true,
       installed: true,
       version: "1.0.0",
@@ -54,8 +54,8 @@ describe("ServerProvider", () => {
 
   it("defaults one-click update support when decoding older advisory snapshots", () => {
     const parsed = decodeServerProvider({
-      instanceId: "claudeAgent",
-      driver: "claudeAgent",
+      instanceId: "pi",
+      driver: "pi",
       enabled: true,
       installed: true,
       version: "1.0.0",
@@ -81,8 +81,8 @@ describe("ServerProvider", () => {
   it("decodes continuation group metadata", () => {
     const parsed = decodeServerProvider({
       instanceId: "claude_personal",
-      driver: "claudeAgent",
-      continuation: { groupKey: "claudeAgent:home:/Users/julius/.claude" },
+      driver: "pi",
+      continuation: { groupKey: "pi:home:/Users/julius/.claude" },
       enabled: true,
       installed: true,
       version: "1.0.0",
@@ -94,13 +94,13 @@ describe("ServerProvider", () => {
       models: [],
     });
 
-    expect(parsed.continuation?.groupKey).toBe("claudeAgent:home:/Users/julius/.claude");
+    expect(parsed.continuation?.groupKey).toBe("pi:home:/Users/julius/.claude");
   });
 
   it("decodes optional legacy model metadata", () => {
     const parsed = decodeServerProvider({
-      instanceId: "claudeAgent",
-      driver: "claudeAgent",
+      instanceId: "pi",
+      driver: "pi",
       enabled: true,
       installed: true,
       version: "1.0.0",

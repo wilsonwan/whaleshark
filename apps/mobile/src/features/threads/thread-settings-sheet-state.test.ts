@@ -14,17 +14,17 @@ function modelOption(
   options: ReadonlyArray<ProviderOptionSelection> = [],
 ): ModelOption {
   return {
-    key: `claudeAgent:${model}`,
+    key: `pi:${model}`,
     label: model,
     subtitle: "",
-    providerKey: "claudeAgent",
+    providerKey: "pi",
     providerLabel: "Claude",
-    providerDriver: "claudeAgent",
+    providerDriver: "pi",
     isDefault: false,
     isLegacy: false,
     capabilities: null,
     selection: {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model,
       options,
     },
@@ -105,7 +105,7 @@ describe("thread settings sheet state", () => {
 
   it("cannot save a staged model after sign-out removes it from the catalog", () => {
     const pending = modelOption("gemini-native");
-    const group = { providerKey: "claudeAgent", providerLabel: "Claude", models: [pending] };
+    const group = { providerKey: "pi", providerLabel: "Claude", models: [pending] };
 
     expect(canCommitPendingModel(pending, [group])).toBe(true);
     expect(canCommitPendingModel(pending, [])).toBe(false);

@@ -708,7 +708,7 @@ const TaskProgressPayload = Schema.Struct({
 export type TaskProgressPayload = typeof TaskProgressPayload.Type;
 
 /**
- * Non-terminal status patch (from the Claude SDK's task_updated, which main
+ * Non-terminal status patch (from a provider's task_updated, which main
  * previously dropped). killed→cancelled and paused→idle are mapped at the
  * adapter so the wire only carries the shared vocabulary.
  */

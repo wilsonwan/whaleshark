@@ -53,7 +53,7 @@ const EFFORT_CHOICES = [
 export const DESCRIPTOR_PRESETS_BY_KIND: Partial<
   Record<ProviderDriverKind, ReadonlyArray<DescriptorPreset>>
 > = {
-  [ProviderDriverKind.make("claudeAgent")]: [
+  [ProviderDriverKind.make("pi")]: [
     {
       id: "effort",
       label: "Reasoning",
@@ -174,14 +174,10 @@ export function draftFromDefinition(entry: CustomModelDefinition): CustomModelDr
   };
 }
 
-/** Claude context choices require runtime suffix mappings that custom entries do not carry. */
 export function descriptorsFromCapabilities(
   capabilities: ModelCapabilities | null | undefined,
-  driverKind: ProviderDriverKind | null,
 ): EditorDescriptor[] {
-  return (capabilities?.optionDescriptors ?? [])
-    .filter((descriptor) => driverKind !== "claudeAgent" || descriptor.id !== "contextWindow")
-    .map(descriptorToEditor);
+  return (capabilities?.optionDescriptors ?? []).map(descriptorToEditor);
 }
 
 /**

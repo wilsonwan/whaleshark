@@ -1488,7 +1488,7 @@ describe("MessagesTimeline", () => {
     const providerStatuses = [
       {
         instanceId: "claude_personal",
-        driver: "claudeAgent",
+        driver: "pi",
         enabled: true,
         installed: true,
         version: null,
@@ -1500,8 +1500,8 @@ describe("MessagesTimeline", () => {
         skills: [],
       },
       {
-        instanceId: "claudeAgent",
-        driver: "claudeAgent",
+        instanceId: "pi",
+        driver: "pi",
         enabled: true,
         installed: true,
         version: null,
@@ -1557,7 +1557,7 @@ describe("MessagesTimeline", () => {
         timelineEntries={[
           buildHandoffEntry({
             fromProviderInstanceIds: ["claude_personal"],
-            toProviderInstanceId: "claudeAgent",
+            toProviderInstanceId: "pi",
             fromModelSelections: [{ instanceId: "claude_personal", model: "gpt-5.6-sol" }],
             toModel: "claude-fable-5",
           }),
@@ -1584,8 +1584,8 @@ describe("MessagesTimeline", () => {
       {
         id: "run-2",
         ordinal: 2,
-        providerInstanceId: "claudeAgent",
-        modelSelection: { instanceId: "claudeAgent", model: "claude-fable-5" },
+        providerInstanceId: "pi",
+        modelSelection: { instanceId: "pi", model: "claude-fable-5" },
       },
     ] as never;
     const legacyMarkup = renderToStaticMarkup(
@@ -1596,7 +1596,7 @@ describe("MessagesTimeline", () => {
         timelineEntries={[
           buildHandoffEntry({
             fromProviderInstanceIds: ["claude_personal"],
-            toProviderInstanceId: "claudeAgent",
+            toProviderInstanceId: "pi",
           }),
         ]}
       />,
@@ -1615,7 +1615,7 @@ describe("MessagesTimeline", () => {
         timelineEntries={[
           buildHandoffEntry({
             fromProviderInstanceIds: ["claude_personal"],
-            toProviderInstanceId: "claudeAgent",
+            toProviderInstanceId: "pi",
           }),
         ]}
       />,
@@ -1801,8 +1801,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "claudeAgent",
-                providerInstanceId: "claudeAgent",
+                driver: "pi",
+                providerInstanceId: "pi",
                 childThreadId: "thread-subagent-1",
                 prompt: "Inspect the package",
                 progress: "Reading src/index.ts",
@@ -1830,16 +1830,16 @@ describe("MessagesTimeline", () => {
         {...buildProps()}
         timelineEntries={[
           {
-            id: "claudeAgent-subagent-result",
+            id: "pi-subagent-result",
             kind: "event",
             createdAt: MESSAGE_CREATED_AT,
             projectedItem: {
               position: 0,
               visibility: "local",
               sourceThreadId: "thread-1",
-              sourceItemId: "claudeAgent-subagent-result",
+              sourceItemId: "pi-subagent-result",
               item: {
-                id: "claudeAgent-subagent-result",
+                id: "pi-subagent-result",
                 threadId: "thread-1",
                 runId: "run-1",
                 nodeId: "node-subagent-1",
@@ -1856,8 +1856,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "claudeAgent",
-                providerInstanceId: "claudeAgent",
+                driver: "pi",
+                providerInstanceId: "pi",
                 childThreadId: "thread-subagent-1",
                 prompt: "Explain test isolation",
                 result: "Tests should be isolated.\n\nResult: no shared state.",
@@ -1912,8 +1912,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "claudeAgent",
-                providerInstanceId: "claudeAgent",
+                driver: "pi",
+                providerInstanceId: "pi",
                 childThreadId: "thread-subagent-1",
                 prompt: "Inspect the package",
                 progress: "Reading src/index.ts",
@@ -1966,8 +1966,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "claudeAgent",
-                providerInstanceId: "claudeAgent",
+                driver: "pi",
+                providerInstanceId: "pi",
                 childThreadId: "thread-subagent-1",
                 prompt: "Inspect the package",
                 progress: null,
@@ -2019,8 +2019,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "claudeAgent",
-                providerInstanceId: "claudeAgent",
+                driver: "pi",
+                providerInstanceId: "pi",
                 childThreadId: "thread-subagent-1",
                 prompt: "Inspect the package",
                 progress: "Reading src/index.ts",
@@ -2072,8 +2072,8 @@ describe("MessagesTimeline", () => {
                 type: "subagent",
                 subagentId: "node-subagent-1",
                 origin: "provider_native",
-                driver: "claudeAgent",
-                providerInstanceId: "claudeAgent",
+                driver: "pi",
+                providerInstanceId: "pi",
                 childThreadId: "thread-subagent-1",
                 prompt: "Inspect the package",
                 progress: "Audited 12 packages",

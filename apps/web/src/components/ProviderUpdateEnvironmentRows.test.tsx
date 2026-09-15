@@ -109,7 +109,7 @@ const pendingExpiryMs = 6 * 60_000;
 function provider(updateStatus?: "succeeded"): ServerProvider {
   const result: ServerProvider = {
     instanceId: ProviderInstanceId.make("claude-wsl"),
-    driver: ProviderDriverKind.make("claudeAgent"),
+    driver: ProviderDriverKind.make("pi"),
     enabled: true,
     installed: true,
     version: updateStatus ? "1.1.0" : "1.0.0",

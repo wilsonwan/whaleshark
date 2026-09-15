@@ -245,7 +245,7 @@ describe("host context compatibility", () => {
             createdAt: "2026-01-01T00:00:00Z",
             uploadedAttachments: [],
             modelSelection: {
-              instanceId: ProviderInstanceId.make("claudeAgent"),
+              instanceId: ProviderInstanceId.make("pi"),
               model: "gpt-5.6-sol",
             },
             runtimeMode: "full-access",

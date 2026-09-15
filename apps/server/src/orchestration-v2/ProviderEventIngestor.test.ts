@@ -66,10 +66,10 @@ const TestLayer = Layer.mergeAll(
   ),
 );
 const modelSelection = {
-  instanceId: ProviderInstanceId.make("claudeAgent"),
+  instanceId: ProviderInstanceId.make("pi"),
   model: "gpt-5.4",
 } satisfies ModelSelection;
-const CLAUDE_DRIVER = ProviderDriverKind.make("claudeAgent");
+const CLAUDE_DRIVER = ProviderDriverKind.make("pi");
 
 function threadCreatedEvent(
   now: DateTime.Utc,

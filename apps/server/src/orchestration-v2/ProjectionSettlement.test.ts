@@ -32,7 +32,7 @@ import { isAutoSettlementCandidate, resolveAutoSettlementAt } from "./ThreadSett
 const SqlLayer = projectionStoreLayer.pipe(Layer.provideMerge(SqlitePersistenceMemory));
 const now = DateTime.makeUnsafe("2026-09-04T12:00:00Z");
 const old = DateTime.subtract(now, { days: 10 });
-const providerInstanceId = ProviderInstanceId.make("claudeAgent");
+const providerInstanceId = ProviderInstanceId.make("pi");
 const modelSelection = { instanceId: providerInstanceId, model: "test-model" };
 const encodeNumbers = Schema.encodeSync(Schema.fromJsonString(Schema.Array(Schema.Number)));
 
@@ -239,7 +239,7 @@ for (const [name, testLayer] of [
             id: ProviderThreadId.make("provider-thread:settlement"),
             appThreadId: roster,
             ownerNodeId: null,
-            driver: ProviderDriverKind.make("claudeAgent"),
+            driver: ProviderDriverKind.make("pi"),
             providerInstanceId,
             providerSessionId: null,
             nativeThreadRef: null,

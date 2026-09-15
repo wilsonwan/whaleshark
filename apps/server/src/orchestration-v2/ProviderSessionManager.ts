@@ -1833,7 +1833,7 @@ export const layerWithOptions = (
               return [Option.some(updatedEntry), updated] as const;
             });
             // Plain detaches deliberately do not revoke: a detached thread's
-            // provider process may still be alive (shared multi-thread claudeAgent
+            // provider process may still be alive (shared multi-thread pi
             // session across a workspace handoff) and holds its MCP client's
             // credential for the thread it will re-attach with. Credentials
             // are revoked when the session entry is released (process gone)

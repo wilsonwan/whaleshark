@@ -14,7 +14,7 @@ function record(overrides: Partial<UsageRecord> = {}): UsageRecord {
   return {
     provider: "claude",
     timestampMs: 1_786_000_000_000,
-    model: "claude-fable-5",
+    model: "gpt-5.6-sol",
     sessionId: "session-a",
     totals: {
       uncachedInputTokens: 2,
@@ -56,15 +56,15 @@ function cacheWith(entries: readonly [string, number, readonly UsageRecord[]][])
 describe("scan cache round trip", () => {
   it("restores records unchanged", () => {
     const original = cacheWith([
-      ["/a.jsonl", 100, [record(), record({ dedupeKey: "msg_2:", model: "claude-opus-5" })]],
+      ["/a.jsonl", 100, [record(), record({ dedupeKey: "msg_2:", model: "opencode-model" })]],
       ["/b.jsonl", 200, [record({ sessionId: "session-b", reportedCostUsd: 1.5 })]],
     ]);
     original.set("/with-tail.jsonl", {
       size: 40,
       mtimeMs: 300,
       provider: "claude",
-      records: [record({ model: "claude-opus-5", dedupeKey: "s:p:claude-opus-5" })],
-      tailRecords: [record({ model: "claude-opus-5", dedupeKey: null })],
+      records: [record({ model: "opencode-model", dedupeKey: "s:p:opencode-model" })],
+      tailRecords: [record({ model: "opencode-model", dedupeKey: null })],
       position: position({ resumeOffset: 30, guardLength: 30, guardHash: 123 }),
     });
     original.set("/c.jsonl", {
@@ -85,7 +85,7 @@ describe("scan cache round trip", () => {
     expect(restored.get("/c.jsonl")).toEqual(original.get("/c.jsonl"));
   });
 
-  it("ignores a persisted entry from a provider this build no longer supports", () => {
+  it("ignores a persisted entry from the removed Claude provider", () => {
     // An older cache can name a provider that has since been removed. The
     // entry must be dropped rather than handed to a parser that no longer
     // exists; that costs one cold parse of the file, never a broken page.
@@ -128,7 +128,7 @@ describe("scan cache round trip", () => {
       cacheWith([["/a.jsonl", 100, [record(), record({ dedupeKey: "msg_2:" }), record()]]]),
     );
 
-    expect(encoded.models).toEqual(["claude-fable-5"]);
+    expect(encoded.models).toEqual(["gpt-5.6-sol"]);
     expect(encoded.sessions).toEqual(["session-a"]);
   });
 
@@ -249,7 +249,7 @@ describe("pruneScanCache with an unwalked root", () => {
 
     const removed = pruneScanCache(cache, {
       livePaths: new Set(),
-      walkedRoots: ["/claude/projects"],
+      walkedRoots: ["/claude/archived_projects"],
       windowStartMs: 4000,
       retentionCutoffMs: 1000,
     });

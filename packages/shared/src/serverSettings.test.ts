@@ -195,7 +195,7 @@ describe("serverSettings helpers", () => {
         { id: "reasoningEffort", value: "high" },
       ]),
     });
-    const selection = createModelSelection(ProviderInstanceId.make("claudeAgent"), "sonnet");
+    const selection = createModelSelection(ProviderInstanceId.make("pi"), "sonnet");
     const updated = applyServerSettingsPatch(current, { defaultModelSelection: selection });
     expect(updated.defaultModelSelection).toEqual(selection);
     expect(

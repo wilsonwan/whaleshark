@@ -21,7 +21,7 @@
  * @module provider/builtInDrivers
  */
 import { AcpRegistryDriver, type AcpRegistryDriverEnv } from "./Drivers/AcpRegistryDriver.ts";
-import { ClaudeDriver, type ClaudeDriverEnv } from "./Drivers/ClaudeDriver.ts";
+
 import { OpenCodeDriver, type OpenCodeDriverEnv } from "./Drivers/OpenCodeDriver.ts";
 import { PiDriver, type PiDriverEnv } from "./Drivers/PiDriver.ts";
 import type { AnyProviderDriver } from "./ProviderDriver.ts";
@@ -31,11 +31,7 @@ import type { AnyProviderDriver } from "./ProviderDriver.ts";
  * driver. The registry layer declares `R = BuiltInDriversEnv`; the runtime
  * layer must provide every service in this union.
  */
-export type BuiltInDriversEnv =
-  | AcpRegistryDriverEnv
-  | ClaudeDriverEnv
-  | OpenCodeDriverEnv
-  | PiDriverEnv;
+export type BuiltInDriversEnv = AcpRegistryDriverEnv | OpenCodeDriverEnv | PiDriverEnv;
 
 /**
  * Ordered list of built-in drivers. Order matters only for tie-breaking in
@@ -43,7 +39,6 @@ export type BuiltInDriversEnv =
  * iteration order has no functional effect on instance lookup.
  */
 export const BUILT_IN_DRIVERS: ReadonlyArray<AnyProviderDriver<BuiltInDriversEnv>> = [
-  ClaudeDriver,
   OpenCodeDriver,
   PiDriver,
   AcpRegistryDriver,

@@ -25,8 +25,8 @@ import * as EffectOutbox from "./EffectOutbox.ts";
 
 const threadId = ThreadId.make("thread:restart");
 const runId = RunId.make("run:restart");
-const instanceId = ProviderInstanceId.make("claudeAgent");
-const driver = ProviderDriverKind.make("claudeAgent");
+const instanceId = ProviderInstanceId.make("pi");
+const driver = ProviderDriverKind.make("pi");
 const providerThreadId = ProviderThreadId.make("provider-thread:restart");
 const sessionId = ProviderSessionId.make("session:restart");
 const attemptId = RunAttemptId.make("attempt:restart");

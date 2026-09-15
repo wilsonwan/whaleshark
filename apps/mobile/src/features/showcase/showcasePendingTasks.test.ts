@@ -15,7 +15,7 @@ const projects: ReadonlyArray<EnvironmentProject> = [
     workspaceRoot: "/workspace/t3code",
     repositoryIdentity: null,
     defaultModelSelection: {
-      instanceId: ProviderInstanceId.make("claudeAgent"),
+      instanceId: ProviderInstanceId.make("pi"),
       model: "claude-fable-5-1",
     },
     scripts: [],
